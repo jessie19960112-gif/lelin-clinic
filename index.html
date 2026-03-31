@@ -875,14 +875,14 @@ function toggleLine(id){
   const b=bookings.find(x=>x.id===id);if(!b)return;
   if(b.status==='pending'){toast('warn','請先核准後再進行 LINE 通知');return;}
   b.lineNotified=true;
-  window._fbReady.then(()=>{ if(b.fbId) window._fbToggleLine(b.fbId); });
+  if(b.fbId && window._fbToggleLine) window._fbToggleLine(b.fbId);
   renderBookings();
   toast('info',`${b.name} 已標記 LINE 已通知`);
 }
 function deleteBooking(id){
   const b=bookings.find(x=>x.id===id);if(!b)return;
   if(!confirm(`確定要刪除 ${b.name} 的預約？`))return;
-  window._fbReady.then(()=>{ if(b.fbId) window._fbDelete(b.fbId); });
+  if(b.fbId && window._fbDelete) window._fbDelete(b.fbId);
   bookings=bookings.filter(x=>x.id!==id);
   renderBookings();
   if(document.getElementById('panel-schedule').classList.contains('active')) renderSlotCal();
@@ -1023,12 +1023,10 @@ function saveEdit(id){
   b.lineNotified=document.getElementById('e_line').value==='1';
   b.note=document.getElementById('e_note').value.trim();
   closeModal();
-  window._fbReady.then(()=>{
-    if(b.fbId) window._fbSaveEdit(b.fbId,{
-      name:b.name,bday:b.bday,phone:b.phone,
-      date:b.date,slot:b.slot,docId:b.docId,
-      op:b.op,status:b.status,lineNotified:b.lineNotified,note:b.note
-    });
+  if(b.fbId && window._fbSaveEdit) window._fbSaveEdit(b.fbId,{
+    name:b.name,bday:b.bday,phone:b.phone,
+    date:b.date,slot:b.slot,docId:b.docId,
+    op:b.op,status:b.status,lineNotified:b.lineNotified,note:b.note
   });
   renderBookings();
   // refresh calendar if visible
@@ -2046,7 +2044,7 @@ function _renderReviewLockBar(dc, unlocked, count){
 function reviewApprove(id){
   const b=bookings.find(x=>x.id===id);if(!b)return;
   b.status='approved';
-  window._fbReady.then(()=>{ if(b.fbId) window._fbApprove(b.fbId); });
+  if(b.fbId && window._fbApprove) window._fbApprove(b.fbId);
   renderReview();renderBookings();updateReviewBadge();
   if(document.getElementById('panel-calendar').classList.contains('active')) renderCal();
   toast('success',`${b.name} 已核准`);
@@ -2055,7 +2053,7 @@ function reviewApprove(id){
 function reviewReject(id){
   const b=bookings.find(x=>x.id===id);if(!b)return;
   b.status='rejected';
-  window._fbReady.then(()=>{ if(b.fbId) window._fbReject(b.fbId); });
+  if(b.fbId && window._fbReject) window._fbReject(b.fbId);
   renderReview();renderBookings();updateReviewBadge();
   if(document.getElementById('panel-calendar').classList.contains('active')) renderCal();
   toast('warn',`${b.name} 已拒絕`);
@@ -2078,10 +2076,50 @@ document.addEventListener('click',function(e){
 /* ═══════════════════════════════════════
    INIT
 ═══════════════════════════════════════ */
-// fbReady: resolves when Firebase module finishes loading
-let _fbReadyResolve;
-window._fbReady = new Promise(res=>{ _fbReadyResolve=res; });
-window._fbReadyResolve = _fbReadyResolve;
+// 把所有 onclick 函數掛到 window，防止 Netlify 壓縮後名稱被改
+window.nav                    = nav;
+window.calNav                 = calNav;
+window.calGoToday             = calGoToday;
+window.setCalView             = setCalView;
+window.setCalDocFilter        = setCalDocFilter;
+window.slotCalNav             = slotCalNav;
+window.selectSlotDoc          = selectSlotDoc;
+window.selectSlotDay          = selectSlotDay;
+window.openGlobalTimeSettings = openGlobalTimeSettings;
+window.toggleGlobalDay        = toggleGlobalDay;
+window.addGlobalSlot          = addGlobalSlot;
+window.delGlobalSlot          = delGlobalSlot;
+window.applyGlobalSettings    = applyGlobalSettings;
+window.closeModal             = closeModal;
+window.closeModal2            = closeModal2;
+window.closeOverlay           = closeOverlay;
+window.closeOverlay2          = closeOverlay2;
+window.openAddPatient         = openAddPatient;
+window.saveAddPatient         = saveAddPatient;
+window.openDetail             = openDetail;
+window._renderDetailModal     = _renderDetailModal;
+window.saveEdit               = saveEdit;
+window.deleteBooking          = deleteBooking;
+window.toggleLine             = toggleLine;
+window.setStatusFilter        = setStatusFilter;
+window.setSort                = setSort;
+window.reviewApprove          = reviewApprove;
+window.reviewReject           = reviewReject;
+window.reviewToggleDocLock    = reviewToggleDocLock;
+window.selectReviewDoc        = selectReviewDoc;
+window.openAddDoctor          = openAddDoctor;
+window.openEditDoctor         = openEditDoctor;
+window.saveAddDoctor          = saveAddDoctor;
+window.saveEditDoctor         = saveEditDoctor;
+window.deleteDoctor           = deleteDoctor;
+window.onEditDocChange        = onEditDocChange;
+window.updateEditSlots        = updateEditSlots;
+window.checkEditConflict      = checkEditConflict;
+window.removeOpsTag           = removeOpsTag;
+window.toggleColorDropdown    = toggleColorDropdown;
+window.selectDocColor         = selectDocColor;
+window.addDaySlotInline       = addDaySlotInline;
+window.removeDaySlotInline    = removeDaySlotInline;
 
 renderBookings();
 updateReviewBadge();
@@ -2203,8 +2241,6 @@ updateReviewBadge();
       .catch(e=>toast('err','儲存失敗'));
   };
 
-  // resolve fbReady
-  window._fbReadyResolve();
 })();
 </script>
 </body>
