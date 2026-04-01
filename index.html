@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>樂霖後台管理系統</title>
+<!-- Firebase compat SDK 提前載入，確保所有功能正常運作 -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700;900&display=swap');
 :root {
@@ -669,7 +672,7 @@ let slotCalDate = new Date(2026,3,1), slotSelectedDay = null;
 ═══════════════════════════════════════ */
 const panelNames = {bookings:'預約清單',review:'醫師審核',calendar:'手術排程',schedule:'預約時段設定',doctors:'醫師與術式管理'};
 
-function nav(id) {
+window.nav = function(id) {
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.ni').forEach(b=>b.classList.remove('active'));
   document.getElementById('panel-'+id).classList.add('active');
@@ -736,7 +739,7 @@ let bookingStatusFilter = 'all';
 let bookingDocFilter = 'all';
 let calDocFilter = 'all';
 
-function setStatusFilter(f, btn){
+window.setStatusFilter = function(f, btn){
   bookingStatusFilter = f;
   document.querySelectorAll('.ft[data-type="status"]').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
@@ -754,7 +757,7 @@ function countFilter(f){
   return bookings.filter(b=>b.status===f).length;
 }
 
-function setSort(col){
+window.setSort = function(col){
   if(bookingSort.col===col) bookingSort.dir=bookingSort.dir==='asc'?'desc':'asc';
   else {bookingSort.col=col;bookingSort.dir='asc';}
   renderBookings();
@@ -871,7 +874,7 @@ function lineCol(b){
   return `<button class="line-toggle unsent" onclick="toggleLine(${b.id})" title="點擊標記為已通知"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px;height:12px;"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>未通知</button>`;
 }
 
-function toggleLine(id){
+window.toggleLine = function(id){
   const b=bookings.find(x=>x.id===id);if(!b)return;
   if(b.status==='pending'){toast('warn','請先核准後再進行 LINE 通知');return;}
   b.lineNotified=true;
@@ -879,7 +882,7 @@ function toggleLine(id){
   renderBookings();
   toast('info',`${b.name} 已標記 LINE 已通知`);
 }
-function deleteBooking(id){
+window.deleteBooking = function(id){
   const b=bookings.find(x=>x.id===id);if(!b)return;
   if(!confirm(`確定要刪除 ${b.name} 的預約？`))return;
   if(b.fbId && window._fbDelete) window._fbDelete(b.fbId);
@@ -891,7 +894,7 @@ function deleteBooking(id){
 }
 
 /* Combined Detail + Edit modal */
-function openDetail(id){
+window.openDetail = function(id){
   const b=bookings.find(x=>x.id===id);if(!b)return;
   const todayStr=new Date().toISOString().slice(0,10);
   const isPast=b.date<todayStr;
@@ -921,7 +924,7 @@ function composeBday(y,m,d){
   return `${y}/${String(m).padStart(2,'0')}/${String(d).padStart(2,'0')}`;
 }
 
-function _renderDetailModal(b, editMode, isPast=false){
+window._renderDetailModal = function(b, editMode, isPast=false){
   document.getElementById('modal').className='modal wide';
   const docOpts=`<option value="">— 請選擇醫師 —</option>`+doctors.map(d=>`<option value="${d.id}"${b.docId===d.id?' selected':''}>${d.name} 醫師</option>`).join('');
   const selDoc=doctors.find(d=>d.id===b.docId);
@@ -1003,7 +1006,7 @@ function _renderDetailModal(b, editMode, isPast=false){
   openOverlay();
 }
 
-function saveEdit(id){
+window.saveEdit = function(id){
   const b=bookings.find(x=>x.id===id);if(!b)return;
   const date=document.getElementById('e_date').value||b.date;
   const slot=document.getElementById('e_slot').value;
@@ -1035,7 +1038,7 @@ function saveEdit(id){
   toast('success','資料已更新');
 }
 
-function onEditDocChange(){
+window.onEditDocChange = function(){
   const docId=parseInt(document.getElementById('e_doc').value);
   const doc=doctors.find(d=>d.id===docId);
   const opSel=document.getElementById('e_op');
@@ -1087,13 +1090,13 @@ function buildSlotOptions(date, selectedSlot, excludeId=null){
   }).join('');
 }
 
-function updateEditSlots(excludeId){
+window.updateEditSlots = function(excludeId){
   const date=document.getElementById('e_date').value;
   document.getElementById('e_slot').innerHTML=buildSlotOptions(date,'',excludeId);
   checkEditConflict(excludeId);
 }
 
-function checkEditConflict(excludeId){
+window.checkEditConflict = function(excludeId){
   const date=document.getElementById('e_date').value;
   const slot=document.getElementById('e_slot').value;
   const warn=document.getElementById('e_conflict');
@@ -1107,7 +1110,7 @@ function checkEditConflict(excludeId){
 /* ═══════════════════════════════════════
    ADD PATIENT  (FIX2 + FIX6 + FIX1)
 ═══════════════════════════════════════ */
-function openAddPatient(){
+window.openAddPatient = function(){
   document.getElementById('modalTitle').textContent='新增病人預約';
   document.getElementById('modal').className='modal wide';
 
@@ -1202,7 +1205,7 @@ function onAddDocChange(){
   if(date) onAddDateChange();
 }
 
-function saveAddPatient(){
+window.saveAddPatient = function(){
   const name  = document.getElementById('a_name').value.trim();
   const phone = document.getElementById('a_phone').value.trim();
   const date  = document.getElementById('a_date').value;
@@ -1226,11 +1229,11 @@ function saveAddPatient(){
 /* ═══════════════════════════════════════
    CALENDAR  (FIX10: clean week view)
 ═══════════════════════════════════════ */
-function setCalView(v,btn){calView=v;document.querySelectorAll('.cvt').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderCal();}
-function calNav(d){if(calView==='month')calDate.setMonth(calDate.getMonth()+d);else if(calView==='week')calDate.setDate(calDate.getDate()+d*7);else calDate.setDate(calDate.getDate()+d);renderCal();}
-function calGoToday(){calDate=new Date();renderCal();}
+window.setCalView = function(v,btn){calView=v;document.querySelectorAll('.cvt').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderCal();}
+window.calNav = function(d){if(calView==='month')calDate.setMonth(calDate.getMonth()+d);else if(calView==='week')calDate.setDate(calDate.getDate()+d*7);else calDate.setDate(calDate.getDate()+d);renderCal();}
+window.calGoToday = function(){calDate=new Date();renderCal();}
 
-function setCalDocFilter(val){
+window.setCalDocFilter = function(val){
   calDocFilter=val==='all'?'all':parseInt(val);
   renderCal();
 }
@@ -1380,7 +1383,7 @@ function isSlotLimitReached(doc, ds, slot){
   return isAM(slot)?(counts.am>=limit):(counts.pm>=limit);
 }
 
-function slotCalNav(d){slotCalDate.setMonth(slotCalDate.getMonth()+d);slotSelectedDay=null;renderSlotCal();}
+window.slotCalNav = function(d){slotCalDate.setMonth(slotCalDate.getMonth()+d);slotSelectedDay=null;renderSlotCal();}
 
 function renderSlotDocTabs(){
   const tabs=document.getElementById('slotDocTabs');
@@ -1400,7 +1403,7 @@ function renderSlotDocTabs(){
   tabs.innerHTML=tabsHtml+gearBtn;
 }
 
-function selectSlotDoc(docId){
+window.selectSlotDoc = function(docId){
   slotActiveDocId=docId; slotSelectedDay=null;
   renderSlotDocTabs(); renderSlotCal();
 }
@@ -1467,7 +1470,7 @@ function renderSlotCal(){
   else document.getElementById('timeSlotPanel').innerHTML='<div class="no-date-hint">↑ 請點選上方日期來設定時段</div>';
 }
 
-function selectSlotDay(ds){slotSelectedDay=ds;renderSlotCal();}
+window.selectSlotDay = function(ds){slotSelectedDay=ds;renderSlotCal();}
 
 function renderTimeSlotPanel(ds){
   if(!slotActiveDocId){document.getElementById('timeSlotPanel').innerHTML='<div class="no-date-hint">請先選擇醫師分頁</div>';return;}
@@ -1526,7 +1529,7 @@ function renderTimeSlotPanel(ds){
     ${booked.length?`<div style="margin-top:8px;font-size:11px;color:var(--text3);"><span style="display:inline-block;width:10px;height:10px;background:#F1F5F9;border:1px solid var(--border);border-radius:3px;margin-right:4px;"></span>灰色標記時段已有預約，不可刪除</div>`:''}`;
 }
 
-function addDaySlotInline(ds){
+window.addDaySlotInline = function(ds){
   const h=document.getElementById('dds_h').value;
   const min=document.getElementById('dds_m').value;
   if(!h||min===''){toast('warn','請選擇時與分');return;}
@@ -1547,7 +1550,7 @@ function addDaySlotInline(ds){
   toast('success','已新增 '+slot);
 }
 
-function removeDaySlotInline(ds,slot){
+window.removeDaySlotInline = function(ds,slot){
   if(getBookedSlots(ds).includes(slot)){toast('warn','此時段已有預約，無法刪除');return;}
   setDocSlots(slotActiveDocId,ds,getDocSlots(slotActiveDocId,ds).filter(s=>s!==slot));
   renderSlotCal();
@@ -1613,7 +1616,7 @@ function clearDocSlots(ds){
 let doctorDefaultSlots={};
 let globalSettingDocId=null;
 
-function openGlobalTimeSettings(){
+window.openGlobalTimeSettings = function(){
   globalSettingDocId=slotActiveDocId||( doctors.length?doctors[0].id:null );
   document.getElementById('modal2Title').textContent='總預約時段設定';
   renderGlobalTimeBody();
@@ -1661,14 +1664,14 @@ function renderGlobalTimeBody(){
     </div>`;
 }
 
-function toggleGlobalDay(d){
+window.toggleGlobalDay = function(d){
   if(!doctorDefaultSlots[globalSettingDocId]) doctorDefaultSlots[globalSettingDocId]={days:[],slots:[]};
   const days=doctorDefaultSlots[globalSettingDocId].days;
   const idx=days.indexOf(d); if(idx>=0) days.splice(idx,1); else days.push(d);
   renderGlobalTimeBody();
 }
 
-function addGlobalSlot(){
+window.addGlobalSlot = function(){
   const h=document.getElementById('gs_h').value,min=document.getElementById('gs_m').value;
   if(!h||min===''){toast('warn','請選擇時與分');return;}
   const slot=h+':'+min;
@@ -1684,11 +1687,11 @@ function addGlobalSlot(){
   arr.push(slot);arr.sort();renderGlobalTimeBody();
 }
 
-function delGlobalSlot(i){
+window.delGlobalSlot = function(i){
   doctorDefaultSlots[globalSettingDocId].slots.splice(i,1);renderGlobalTimeBody();
 }
 
-function applyGlobalSettings(){
+window.applyGlobalSettings = function(){
   if(!globalSettingDocId){toast('warn','請選擇醫師');return;}
   const cfg=doctorDefaultSlots[globalSettingDocId];
   if(!cfg||!cfg.days.length||!cfg.slots.length){toast('warn','請設定星期和時段');return;}
@@ -1717,8 +1720,8 @@ function applyGlobalSettings(){
 }
 
 function openOverlay2(){document.getElementById('overlay2').classList.add('open');}
-function closeModal2(){document.getElementById('overlay2').classList.remove('open');}
-function closeOverlay2(e){if(e.target===document.getElementById('overlay2'))closeModal2();}
+window.closeModal2 = function(){document.getElementById('overlay2').classList.remove('open');}
+window.closeOverlay2 = function(e){if(e.target===document.getElementById('overlay2'))closeModal2();}
 
 
 
@@ -1799,11 +1802,11 @@ function doctorModal(doc){
   // no ops preview needed
 }
 
-function toggleColorDropdown(){
+window.toggleColorDropdown = function(){
   document.getElementById('colorDropdownList').classList.toggle('open');
 }
 
-function selectDocColor(cid){
+window.selectDocColor = function(cid){
   document.getElementById('dc_colorId').value=cid;
   const c=DOC_COLORS.find(x=>x.id===cid)||DOC_COLORS[0];
   document.getElementById('colorBtnDot').style.background=c.dot;
@@ -1842,7 +1845,7 @@ function handleOpsTagKey(e){
   }
 }
 
-function removeOpsTag(btn){
+window.removeOpsTag = function(btn){
   btn.parentElement.remove();
 }
 
@@ -1850,7 +1853,7 @@ function getSelectedOps(){
   return [...document.querySelectorAll('#opsTags .ops-tag')].map(t=>t.dataset.op);
 }
 
-function openAddDoctor(){
+window.openAddDoctor = function(){
   document.getElementById('modalTitle').textContent='新增醫師';
   document.getElementById('modal').className='modal wide';
   doctorModal(null);
@@ -1861,7 +1864,7 @@ function openAddDoctor(){
   openOverlay();
 }
 
-function saveAddDoctor(){
+window.saveAddDoctor = function(){
   const name=document.getElementById('dc_name').value.trim();
   if(!name){toast('err','請填寫醫師姓名');return;}
   const ops=getSelectedOps();
@@ -1874,12 +1877,12 @@ function saveAddDoctor(){
   closeModal();renderDoctors();toast('success',`${name} 醫師已新增，請記得按「儲存醫師」同步到雲端`);
 }
 
-function saveDoctorsToDB(){
+window.saveDoctorsToDB = function(){
   if(window._fbSaveAllDoctors) window._fbSaveAllDoctors(doctors);
   else toast('warn','Firebase 尚未連線，請稍後再試');
 }
 
-function openEditDoctor(id){
+window.openEditDoctor = function(id){
   const doc=doctors.find(d=>d.id===id);if(!doc)return;
   document.getElementById('modalTitle').textContent='編輯醫師';
   document.getElementById('modal').className='modal wide';
@@ -1891,7 +1894,7 @@ function openEditDoctor(id){
   openOverlay();
 }
 
-function saveEditDoctor(id){
+window.saveEditDoctor = function(id){
   const doc=doctors.find(d=>d.id===id);if(!doc)return;
   doc.name=document.getElementById('dc_name').value.trim()||doc.name;
   doc.title=document.getElementById('dc_title').value.trim()||doc.title;
@@ -1903,7 +1906,7 @@ function saveEditDoctor(id){
   closeModal();renderDoctors();toast('success','醫師資料已更新');
 }
 
-function deleteDoctor(id){
+window.deleteDoctor = function(id){
   const doc=doctors.find(d=>d.id===id);if(!doc)return;
   if(!confirm(`確定要刪除 ${doc.name} 醫師？`))return;
   if(window._fbDeleteDoctor) window._fbDeleteDoctor(id);
@@ -1943,14 +1946,14 @@ function renderReviewDocTabs(){
   tabs.innerHTML=html;
 }
 
-function selectReviewDoc(docId){
+window.selectReviewDoc = function(docId){
   if(reviewActiveDocId===docId) return; // already on this tab
   reviewActiveDocId=docId;
   reviewUnlockedDocId=null; // auto-lock on tab switch
   renderReview();
 }
 
-function reviewToggleDocLock(){
+window.reviewToggleDocLock = function(){
   reviewUnlockedDocId=(reviewUnlockedDocId===reviewActiveDocId)?null:reviewActiveDocId;
   renderReview();
 }
@@ -2041,7 +2044,7 @@ function _renderReviewLockBar(dc, unlocked, count){
   }
 }
 
-function reviewApprove(id){
+window.reviewApprove = function(id){
   const b=bookings.find(x=>x.id===id);if(!b)return;
   b.status='approved';
   if(b.fbId && window._fbApprove) window._fbApprove(b.fbId);
@@ -2050,7 +2053,7 @@ function reviewApprove(id){
   toast('success',`${b.name} 已核准`);
 }
 
-function reviewReject(id){
+window.reviewReject = function(id){
   const b=bookings.find(x=>x.id===id);if(!b)return;
   b.status='rejected';
   if(b.fbId && window._fbReject) window._fbReject(b.fbId);
@@ -2061,8 +2064,8 @@ function reviewReject(id){
 
 
 function openOverlay(){document.getElementById('overlay').classList.add('open');}
-function closeModal(){document.getElementById('overlay').classList.remove('open');}
-function closeOverlay(e){if(e.target===document.getElementById('overlay'))closeModal();}
+window.closeModal = function(){document.getElementById('overlay').classList.remove('open');}
+window.closeOverlay = function(e){if(e.target===document.getElementById('overlay'))closeModal();}
 
 // close color dropdown when clicking outside
 document.addEventListener('click',function(e){
@@ -2076,58 +2079,11 @@ document.addEventListener('click',function(e){
 /* ═══════════════════════════════════════
    INIT
 ═══════════════════════════════════════ */
-// 把所有 onclick 函數掛到 window，防止 Netlify 壓縮後名稱被改
-window.nav                    = nav;
-window.calNav                 = calNav;
-window.calGoToday             = calGoToday;
-window.setCalView             = setCalView;
-window.setCalDocFilter        = setCalDocFilter;
-window.slotCalNav             = slotCalNav;
-window.selectSlotDoc          = selectSlotDoc;
-window.selectSlotDay          = selectSlotDay;
-window.openGlobalTimeSettings = openGlobalTimeSettings;
-window.toggleGlobalDay        = toggleGlobalDay;
-window.addGlobalSlot          = addGlobalSlot;
-window.delGlobalSlot          = delGlobalSlot;
-window.applyGlobalSettings    = applyGlobalSettings;
-window.closeModal             = closeModal;
-window.closeModal2            = closeModal2;
-window.closeOverlay           = closeOverlay;
-window.closeOverlay2          = closeOverlay2;
-window.openAddPatient         = openAddPatient;
-window.saveAddPatient         = saveAddPatient;
-window.openDetail             = openDetail;
-window._renderDetailModal     = _renderDetailModal;
-window.saveEdit               = saveEdit;
-window.deleteBooking          = deleteBooking;
-window.toggleLine             = toggleLine;
-window.setStatusFilter        = setStatusFilter;
-window.setSort                = setSort;
-window.reviewApprove          = reviewApprove;
-window.reviewReject           = reviewReject;
-window.reviewToggleDocLock    = reviewToggleDocLock;
-window.selectReviewDoc        = selectReviewDoc;
-window.openAddDoctor          = openAddDoctor;
-window.openEditDoctor         = openEditDoctor;
-window.saveAddDoctor          = saveAddDoctor;
-window.saveEditDoctor         = saveEditDoctor;
-window.deleteDoctor           = deleteDoctor;
-window.onEditDocChange        = onEditDocChange;
-window.updateEditSlots        = updateEditSlots;
-window.checkEditConflict      = checkEditConflict;
-window.removeOpsTag           = removeOpsTag;
-window.toggleColorDropdown    = toggleColorDropdown;
-window.selectDocColor         = selectDocColor;
-window.addDaySlotInline       = addDaySlotInline;
-window.removeDaySlotInline    = removeDaySlotInline;
-
 renderBookings();
 updateReviewBadge();
 </script>
 
-<!-- Firebase compat SDK (避免 Netlify 壓縮 module 導致函數名稱被混淆) -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<!-- Firebase compat SDK 已移至 <head> 提前載入 -->
 <script>
 (function(){
   const firebaseConfig = {
