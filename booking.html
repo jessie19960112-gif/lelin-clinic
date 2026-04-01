@@ -104,15 +104,11 @@ button{font-family:inherit;cursor:pointer;}
 
 /* OPS — large card style (same as doctor) */
 .op-wrap{display:flex;flex-direction:column;gap:8px;}
-.op-chip{border:2px solid var(--border);border-radius:var(--rs);padding:13px 15px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:13px;transition:all .18s;background:white;}
+.op-chip{border:2px solid var(--border);border-radius:var(--rs);padding:13px 15px;cursor:pointer;display:flex;align-items:center;gap:13px;transition:all .18s;background:white;}
 .op-chip:hover{border-color:var(--ob);}
 .op-chip.sel{border-color:var(--o1);background:var(--op);}
 .op-chip-name{font-size:14px;font-weight:700;color:var(--ink);}
 .op-chip.sel .op-chip-name{color:var(--o1);}
-.op-radio{width:22px;height:22px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .18s;}
-.op-chip.sel .op-radio{border-color:var(--o1);background:var(--o1);}
-.op-radio svg{display:none;width:12px;height:12px;}
-.op-chip.sel .op-radio svg{display:block;}
 .op-placeholder{font-size:12px;color:var(--ink3);padding:4px 0;}
 
 .cday.full{color:var(--ink3);cursor:default;opacity:.55;}
@@ -145,6 +141,7 @@ button{font-family:inherit;cursor:pointer;}
 .slot-btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;border:1.5px solid var(--border);background:white;color:var(--ink2);cursor:pointer;transition:all .15s;}
 .slot-btn:hover{border-color:var(--o1);color:var(--o1);}
 .slot-btn.sel{background:var(--o1);border-color:var(--o1);color:white;}
+.slot-btn.booked{color:var(--ink3);border-color:var(--border);background:#F5F5F5;cursor:default;text-decoration:line-through;opacity:.6;}
 
 /* FORM */
 .fg{margin-bottom:14px;}.fg:last-child{margin-bottom:0;}
@@ -176,7 +173,7 @@ button{font-family:inherit;cursor:pointer;}
 /* BUTTONS */
 .btn-p{width:100%;padding:14px;background:var(--o1);color:white;border:none;border-radius:var(--rs);font-size:14px;font-weight:700;letter-spacing:.04em;cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:8px;}
 .btn-p:hover{background:#E06C10;}.btn-p:active{transform:scale(.98);}
-.btn-s{width:100%;padding:12px;background:white;color:var(--ink2);border:1.5px solid var(--border);border-radius:var(--rs);font-size:13px;font-weight:600;cursor:pointer;transition:all .18s;}
+.btn-s{width:100%;padding:12px;background:white;color:var(--ink2);border:1.5px solid var(--border);border-radius:var(--rs);font-size:13px;font-weight:600;cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:6px;}
 .btn-s:hover{border-color:var(--o1);color:var(--o1);}
 .brow{display:flex;gap:10px;}.brow .btn-p,.brow .btn-s{margin:0;}
 
@@ -203,11 +200,28 @@ button{font-family:inherit;cursor:pointer;}
 .suc-info-row{display:flex;padding:7px 0;border-bottom:1px solid var(--ob);}
 .suc-info-row:last-child{border-bottom:none;}
 .suc-info-k{font-size:12px;color:var(--o1);width:52px;flex-shrink:0;font-weight:600;}
-.suc-info-v{font-size:13px;font-weight:700;color:#7B4A1E;}
+.suc-info-v{font-size:13px;font-weight:700;color:var(--ink);}
 .suc-contact-card{background:#F8F8F6;border:1px solid var(--border);border-radius:var(--rs);padding:12px 14px;margin-bottom:16px;text-align:left;display:flex;flex-direction:column;gap:8px;}
-.suc-contact-row{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink3);}
-.suc-contact-row svg{width:12px;height:12px;stroke:var(--ink3);flex-shrink:0;}
+.suc-contact-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink2);font-weight:500;}
+.suc-contact-row svg{width:13px;height:13px;stroke:var(--ink2);flex-shrink:0;}
 
+
+/* CUSTOM MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .22s;}
+.modal-overlay.on{opacity:1;pointer-events:auto;}
+.modal-box{background:white;border-radius:20px;padding:28px 24px;max-width:340px;width:100%;box-shadow:0 20px 60px rgba(180,80,0,.22);transform:translateY(16px);transition:transform .22s;text-align:center;}
+.modal-overlay.on .modal-box{transform:translateY(0);}
+.modal-ico{width:56px;height:56px;border-radius:50%;background:var(--op);border:2px solid var(--ob);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;}
+.modal-ico svg{width:26px;height:26px;stroke:var(--o1);}
+.modal-ttl{font-size:16px;font-weight:700;color:var(--ink);margin-bottom:8px;}
+.modal-msg{font-size:13px;color:var(--ink2);line-height:1.75;margin-bottom:20px;}
+.modal-btn{width:100%;padding:13px;background:var(--o1);color:white;border:none;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;transition:background .18s;}
+.modal-btn:hover{background:#E06C10;}
+/* doc/date error */
+.ferr-doc{font-size:11px;color:#D03020;margin-top:8px;display:none;}
+.ferr-doc.on{display:block;}
+.ferr-date{font-size:11px;color:#D03020;margin-top:8px;display:none;text-align:center;}
+.ferr-date.on{display:block;}
 /* ANIM */
 @keyframes fU{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
 @keyframes fD{from{opacity:0;transform:translateY(-10px);}to{opacity:1;transform:translateY(0);}}
@@ -278,6 +292,7 @@ button{font-family:inherit;cursor:pointer;}
       <div class="card">
         <div class="cttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>選擇醫師</div>
         <div class="doc-list" id="docList"></div>
+        <div class="ferr-doc" id="docErr">請先選擇醫師</div>
       </div>
       <div class="card" id="opCard">
         <div class="cttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>選擇術式</div>
@@ -306,6 +321,7 @@ button{font-family:inherit;cursor:pointer;}
         <div class="cttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>選擇時段<span style="font-size:11px;font-weight:400;color:var(--ink3);margin-left:4px;" id="slotDtLbl"></span></div>
         <div class="slot-grid" id="slotAll"></div>
       </div>
+      <div class="ferr-date" id="dateErr">請先選擇預約日期與時段</div>
       <div class="brow">
         <button class="btn-s" style="flex:1;" onclick="toStep1()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><polyline points="15 18 9 12 15 6"/></svg> 上一步</button>
         <button class="btn-p" style="flex:2;" onclick="toStep3()">下一步：填寫資料 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><polyline points="9 18 15 12 9 6"/></svg></button>
@@ -403,9 +419,17 @@ let doctors=[];
 let slots={};
 const MN=['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
 let sel={docId:null,op:null,date:null,slot:null};
-let calDate=new Date(2026,4,1);
+let calDate=new Date();
 
 renderDoctors(); renderCal();
+
+function showModal(ttl, msg, btnTxt='重新選擇'){
+  document.getElementById('modalTtl').textContent=ttl;
+  document.getElementById('modalMsg').textContent=msg;
+  document.getElementById('customModal').querySelector('.modal-btn').textContent=btnTxt;
+  document.getElementById('customModal').classList.add('on');
+}
+function closeModal(){ document.getElementById('customModal').classList.remove('on'); }
 
 function renderDoctors(){
   document.getElementById('docList').innerHTML=doctors.map(d=>`
@@ -415,30 +439,36 @@ function renderDoctors(){
     </div>`).join('');
 }
 function pickDoc(id){
-  sel.docId=id;sel.op=null;
+  sel.docId=id; sel.op=null;
   renderDoctors();
+  document.getElementById('docErr').classList.remove('on');
   const doc=doctors.find(d=>d.id===id);
   document.getElementById('opWrap').innerHTML=doc.ops.length
     ? doc.ops.map(o=>`<div class="op-chip${sel.op===o?' sel':''}" onclick="pickOp('${o}')">
         <span class="op-chip-name">${o}</span>
-        <span class="op-radio"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></span>
       </div>`).join('')
     : '<div class="op-placeholder">此醫師尚未設定術式</div>';
   document.getElementById('opErr').classList.remove('on');
 }
 function pickOp(o){
+  if(sel.op===o){ sel.op=null; document.querySelectorAll('.op-chip').forEach(c=>c.classList.remove('sel')); return; }
   sel.op=o;
   document.querySelectorAll('.op-chip').forEach(c=>c.classList.toggle('sel',c.querySelector('.op-chip-name')?.textContent===o));
   document.getElementById('opErr').classList.remove('on');
 }
 function toStep2(){
-  if(!sel.docId) return;
+  if(!sel.docId){document.getElementById('docErr').classList.add('on');return;}
   if(!sel.op){document.getElementById('opErr').classList.add('on');return;}
   show('p2');setStep(2);renderCal();
 }
 function toStep1(){show('p1');setStep(1);}
 function toStep3(){
-  if(!sel.date||!sel.slot){alert('請先選擇預約日期與時段');return;}
+  if(!sel.date||!sel.slot){
+    document.getElementById('dateErr').classList.add('on');
+    document.getElementById('dateErr').scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
+  document.getElementById('dateErr').classList.remove('on');
   show('p3');setStep(3);
 }
 function toStep4(){
@@ -520,22 +550,50 @@ function goHome(){
   document.getElementById('homePage').style.display='flex';
   window.scrollTo({top:0,behavior:'smooth'});
 }
+// 判斷某天的上午或下午是否達到配額
+function isSessionFull(docId, ds, isAM){
+  if(!window._bookedSlots) return false;
+  const doc=doctors.find(d=>d.id===docId);
+  if(!doc) return false;
+  const lim=isAM?(doc.limitAM??99):(doc.limitPM??99);
+  if(!lim||lim<=0) return false;
+  // 計算該天同一時段（上午/下午）的總預約數
+  const total=Object.entries(window._bookedSlots).reduce((sum,[key,cnt])=>{
+    const [did,date,slot]=key.split(':');
+    if(parseInt(did)===docId && date===ds && (parseInt(slot)<12)===isAM) return sum+cnt;
+    return sum;
+  },0);
+  return total>=lim;
+}
+
 function isDayFull(docId, ds, ss){
   if(!window._bookedSlots||!ss||!ss.length) return false;
   const doc=doctors.find(d=>d.id===docId);
   if(!doc) return false;
+  // 每個時段：若所屬上午/下午配額已滿，或該時段自身已被預約，則視為不可用
   return ss.every(slot=>{
-    const isAM=parseInt(slot)<12;
-    const lim=isAM?(doc.limitAM??99):(doc.limitPM??99);
-    const booked=window._bookedSlots[`${docId}:${ds}:${slot}`]||0;
-    return lim>0&&booked>=lim;
+    const am=parseInt(slot)<12;
+    return isSessionFull(docId,ds,am);
   });
 }
+
+function isSlotUnavailable(docId, ds, slot){
+  // 該時段已被預約（booked > 0）
+  const key=`${docId}:${ds}:${slot}`;
+  const booked=(window._bookedSlots||{})[key]||0;
+  if(booked>0) return 'booked'; // 已被佔走
+  // 所屬上午/下午配額已滿
+  const am=parseInt(slot)<12;
+  if(isSessionFull(docId,ds,am)) return 'full';
+  return null;
+}
+
 function renderCal(){
   const y=calDate.getFullYear(),m=calDate.getMonth();
   document.getElementById('calM').textContent=`${y} 年 ${MN[m]}`;
   const first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate();
-  const today=new Date();today.setHours(0,0,0,0);
+  const now=new Date();
+  const today=new Date(now);today.setHours(0,0,0,0);
   let h='';
   for(let i=0;i<first;i++) h+=`<div class="cday other"></div>`;
   for(let dd=1;dd<=days;dd++){
@@ -544,37 +602,72 @@ function renderCal(){
     const dow=dt.getDay();
     const isPast=dt<today;
     const ss=sel.docId?(slots[sel.docId+':'+ds]||[]):[];
-    const has=ss.length>0;
-    const full=has&&!isPast&&isDayFull(sel.docId,ds,ss);
+    // 今天：過濾掉已過的時段
+    const availSS=isPast?[]:ss.filter(s=>{
+      if(dt.getTime()===today.getTime()){
+        const [hh,mm2]=s.split(':').map(Number);
+        const slotTime=new Date(dt);slotTime.setHours(hh,mm2,0,0);
+        return slotTime>now;
+      }
+      return true;
+    });
+    const has=availSS.length>0;
+    const full=has&&isDayFull(sel.docId,ds,availSS);
     const picked=sel.date===ds;
     let cls='cday';
     if(dow===0)cls+=' sun';if(dow===6)cls+=' sat';
-    if(isPast)cls+=' past';
+    if(isPast||(!has&&ss.length>0))cls+=' past'; // 今天時段全過了也視為過去
     else if(full)cls+=' full';
     else if(!has)cls+=' noslot';
     else cls+=' has';
     if(picked)cls+=' picked';
-    const dot=has&&!isPast&&!full?`<div class="cday-dot"></div>`:'';
+    const dot=has&&!full?`<div class="cday-dot"></div>`:'';
     const fullLbl=full?`<div class="cday-full-lbl">額滿</div>`:'';
-    const click=(!isPast&&has&&!full)?`onclick="pickDate('${ds}')"`:'';
+    const click=(has&&!full)?`onclick="pickDate('${ds}')"`:'';
     h+=`<div class="${cls}" ${click}>${dd}${dot}${fullLbl}</div>`;
   }
   document.getElementById('calGrid').innerHTML=h;
 }
-function pickDate(ds){
-  sel.date=ds;sel.slot=null;renderCal();
+
+function renderSlots(ds){
+  const now=new Date();
+  const today=new Date(now);today.setHours(0,0,0,0);
+  const dt=new Date(ds);
   const ss=slots[sel.docId+':'+ds]||[];
+  // 過濾今天已過的時段
+  const filtered=ss.filter(s=>{
+    if(dt.getTime()===today.getTime()){
+      const [hh,mm2]=s.split(':').map(Number);
+      const slotTime=new Date(dt);slotTime.setHours(hh,mm2,0,0);
+      return slotTime>now;
+    }
+    return true;
+  });
+  if(!filtered.length){
+    return `<div style="font-size:12px;color:var(--ink3);">此日期暫無可預約時段</div>`;
+  }
+  return filtered.map(s=>{
+    const unavail=isSlotUnavailable(sel.docId,ds,s);
+    if(unavail){
+      return `<button class="slot-btn booked" disabled>${s}</button>`;
+    }
+    const isSel=sel.slot===s;
+    return `<button class="slot-btn${isSel?' sel':''}" onclick="pickSlot('${s}')">${s}</button>`;
+  }).join('');
+}
+
+function pickDate(ds){
+  sel.date=ds; sel.slot=null; renderCal();
+  document.getElementById('dateErr').classList.remove('on');
   const[yy,mm,dd]=ds.split('-');
   document.getElementById('slotDtLbl').textContent=`${yy}年${parseInt(mm)}月${parseInt(dd)}日`;
-  document.getElementById('slotAll').innerHTML=ss.length
-    ? ss.map(s=>`<button class="slot-btn${sel.slot===s?' sel':''}" onclick="pickSlot('${s}')">${s}</button>`).join('')
-    : `<div style="font-size:12px;color:var(--ink3);">此日期暫無可預約時段</div>`;
+  document.getElementById('slotAll').innerHTML=renderSlots(ds);
   document.getElementById('slotCard').style.display='block';
   document.getElementById('slotCard').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 function pickSlot(s){
   sel.slot=s;
-  document.querySelectorAll('.slot-btn').forEach(b=>b.classList.toggle('sel',b.textContent.trim()===s));
+  document.querySelectorAll('.slot-btn:not(.booked)').forEach(b=>b.classList.toggle('sel',b.textContent.trim()===s));
 }
 function calNav(d){calDate.setMonth(calDate.getMonth()+d);sel.date=null;sel.slot=null;document.getElementById('slotCard').style.display='none';renderCal();}
 function show(id){document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));document.getElementById(id).classList.add('on');window.scrollTo({top:0,behavior:'smooth'});}
@@ -592,6 +685,7 @@ function fmtDs(ds){if(!ds)return'';const[y,m,d]=ds.split('-');return`${y}年${pa
 
 // 把所有 onclick 函數掛到 window，防止 Netlify 壓縮後名稱被改
 window.enterBooking  = enterBooking;
+window.closeModal    = closeModal;
 window.goHome        = goHome;
 window.pickDoc       = pickDoc;
 window.pickOp        = pickOp;
@@ -603,6 +697,7 @@ window.submitBooking = submitBooking;
 window.calNav        = calNav;
 window.pickDate      = pickDate;
 window.pickSlot      = pickSlot;
+window.renderSlots   = renderSlots;
 </script>
 
 <!-- Firebase SDK moved to <head> -->
@@ -648,7 +743,7 @@ window.pickSlot      = pickSlot;
     if(document.getElementById('bookingApp').style.display!=='none') renderCal();
   });
 
-  // ── 即時監聽 bookings → 計算已預約數 ──
+  // ── 即時監聽 bookings → 計算已預約數，即時更新畫面 ──
   db.collection('bookings').onSnapshot(snap=>{
     window._bookedSlots={};
     snap.docs.map(d=>d.data())
@@ -657,6 +752,11 @@ window.pickSlot      = pickSlot;
         const key=`${b.docId}:${b.date}:${b.slot}`;
         window._bookedSlots[key]=(window._bookedSlots[key]||0)+1;
       });
+    // 即時更新日曆與時段顯示
+    if(document.getElementById('p2').classList.contains('on')){
+      renderCal();
+      if(sel.date){ document.getElementById('slotAll').innerHTML=renderSlots(sel.date); }
+    }
   });
 
   // ── 送出預約（含額滿檢查）──
@@ -683,7 +783,7 @@ window.pickSlot      = pickSlot;
       const limit=isAM?(docObj.limitAM??99):(docObj.limitPM??99);
       if(limit>0 && snap.size>=limit){
         if(btnEl){btnEl.disabled=false;btnEl.innerHTML='確認送出';}
-        alert('此時段已額滿，請重新選擇');
+        showModal('此時段已額滿','很抱歉，您選擇的時段已被預約額滿，請重新選擇其他時間。');
         show('p2');setStep(2);
         return;
       }
@@ -701,10 +801,20 @@ window.pickSlot      = pickSlot;
       submitBooking();
     }catch(e){
       if(btnEl){btnEl.disabled=false;btnEl.innerHTML='確認送出';}
-      alert('送出失敗，請稍後再試。\n錯誤：'+e.message);
+      showModal('送出失敗','網路異常，請稍後再試。\n（'+e.message+'）','關閉');
     }
   };
 })();
 </script>
+
+<!-- Custom Modal -->
+<div class="modal-overlay" id="customModal">
+  <div class="modal-box">
+    <div class="modal-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+    <div class="modal-ttl" id="modalTtl">提示</div>
+    <div class="modal-msg" id="modalMsg"></div>
+    <button class="modal-btn" onclick="closeModal()">重新選擇</button>
+  </div>
+</div>
 </body>
 </html>
