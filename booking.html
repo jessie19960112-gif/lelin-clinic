@@ -220,8 +220,8 @@ button{font-family:inherit;cursor:pointer;}
 /* doc/date error */
 .ferr-doc{font-size:11px;color:#D03020;margin-top:8px;display:none;}
 .ferr-doc.on{display:block;}
-.ferr-date{font-size:11px;color:#D03020;margin-top:8px;display:none;text-align:center;}
-.ferr-date.on{display:block;}
+.ferr-date{font-size:11px;color:#D03020;font-weight:600;margin-left:auto;display:none;}
+.ferr-date.on{display:inline;}
 /* ANIM */
 @keyframes fU{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
 @keyframes fD{from{opacity:0;transform:translateY(-10px);}to{opacity:1;transform:translateY(0);}}
@@ -308,7 +308,7 @@ button{font-family:inherit;cursor:pointer;}
     <!-- P2 -->
     <div class="panel" id="p2">
       <div class="card">
-        <div class="cttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>選擇日期</div>
+        <div class="cttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>選擇日期<span class="ferr-date" id="dateErr">請先選擇日期與時段</span></div>
         <div class="cal-nav">
           <button class="cal-nb" onclick="calNav(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg></button>
           <div class="cal-m" id="calM"></div>
@@ -321,7 +321,6 @@ button{font-family:inherit;cursor:pointer;}
         <div class="cttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>選擇時段<span style="font-size:11px;font-weight:400;color:var(--ink3);margin-left:4px;" id="slotDtLbl"></span></div>
         <div class="slot-grid" id="slotAll"></div>
       </div>
-      <div class="ferr-date" id="dateErr">請先選擇預約日期與時段</div>
       <div class="brow">
         <button class="btn-s" style="flex:1;" onclick="toStep1()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><polyline points="15 18 9 12 15 6"/></svg> 上一步</button>
         <button class="btn-p" style="flex:2;" onclick="toStep3()">下一步：填寫資料 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><polyline points="9 18 15 12 9 6"/></svg></button>
@@ -465,7 +464,7 @@ function toStep1(){show('p1');setStep(1);}
 function toStep3(){
   if(!sel.date||!sel.slot){
     document.getElementById('dateErr').classList.add('on');
-    document.getElementById('dateErr').scrollIntoView({behavior:'smooth',block:'center'});
+    document.getElementById('dateErr').closest('.card').scrollIntoView({behavior:'smooth',block:'start'});
     return;
   }
   document.getElementById('dateErr').classList.remove('on');
@@ -783,7 +782,9 @@ window.renderSlots   = renderSlots;
       const limit=isAM?(docObj.limitAM??99):(docObj.limitPM??99);
       if(limit>0 && snap.size>=limit){
         if(btnEl){btnEl.disabled=false;btnEl.innerHTML='確認送出';}
-        showModal('此時段已額滿','很抱歉，您選擇的時段已被預約額滿，請重新選擇其他時間。');
+        showModal('此時段已額滿','很抱歉，您選擇的時段已額滿，請重新選擇其他時間。','重新選擇');
+        show('p2');setStep(2);renderCal();
+        if(sel.date){ document.getElementById('slotAll').innerHTML=renderSlots(sel.date); document.getElementById('slotCard').style.display='block'; }
         show('p2');setStep(2);
         return;
       }
