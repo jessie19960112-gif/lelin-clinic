@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>樂霖診所 — 線上預約</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+:root{
+  --o1:#F47B20;--o2:#FF9A3C;--o3:#FFB865;--op:#FFF4EB;--ob:#FFD4A8;
+  --white:#FFF;--ink:#1A1A1A;--ink2:#4A4A4A;--ink3:#9A9A9A;
+  --bg:#F9F7F4;--border:#EDE8E2;--r:14px;--rs:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{min-height:100%;overflow-x:hidden;}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.6;}
+button{font-family:inherit;cursor:pointer;}
+
+/* HOME */
+#homePage{
+  min-height:100vh;
+  background:linear-gradient(145deg,#F47B20 0%,#FF9A3C 42%,#FFB865 75%,#FFCF90 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;padding:40px 24px;
+}
+.geo{position:absolute;border-radius:50%;opacity:.13;}
+.geo1{width:340px;height:340px;background:white;top:-90px;right:-90px;}
+.geo2{width:200px;height:200px;background:white;bottom:50px;left:-65px;}
+.geo3{width:110px;height:110px;background:white;bottom:190px;right:25px;border-radius:26px;transform:rotate(22deg);}
+.geo4{width:55px;height:55px;background:white;top:110px;left:38px;}
+.geo5{width:170px;height:170px;border:3px solid rgba(255,255,255,.22);background:transparent;border-radius:38px;position:absolute;top:42%;left:50%;transform:translate(-50%,-50%) rotate(14deg);}
+
+.home-wrap{position:relative;z-index:1;text-align:center;max-width:360px;width:100%;}
+.home-pill{
+  display:inline-flex;align-items:center;gap:10px;
+  background:rgba(255,255,255,.2);backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.32);border-radius:50px;padding:10px 22px;
+  margin-bottom:38px;animation:fU .6s ease both;
+}
+.home-pill-ico{width:26px;height:26px;background:white;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.home-pill-ico svg{width:15px;height:15px;}
+.home-pill-txt{font-size:15px;font-weight:700;color:white;letter-spacing:.04em;text-shadow:0 1px 8px rgba(140,55,0,.3);}
+.home-title{font-family:'Noto Serif TC',serif;font-size:40px;font-weight:900;color:white;line-height:1.2;margin-bottom:12px;animation:fU .6s .1s ease both;text-shadow:0 2px 12px rgba(140,55,0,.35),0 4px 24px rgba(140,55,0,.25);}
+.home-sub{font-size:13px;color:rgba(255,255,255,.95);line-height:1.85;margin-bottom:50px;animation:fU .6s .2s ease both;text-shadow:0 1px 8px rgba(140,55,0,.3);}
+.home-btn{
+  display:inline-flex;align-items:center;gap:10px;
+  background:white;color:var(--o1);border:none;border-radius:50px;
+  padding:16px 38px;font-size:16px;font-weight:700;letter-spacing:.05em;
+  box-shadow:0 8px 32px rgba(170,70,0,.28);transition:all .22s;
+  animation:fU .6s .3s ease both;
+}
+.home-btn:hover{transform:translateY(-3px);box-shadow:0 16px 40px rgba(170,70,0,.36);}
+.home-btn:active{transform:translateY(0);}
+.home-btn svg{width:17px;height:17px;}
+.home-info{margin-top:50px;display:flex;flex-direction:column;gap:8px;animation:fU .6s .4s ease both;}
+.home-info-row{display:flex;align-items:center;justify-content:center;gap:7px;font-size:12px;color:rgba(255,255,255,.9);text-shadow:0 1px 6px rgba(140,55,0,.3);}
+.home-info-row svg{width:13px;height:13px;flex-shrink:0;}
+
+/* BOOKING */
+#bookingApp{display:none;}
+#bookingApp.on{display:block;}
+.bk-hd{
+  background:white;border-bottom:1px solid var(--border);padding:0 20px;height:56px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;box-shadow:0 1px 6px rgba(0,0,0,.05);
+}
+.bk-hd-l{display:flex;align-items:center;gap:10px;}
+.bk-ico{width:32px;height:32px;background:var(--o1);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.bk-ico svg{width:17px;height:17px;}
+.bk-nm{font-size:13px;font-weight:700;color:var(--ink);}
+.bk-back{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--ink3);background:none;border:none;padding:6px 10px;border-radius:8px;transition:all .15s;}
+.bk-back:hover{color:var(--o1);background:var(--op);}
+.bk-back svg{width:14px;height:14px;}
+.bk-main{max-width:600px;margin:0 auto;padding:20px 18px 60px;}
+
+/* STEPS */
+.steps{display:flex;align-items:flex-start;margin-bottom:22px;}
+.step{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;position:relative;}
+.step:not(:last-child)::after{content:'';position:absolute;top:12px;left:calc(50% + 13px);width:calc(100% - 26px);height:2px;background:var(--border);transition:background .3s;}
+.step.done:not(:last-child)::after{background:var(--o1);}
+.step-n{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;border:2px solid var(--border);background:white;color:var(--ink3);transition:all .25s;z-index:1;}
+.step.active .step-n{border-color:var(--o1);background:var(--o1);color:white;}
+.step.done .step-n{border-color:var(--o1);background:var(--o1);color:white;}
+.step-l{font-size:10px;color:var(--ink3);text-align:center;font-weight:500;}
+.step.active .step-l,.step.done .step-l{color:var(--o1);font-weight:700;}
+
+/* CARD */
+.card{background:white;border-radius:var(--r);border:1px solid var(--border);padding:20px 18px;margin-bottom:14px;box-shadow:0 2px 10px rgba(0,0,0,.04);animation:fU .28s ease both;}
+.cttl{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.cttl svg{width:16px;height:16px;color:var(--o1);}
+.sbar{display:none;}
+
+/* DOCTOR */
+.doc-list{display:flex;flex-direction:column;gap:8px;}
+.doc-item{border:2px solid var(--border);border-radius:var(--rs);padding:13px 15px;cursor:pointer;display:flex;align-items:center;gap:13px;transition:all .18s;background:white;}
+.doc-item:hover{border-color:var(--ob);}
+.doc-item.sel{border-color:var(--o1);background:var(--op);}
+.doc-av{width:42px;height:42px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Noto Serif TC',serif;font-size:16px;font-weight:900;color:white;}
+.doc-nm{font-size:14px;font-weight:700;color:var(--ink);}
+.doc-tt{font-size:11px;color:var(--ink3);margin-top:1px;}
+
+/* OPS — large card style (same as doctor) */
+.op-wrap{display:flex;flex-direction:column;gap:8px;}
+.op-chip{border:2px solid var(--border);border-radius:var(--rs);padding:13px 15px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:13px;transition:all .18s;background:white;}
+.op-chip:hover{border-color:var(--ob);}
+.op-chip.sel{border-color:var(--o1);background:var(--op);}
+.op-chip-name{font-size:14px;font-weight:700;color:var(--ink);}
+.op-chip.sel .op-chip-name{color:var(--o1);}
+.op-radio{width:22px;height:22px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .18s;}
+.op-chip.sel .op-radio{border-color:var(--o1);background:var(--o1);}
+.op-radio svg{display:none;width:12px;height:12px;}
+.op-chip.sel .op-radio svg{display:block;}
+.op-placeholder{font-size:12px;color:var(--ink3);padding:4px 0;}
+
+.cday.full{color:var(--ink3);cursor:default;opacity:.55;}
+.cday.full .cday-full-lbl{font-size:8px;font-weight:700;color:var(--ink3);position:absolute;bottom:1px;left:50%;transform:translateX(-50%);white-space:nowrap;}
+/* CAL */
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.cal-m{font-size:15px;font-weight:700;}
+.cal-nb{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--border);background:white;color:var(--ink2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;}
+.cal-nb:hover{border-color:var(--o1);color:var(--o1);}
+.cal-nb svg{width:13px;height:13px;}
+.cal-hd{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px;}
+.cal-dow{text-align:center;font-size:10px;font-weight:700;color:var(--ink3);padding:4px 0;}
+.cal-dow:first-child{color:#E05252;}.cal-dow:last-child{color:var(--o1);}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.cday{aspect-ratio:1;border-radius:8px;border:1.5px solid transparent;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;position:relative;}
+.cday.other{opacity:0;pointer-events:none;}
+.cday.past{color:var(--ink3);cursor:default;opacity:.4;}
+.cday.noslot{color:var(--ink3);cursor:default;opacity:.45;}
+.cday.sun{color:#E05252;}.cday.sat{color:var(--o1);}
+.cday.has{border-color:var(--ob);background:var(--op);color:var(--o1);font-weight:700;}
+.cday.has:hover{background:var(--o1);color:white;border-color:var(--o1);}
+.cday.picked{background:var(--o1);color:white!important;border-color:var(--o1);font-weight:700;}
+.cday-dot{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--o1);}
+.cday.picked .cday-dot{background:rgba(255,255,255,.7);}
+
+/* SLOTS */
+.slot-sec{margin-top:14px;}
+.slot-sec-lbl{font-size:10px;font-weight:700;color:var(--ink3);letter-spacing:.08em;margin-bottom:8px;}
+.slot-grid{display:flex;flex-wrap:wrap;gap:7px;}
+.slot-btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;border:1.5px solid var(--border);background:white;color:var(--ink2);cursor:pointer;transition:all .15s;}
+.slot-btn:hover{border-color:var(--o1);color:var(--o1);}
+.slot-btn.sel{background:var(--o1);border-color:var(--o1);color:white;}
+
+/* FORM */
+.fg{margin-bottom:14px;}.fg:last-child{margin-bottom:0;}
+.flbl{font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:5px;display:block;}
+.flbl em{color:var(--o1);font-style:normal;margin-left:2px;}
+.finp{width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:var(--rs);font-family:'Noto Sans TC',sans-serif;font-size:16px;color:var(--ink);background:white;outline:none;transition:border-color .2s;}
+.finp:focus{border-color:var(--o1);}
+.finp::placeholder{color:var(--ink3);}
+.bday-row{display:flex;align-items:center;gap:6px;}
+.bday-row .finp{text-align:center;}
+.bsep{font-size:14px;font-weight:700;color:var(--ink3);}
+.ferr{font-size:11px;color:#D03020;margin-top:4px;display:none;}
+.ferr.on{display:block;}
+
+/* PREVIEW */
+.pv-blk{background:#FBF9F7;border-radius:var(--rs);border:1px solid var(--border);padding:14px;margin-bottom:12px;}
+.pv-ttl{font-size:10px;font-weight:700;color:var(--o1);letter-spacing:.1em;margin-bottom:10px;}
+.pv-row{display:flex;padding:7px 0;border-bottom:1px solid var(--border);}
+.pv-row:last-child{border-bottom:none;}
+.pv-k{font-size:12px;color:var(--ink3);width:68px;flex-shrink:0;}
+.pv-v{font-size:13px;font-weight:600;color:var(--ink);}
+
+/* NOTICE */
+.notice{background:var(--op);border:1px solid var(--ob);border-radius:var(--rs);padding:12px 14px;display:flex;gap:10px;align-items:flex-start;margin-bottom:14px;}
+.notice svg{width:15px;height:15px;color:var(--o1);flex-shrink:0;margin-top:1px;}
+.notice p{font-size:12px;color:var(--ink2);line-height:1.75;}
+.notice strong{color:var(--o1);}
+
+/* BUTTONS */
+.btn-p{width:100%;padding:14px;background:var(--o1);color:white;border:none;border-radius:var(--rs);font-size:14px;font-weight:700;letter-spacing:.04em;cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-p:hover{background:#E06C10;}.btn-p:active{transform:scale(.98);}
+.btn-s{width:100%;padding:12px;background:white;color:var(--ink2);border:1.5px solid var(--border);border-radius:var(--rs);font-size:13px;font-weight:600;cursor:pointer;transition:all .18s;}
+.btn-s:hover{border-color:var(--o1);color:var(--o1);}
+.brow{display:flex;gap:10px;}.brow .btn-p,.brow .btn-s{margin:0;}
+
+/* PANELS */
+.panel{display:none;}.panel.on{display:block;}
+
+/* SUCCESS */
+#successPage{display:none;min-height:100vh;background:linear-gradient(160deg,#F47B20 0%,#FFB865 100%);padding:24px 20px;}
+#successPage.on{display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.suc-wrap{background:white;border-radius:20px;padding:36px 24px;max-width:380px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(180,80,0,.2);animation:fU .4s ease both;}
+.suc-ico{width:68px;height:68px;border-radius:50%;background:var(--op);border:2px solid var(--ob);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;}
+.suc-ico svg{width:30px;height:30px;stroke:var(--o1);}
+.suc-title{font-family:'Noto Serif TC',serif;font-size:22px;font-weight:900;color:var(--ink);margin-bottom:8px;}
+.suc-sub{font-size:13px;color:var(--ink2);line-height:1.85;margin-bottom:22px;}
+.suc-cards{display:flex;flex-direction:column;gap:8px;text-align:left;margin-bottom:24px;}
+.suc-card{background:var(--op);border-radius:var(--rs);padding:12px 14px;display:flex;align-items:flex-start;gap:10px;}
+.suc-card svg{width:15px;height:15px;stroke:var(--o1);flex-shrink:0;margin-top:2px;}
+.suc-card-t{font-size:12px;color:var(--ink2);line-height:1.7;}
+.suc-card-t strong{color:var(--ink);display:block;margin-bottom:1px;}
+.suc-btn{width:100%;padding:13px;background:var(--o1);color:white;border:none;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;transition:all .18s;letter-spacing:.04em;display:flex;align-items:center;justify-content:center;gap:8px;}
+.suc-btn:hover{background:#E06C10;}
+.suc-info-card{background:var(--op);border:1px solid var(--ob);border-radius:var(--rs);padding:14px 16px;margin-bottom:12px;text-align:left;}
+.suc-info-ttl{font-size:10px;font-weight:700;color:var(--o1);letter-spacing:.1em;margin-bottom:10px;}
+.suc-info-row{display:flex;padding:7px 0;border-bottom:1px solid var(--ob);}
+.suc-info-row:last-child{border-bottom:none;}
+.suc-info-k{font-size:12px;color:var(--o1);width:52px;flex-shrink:0;font-weight:600;}
+.suc-info-v{font-size:13px;font-weight:700;color:#7B4A1E;}
+.suc-contact-card{background:#F8F8F6;border:1px solid var(--border);border-radius:var(--rs);padding:12px 14px;margin-bottom:16px;text-align:left;display:flex;flex-direction:column;gap:8px;}
+.suc-contact-row{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink3);}
+.suc-contact-row svg{width:12px;height:12px;stroke:var(--ink3);flex-shrink:0;}
+
+/* ANIM */
+@keyframes fU{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+@keyframes fD{from{opacity:0;transform:translateY(-10px);}to{opacity:1;transform:translateY(0);}}
+.home-pill{animation:fD .6s ease both;}
+.home-title{animation:fU .6s .1s ease both;}
+.home-sub{animation:fU .6s .2s ease both;}
+.home-btn{animation:fU .6s .3s ease both;}
+.home-info{animation:fU .6s .4s ease both;}
+</style>
+</head>
+<body>
+
+<!-- ══ HOME ══ -->
+<div id="homePage">
+  <div class="geo geo1"></div><div class="geo geo2"></div>
+  <div class="geo geo3"></div><div class="geo geo4"></div>
+  <div class="geo5"></div>
+
+  <div class="home-wrap">
+    <div class="home-pill">
+      <div class="home-pill-ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#F47B20" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.8 2.3A.3.3 0 105 2H4a2 2 0 00-2 2v5a6 6 0 006 6 6 6 0 006-6V4a2 2 0 00-2-2h-1a.2.2 0 10.3.3"/><path d="M8 15v1a6 6 0 006 6h0a6 6 0 006-6v-4"/><circle cx="20" cy="10" r="2"/></svg>
+      </div>
+      <span class="home-pill-txt">樂霖耳鼻喉科•內科診所</span>
+    </div>
+
+    <div class="home-title">線上手術<br>預約系統</div>
+    <div class="home-sub">選醫師・選時段・填資料<br>三步驟完成預約申請</div>
+
+    <button class="home-btn" onclick="enterBooking()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      立即預約
+    </button>
+
+    <div class="home-info">
+      <div class="home-info-row">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        高雄市三民區鼎力路199號
+      </div>
+      <div class="home-info-row">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.4 1.13 2 2 0 012.38.02h3a2 2 0 012 1.72 11 11 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 11 11 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+        （07）350-9200
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ BOOKING ══ -->
+<div id="bookingApp">
+  <div class="bk-hd">
+    <div class="bk-hd-l">
+      <div class="bk-ico"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.8 2.3A.3.3 0 105 2H4a2 2 0 00-2 2v5a6 6 0 006 6 6 6 0 006-6V4a2 2 0 00-2-2h-1a.2.2 0 10.3.3"/><path d="M8 15v1a6 6 0 006 6h0a6 6 0 006-6v-4"/><circle cx="20" cy="10" r="2"/></svg></div>
+      <span class="bk-nm">樂霖診所 • 手術預約系統</span>
+    </div>
+
+  </div>
+
+  <div class="bk-main">
+    <div class="steps" id="stepBar">
+      <div class="step active" id="s1"><div class="step-n">1</div><div class="step-l">選醫師</div></div>
+      <div class="step" id="s2"><div class="step-n">2</div><div class="step-l">選時段</div></div>
+      <div class="step" id="s3"><div class="step-n">3</div><div class="step-l">填資料</div></div>
+      <div class="step" id="s4"><div class="step-n">4</div><div class="step-l">確認</div></div>
+    </div>
+
+    <!-- P1 -->
+    <div class="panel on" id="p1">
+      <div class="card">
+        <div class="cttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>選擇醫師</div>
+        <div class="doc-list" id="docList"></div>
+      </div>
+      <div class="card" id="opCard">
+        <div class="cttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>選擇術式</div>
+        <div class="op-wrap" id="opWrap"><div style="font-size:12px;color:var(--ink3);padding:4px 0;">請先選擇醫師，術式將自動帶入</div></div>
+        <div class="ferr" id="opErr">請選擇術式</div>
+      </div>
+      <div class="brow">
+        <button class="btn-s" style="flex:1;" onclick="goHome()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><polyline points="15 18 9 12 15 6"/></svg> 返回首頁</button>
+        <button class="btn-p" style="flex:2;" onclick="toStep2()">下一步：選擇時段 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><polyline points="9 18 15 12 9 6"/></svg></button>
+      </div>
+    </div>
+
+    <!-- P2 -->
+    <div class="panel" id="p2">
+      <div class="card">
+        <div class="cttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>選擇日期</div>
+        <div class="cal-nav">
+          <button class="cal-nb" onclick="calNav(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+          <div class="cal-m" id="calM"></div>
+          <button class="cal-nb" onclick="calNav(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+        </div>
+        <div class="cal-hd"><div class="cal-dow">日</div><div class="cal-dow">一</div><div class="cal-dow">二</div><div class="cal-dow">三</div><div class="cal-dow">四</div><div class="cal-dow">五</div><div class="cal-dow">六</div></div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+      <div class="card" id="slotCard" style="display:none;">
+        <div class="cttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>選擇時段<span style="font-size:11px;font-weight:400;color:var(--ink3);margin-left:4px;" id="slotDtLbl"></span></div>
+        <div class="slot-grid" id="slotAll"></div>
+      </div>
+      <div class="brow">
+        <button class="btn-s" style="flex:1;" onclick="toStep1()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><polyline points="15 18 9 12 15 6"/></svg> 上一步</button>
+        <button class="btn-p" style="flex:2;" onclick="toStep3()">下一步：填寫資料 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><polyline points="9 18 15 12 9 6"/></svg></button>
+      </div>
+    </div>
+
+    <!-- P3 -->
+    <div class="panel" id="p3">
+      <div class="card">
+        <div class="cttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>填寫基本資料</div>
+        <div class="fg"><label class="flbl">姓名<em>*</em></label><input class="finp" id="f_name" placeholder="請輸入真實姓名" maxlength="10"><div class="ferr" id="e_name">請輸入姓名</div></div>
+        <div class="fg">
+          <label class="flbl">民國生日<em>*</em></label>
+          <div class="bday-row">
+            <input class="finp" id="f_y" placeholder="年" maxlength="3" inputmode="numeric" style="width:70px;">
+            <span class="bsep">/</span>
+            <input class="finp" id="f_m" placeholder="月" maxlength="2" inputmode="numeric" style="width:58px;">
+            <span class="bsep">/</span>
+            <input class="finp" id="f_d" placeholder="日" maxlength="2" inputmode="numeric" style="width:58px;">
+          </div>
+          <div class="ferr" id="e_bday">請輸入完整生日</div>
+        </div>
+        <div class="fg"><label class="flbl">聯絡電話<em>*</em></label><input class="finp" id="f_phone" placeholder="例：0912-345-678" inputmode="tel" maxlength="15"><div class="ferr" id="e_phone">請輸入聯絡電話</div></div>
+        <div class="fg"><label class="flbl">備註（選填）</label><input class="finp" id="f_note" placeholder="過敏史、用藥史或其他說明" maxlength="100"></div>
+      </div>
+      <div class="brow">
+        <button class="btn-s" style="flex:1;" onclick="toStep2()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><polyline points="15 18 9 12 15 6"/></svg> 上一步</button>
+        <button class="btn-p" style="flex:2;" onclick="toStep4()">預覽確認 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><polyline points="9 18 15 12 9 6"/></svg></button>
+      </div>
+    </div>
+
+    <!-- P4 -->
+    <div class="panel" id="p4">
+      <div class="card">
+        <div class="cttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>預約確認</div>
+        <div class="pv-blk">
+          <div class="pv-ttl">手術資訊</div>
+          <div class="pv-row"><div class="pv-k">醫師</div><div class="pv-v" id="pv_doc"></div></div>
+          <div class="pv-row"><div class="pv-k">術式</div><div class="pv-v" id="pv_op"></div></div>
+          <div class="pv-row"><div class="pv-k">日期</div><div class="pv-v" id="pv_date"></div></div>
+          <div class="pv-row"><div class="pv-k">時段</div><div class="pv-v" id="pv_slot"></div></div>
+        </div>
+        <div class="pv-blk">
+          <div class="pv-ttl">病人資料</div>
+          <div class="pv-row"><div class="pv-k">姓名</div><div class="pv-v" id="pv_name"></div></div>
+          <div class="pv-row"><div class="pv-k">生日</div><div class="pv-v" id="pv_bday"></div></div>
+          <div class="pv-row"><div class="pv-k">電話</div><div class="pv-v" id="pv_phone"></div></div>
+          <div class="pv-row" id="pv_nr"><div class="pv-k">備註</div><div class="pv-v" id="pv_note"></div></div>
+        </div>
+        <div class="notice">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <p>送出後需 <strong>1–2 個工作天</strong> 審核<br>審核結果將透過 <strong>LINE</strong> 通知您<br>如有疑問，請來電 <strong>（07）350-9200</strong></p>
+        </div>
+      </div>
+      <div class="brow">
+        <button class="btn-s" style="flex:1;" onclick="toStep3()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><polyline points="15 18 9 12 15 6"/></svg> 修改</button>
+        <button class="btn-p" style="flex:2;" onclick="submitBookingToFirebase()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>確認送出</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SUCCESS ══ -->
+<div id="successPage">
+  <div class="suc-wrap">
+    <div class="suc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+    <div class="suc-title">預約申請已送出！</div>
+    <div class="suc-sub">我們將盡快安排審核，請靜候<br><strong>1–2 個工作天</strong>，結果將透過 <strong>LINE</strong> 通知您。</div>
+
+    <div class="suc-info-card">
+      <div class="suc-info-ttl" style="font-size:12px;letter-spacing:.06em;display:flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;flex-shrink:0;"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="13" y2="15"/></svg>手術預約詳情</div>
+      <div class="suc-info-row"><div class="suc-info-k">醫師</div><div class="suc-info-v" id="suc_doc"></div></div>
+      <div class="suc-info-row"><div class="suc-info-k">術式</div><div class="suc-info-v" id="suc_op"></div></div>
+      <div class="suc-info-row"><div class="suc-info-k">日期</div><div class="suc-info-v" id="suc_date"></div></div>
+      <div class="suc-info-row"><div class="suc-info-k">時段</div><div class="suc-info-v" id="suc_slot"></div></div>
+    </div>
+
+    <div class="suc-contact-card">
+      <div class="suc-contact-row">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.4 1.13 2 2 0 012.38.02h3a2 2 0 012 1.72 11 11 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 11 11 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+        <span>（07）350-9200</span>
+      </div>
+      <div class="suc-contact-row">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span>高雄市三民區鼎力路199號</span>
+      </div>
+    </div>
+
+    <button class="suc-btn" onclick="goHome()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>返回首頁</button>
+  </div>
+</div>
+
+<script>
+const doctors=[];
+const slots={};
+const MN=['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+let sel={docId:null,op:null,date:null,slot:null};
+let calDate=new Date(2026,4,1);
+
+renderDoctors(); renderCal();
+
+function renderDoctors(){
+  document.getElementById('docList').innerHTML=doctors.map(d=>`
+    <div class="doc-item${sel.docId===d.id?' sel':''}" id="di_${d.id}" onclick="pickDoc(${d.id})">
+      <div class="doc-av" style="background:${d.color};">${d.name[0]}</div>
+      <div><div class="doc-nm">${d.name} 醫師</div><div class="doc-tt">${d.title}</div></div>
+    </div>`).join('');
+}
+function pickDoc(id){
+  sel.docId=id;sel.op=null;
+  renderDoctors();
+  const doc=doctors.find(d=>d.id===id);
+  document.getElementById('opWrap').innerHTML=doc.ops.length
+    ? doc.ops.map(o=>`<div class="op-chip${sel.op===o?' sel':''}" onclick="pickOp('${o}')">
+        <span class="op-chip-name">${o}</span>
+        <span class="op-radio"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+      </div>`).join('')
+    : '<div class="op-placeholder">此醫師尚未設定術式</div>';
+  document.getElementById('opErr').classList.remove('on');
+}
+function pickOp(o){
+  sel.op=o;
+  document.querySelectorAll('.op-chip').forEach(c=>c.classList.toggle('sel',c.querySelector('.op-chip-name')?.textContent===o));
+  document.getElementById('opErr').classList.remove('on');
+}
+function toStep2(){
+  if(!sel.docId) return;
+  if(!sel.op){document.getElementById('opErr').classList.add('on');return;}
+  show('p2');setStep(2);renderCal();
+}
+function toStep1(){show('p1');setStep(1);}
+function toStep3(){
+  if(!sel.date||!sel.slot){alert('請先選擇預約日期與時段');return;}
+  show('p3');setStep(3);
+}
+function toStep4(){
+  const name=document.getElementById('f_name').value.trim();
+  const yv=document.getElementById('f_y').value.trim();
+  const mv=document.getElementById('f_m').value.trim();
+  const dv=document.getElementById('f_d').value.trim();
+  const phone=document.getElementById('f_phone').value.trim();
+  let ok=true;
+
+  document.getElementById('e_name').classList.toggle('on',!name);
+  if(!name) ok=false;
+
+  const yi=parseInt(yv),mi=parseInt(mv),di=parseInt(dv);
+  const todayRoc=new Date().getFullYear()-1911;
+  let bdayErrMsg='';
+  if(!yv||!mv||!dv||isNaN(yi)||isNaN(mi)||isNaN(di)){
+    bdayErrMsg='請輸入完整生日';
+  } else if(yi<1||yi>todayRoc){
+    bdayErrMsg=`民國年請填 1～${todayRoc}`;
+  } else if(mi<1||mi>12){
+    bdayErrMsg='月份請填 1～12';
+  } else {
+    const maxD=new Date(yi+1911,mi,0).getDate();
+    if(di<1||di>maxD){ bdayErrMsg=`${mi}月份日期請填 1～${maxD}`; }
+    else if(new Date(yi+1911,mi-1,di)>new Date()){ bdayErrMsg='生日不能是未來日期'; }
+  }
+  const bdayEl=document.getElementById('e_bday');
+  bdayEl.textContent=bdayErrMsg||'請輸入完整生日';
+  bdayEl.classList.toggle('on',!!bdayErrMsg);
+  if(bdayErrMsg) ok=false;
+
+  document.getElementById('e_phone').classList.toggle('on',!phone);
+  if(!phone) ok=false;
+
+  if(!ok) return;
+  const doc=doctors.find(dd=>dd.id===sel.docId);
+  const note=document.getElementById('f_note').value.trim();
+  document.getElementById('pv_doc').textContent=`${doc.name} 醫師`;
+  document.getElementById('pv_op').textContent=sel.op;
+  document.getElementById('pv_date').textContent=fmtDs(sel.date);
+  document.getElementById('pv_slot').textContent=sel.slot;
+  document.getElementById('pv_name').textContent=name;
+  document.getElementById('pv_bday').textContent=`民國 ${yi}年${mi}月${di}日`;
+  document.getElementById('pv_phone').textContent=phone;
+  const nr=document.getElementById('pv_nr');
+  if(note){document.getElementById('pv_note').textContent=note;nr.style.display='flex';}
+  else nr.style.display='none';
+  show('p4');setStep(4);
+}
+function submitBooking(){
+  const doc=doctors.find(d=>d.id===sel.docId);
+  document.getElementById('suc_doc').textContent=`${doc.name} 醫師`;
+  document.getElementById('suc_op').textContent=sel.op;
+  document.getElementById('suc_date').textContent=fmtDs(sel.date);
+  document.getElementById('suc_slot').textContent=sel.slot;
+  document.getElementById('bookingApp').style.display='none';
+  const sp=document.getElementById('successPage');
+  sp.style.display='flex';sp.classList.add('on');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function enterBooking(){
+  document.getElementById('homePage').style.display='none';
+  const ba=document.getElementById('bookingApp');
+  ba.style.display='block';ba.classList.add('on');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function goHome(){
+  sel={docId:null,op:null,date:null,slot:null};
+  ['f_name','f_y','f_m','f_d','f_phone','f_note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('opWrap').innerHTML='<div style="font-size:12px;color:var(--ink3);padding:4px 0;">請先選擇醫師，術式將自動帶入</div>';
+  document.getElementById('slotCard').style.display='none';
+  calDate=new Date();
+  renderDoctors();renderCal();show('p1');setStep(1);
+  const ba=document.getElementById('bookingApp');
+  ba.style.display='none';ba.classList.remove('on');
+  const sp=document.getElementById('successPage');
+  sp.style.display='none';sp.classList.remove('on');
+  document.getElementById('homePage').style.display='flex';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function isDayFull(docId, ds, ss){
+  if(!window._bookedSlots||!ss||!ss.length) return false;
+  const doc=doctors.find(d=>d.id===docId);
+  if(!doc) return false;
+  return ss.every(slot=>{
+    const isAM=parseInt(slot)<12;
+    const lim=isAM?(doc.limitAM??99):(doc.limitPM??99);
+    const booked=window._bookedSlots[`${docId}:${ds}:${slot}`]||0;
+    return lim>0&&booked>=lim;
+  });
+}
+function renderCal(){
+  const y=calDate.getFullYear(),m=calDate.getMonth();
+  document.getElementById('calM').textContent=`${y} 年 ${MN[m]}`;
+  const first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate();
+  const today=new Date();today.setHours(0,0,0,0);
+  let h='';
+  for(let i=0;i<first;i++) h+=`<div class="cday other"></div>`;
+  for(let dd=1;dd<=days;dd++){
+    const dt=new Date(y,m,dd);
+    const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+    const dow=dt.getDay();
+    const isPast=dt<today;
+    const ss=sel.docId?(slots[sel.docId+':'+ds]||[]):[];
+    const has=ss.length>0;
+    const full=has&&!isPast&&isDayFull(sel.docId,ds,ss);
+    const picked=sel.date===ds;
+    let cls='cday';
+    if(dow===0)cls+=' sun';if(dow===6)cls+=' sat';
+    if(isPast)cls+=' past';
+    else if(full)cls+=' full';
+    else if(!has)cls+=' noslot';
+    else cls+=' has';
+    if(picked)cls+=' picked';
+    const dot=has&&!isPast&&!full?`<div class="cday-dot"></div>`:'';
+    const fullLbl=full?`<div class="cday-full-lbl">額滿</div>`:'';
+    const click=(!isPast&&has&&!full)?`onclick="pickDate('${ds}')"`:'';
+    h+=`<div class="${cls}" ${click}>${dd}${dot}${fullLbl}</div>`;
+  }
+  document.getElementById('calGrid').innerHTML=h;
+}
+function pickDate(ds){
+  sel.date=ds;sel.slot=null;renderCal();
+  const ss=slots[sel.docId+':'+ds]||[];
+  const[yy,mm,dd]=ds.split('-');
+  document.getElementById('slotDtLbl').textContent=`${yy}年${parseInt(mm)}月${parseInt(dd)}日`;
+  document.getElementById('slotAll').innerHTML=ss.length
+    ? ss.map(s=>`<button class="slot-btn${sel.slot===s?' sel':''}" onclick="pickSlot('${s}')">${s}</button>`).join('')
+    : `<div style="font-size:12px;color:var(--ink3);">此日期暫無可預約時段</div>`;
+  document.getElementById('slotCard').style.display='block';
+  document.getElementById('slotCard').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function pickSlot(s){
+  sel.slot=s;
+  document.querySelectorAll('.slot-btn').forEach(b=>b.classList.toggle('sel',b.textContent.trim()===s));
+}
+function calNav(d){calDate.setMonth(calDate.getMonth()+d);sel.date=null;sel.slot=null;document.getElementById('slotCard').style.display='none';renderCal();}
+function show(id){document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));document.getElementById(id).classList.add('on');window.scrollTo({top:0,behavior:'smooth'});}
+function setStep(n){
+  for(let i=1;i<=4;i++){
+    const s=document.getElementById('s'+i);
+    s.classList.remove('active','done');
+    const num=s.querySelector('.step-n');
+    if(i<n){s.classList.add('done');num.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" style="width:11px;height:11px;"><polyline points="20 6 9 17 4 12"/></svg>`;}
+    else if(i===n){s.classList.add('active');num.textContent=i;}
+    else{num.textContent=i;}
+  }
+}
+function fmtDs(ds){if(!ds)return'';const[y,m,d]=ds.split('-');return`${y}年${parseInt(m)}月${parseInt(d)}日`;}
+
+// 把所有 onclick 函數掛到 window，防止 Netlify 壓縮後名稱被改
+window.enterBooking  = enterBooking;
+window.goHome        = goHome;
+window.pickDoc       = pickDoc;
+window.pickOp        = pickOp;
+window.toStep1       = toStep1;
+window.toStep2       = toStep2;
+window.toStep3       = toStep3;
+window.toStep4       = toStep4;
+window.submitBooking = submitBooking;
+window.calNav        = calNav;
+window.pickDate      = pickDate;
+window.pickSlot      = pickSlot;
+</script>
+
+<!-- Firebase SDK moved to <head> -->
+<script>
+(function(){
+  const firebaseConfig = {
+    apiKey: "AIzaSyBjRFH3IbVh-l6Wv6yscGnSZS3qxcKWrX4",
+    authDomain: "lelin-clinic.firebaseapp.com",
+    projectId: "lelin-clinic",
+    storageBucket: "lelin-clinic.firebasestorage.app",
+    messagingSenderId: "90788897823",
+    appId: "1:90788897823:web:6fa7524bcdc68dc7b8e12a"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  function colorFromId(id){
+    const map={'c1':'#F47B20','c2':'#9B6ED4','c3':'#2563EB','c4':'#16A34A','c5':'#DC2626','c6':'#0891B2'};
+    return map[id]||'#F47B20';
+  }
+
+  // ── 即時監聽 doctors ──
+  db.collection('doctors').onSnapshot(snap=>{
+    doctors = snap.docs.map(d=>{
+      const v=d.data();
+      return {id:v.id, name:v.name||'', title:v.title||'',
+        color:colorFromId(v.colorId), ops:v.ops||[],
+        limitAM:v.limitAM??3, limitPM:v.limitPM??3};
+    }).sort((a,b)=>a.id-b.id);
+    renderDoctors();
+    // 若已選醫師被刪除則重置
+    if(sel.docId && !doctors.find(d=>d.id===sel.docId)){
+      sel={docId:null,op:null,date:null,slot:null};
+      document.getElementById('opWrap').innerHTML=
+        '<div class="op-placeholder">請先選擇醫師，術式將自動帶入</div>';
+    }
+  });
+
+  // ── 即時監聽 slots ──
+  db.collection('slots').onSnapshot(snap=>{
+    Object.keys(slots).forEach(k=>delete slots[k]);
+    snap.docs.forEach(d=>{ const v=d.data(); if(v.slots) slots[d.id]=v.slots; });
+    if(document.getElementById('bookingApp').style.display!=='none') renderCal();
+  });
+
+  // ── 即時監聽 bookings → 計算已預約數 ──
+  db.collection('bookings').onSnapshot(snap=>{
+    window._bookedSlots={};
+    snap.docs.map(d=>d.data())
+      .filter(b=>b.status==='approved'||b.status==='pending')
+      .forEach(b=>{
+        const key=`${b.docId}:${b.date}:${b.slot}`;
+        window._bookedSlots[key]=(window._bookedSlots[key]||0)+1;
+      });
+  });
+
+  // ── 送出預約（含額滿檢查）──
+  window.submitBookingToFirebase = async function(){
+    const btnEl=document.querySelector('#p4 .btn-p');
+    if(btnEl){btnEl.disabled=true;btnEl.innerHTML='送出中…';}
+    const docObj=doctors.find(d=>d.id===sel.docId);
+    const name=document.getElementById('f_name').value.trim();
+    const yv=document.getElementById('f_y').value.trim();
+    const mv=document.getElementById('f_m').value.trim();
+    const dv=document.getElementById('f_d').value.trim();
+    const phone=document.getElementById('f_phone').value.trim();
+    const note=document.getElementById('f_note').value.trim();
+
+    // 額滿即時檢查
+    try{
+      const snap=await db.collection('bookings')
+        .where('docId','==',sel.docId)
+        .where('date','==',sel.date)
+        .where('slot','==',sel.slot)
+        .where('status','in',['pending','approved'])
+        .get();
+      const isAM=parseInt(sel.slot)<12;
+      const limit=isAM?(docObj.limitAM??99):(docObj.limitPM??99);
+      if(limit>0 && snap.size>=limit){
+        if(btnEl){btnEl.disabled=false;btnEl.innerHTML='確認送出';}
+        alert('此時段已額滿，請重新選擇');
+        show('p2');setStep(2);
+        return;
+      }
+    }catch(e){ /* 查詢失敗仍允許送出 */ }
+
+    try{
+      await db.collection('bookings').add({
+        docName:docObj.name, docId:sel.docId,
+        op:sel.op, date:sel.date, slot:sel.slot,
+        name, bday:`${yv}/${mv}/${dv}`,
+        phone, note, status:'pending',
+        lineNotified:false,
+        createdAt:firebase.firestore.FieldValue.serverTimestamp()
+      });
+      submitBooking();
+    }catch(e){
+      if(btnEl){btnEl.disabled=false;btnEl.innerHTML='確認送出';}
+      alert('送出失敗，請稍後再試。\n錯誤：'+e.message);
+    }
+  };
+})();
+</script>
+</body>
+</html>
