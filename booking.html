@@ -783,8 +783,10 @@ window.renderSlots   = renderSlots;
       if(limit>0 && snap.size>=limit){
         if(btnEl){btnEl.disabled=false;btnEl.innerHTML='確認送出';}
         showModal('此時段已額滿','很抱歉，您選擇的時段已額滿，請重新選擇其他時間。','重新選擇');
+        sel.date=null; sel.slot=null;
+        calDate=new Date();
+        document.getElementById('slotCard').style.display='none';
         show('p2');setStep(2);renderCal();
-        if(sel.date){ document.getElementById('slotAll').innerHTML=renderSlots(sel.date); document.getElementById('slotCard').style.display='block'; }
         show('p2');setStep(2);
         return;
       }
