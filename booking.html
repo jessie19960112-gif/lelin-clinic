@@ -220,7 +220,7 @@ button{font-family:inherit;cursor:pointer;}
 /* doc/date error */
 .ferr-doc{font-size:11px;color:#D03020;margin-top:8px;display:none;}
 .ferr-doc.on{display:block;}
-.ferr-date{font-size:11px;color:#D03020;font-weight:600;margin-left:auto;display:none;}
+.ferr-date{font-size:11px;color:#D03020;font-weight:600;margin-left:8px;display:none;}
 .ferr-date.on{display:inline;}
 /* ANIM */
 @keyframes fU{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
@@ -292,12 +292,12 @@ button{font-family:inherit;cursor:pointer;}
       <div class="card">
         <div class="cttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>選擇醫師</div>
         <div class="doc-list" id="docList"></div>
-        <div class="ferr-doc" id="docErr">請先選擇醫師</div>
+        <div class="ferr-doc" id="docErr">* 請先選擇醫師</div>
       </div>
       <div class="card" id="opCard">
         <div class="cttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>選擇術式</div>
         <div class="op-wrap" id="opWrap"><div style="font-size:12px;color:var(--ink3);padding:4px 0;">請先選擇醫師，術式將自動帶入</div></div>
-        <div class="ferr" id="opErr">請選擇術式</div>
+        <div class="ferr" id="opErr">* 請選擇術式</div>
       </div>
       <div class="brow">
         <button class="btn-s" style="flex:1;" onclick="goHome()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><polyline points="15 18 9 12 15 6"/></svg> 返回首頁</button>
@@ -308,7 +308,7 @@ button{font-family:inherit;cursor:pointer;}
     <!-- P2 -->
     <div class="panel" id="p2">
       <div class="card">
-        <div class="cttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>選擇日期<span class="ferr-date" id="dateErr">請先選擇日期與時段</span></div>
+        <div class="cttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>選擇日期</div>
         <div class="cal-nav">
           <button class="cal-nb" onclick="calNav(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg></button>
           <div class="cal-m" id="calM"></div>
@@ -316,10 +316,12 @@ button{font-family:inherit;cursor:pointer;}
         </div>
         <div class="cal-hd"><div class="cal-dow">日</div><div class="cal-dow">一</div><div class="cal-dow">二</div><div class="cal-dow">三</div><div class="cal-dow">四</div><div class="cal-dow">五</div><div class="cal-dow">六</div></div>
         <div class="cal-grid" id="calGrid"></div>
+        <div class="ferr" id="dateErr" style="margin-top:10px;">* 請選擇日期</div>
       </div>
       <div class="card" id="slotCard" style="display:none;">
         <div class="cttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>選擇時段<span style="font-size:11px;font-weight:400;color:var(--ink3);margin-left:4px;" id="slotDtLbl"></span></div>
         <div class="slot-grid" id="slotAll"></div>
+        <div class="ferr" id="slotErr" style="margin-top:10px;">* 請選擇時段</div>
       </div>
       <div class="brow">
         <button class="btn-s" style="flex:1;" onclick="toStep1()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><polyline points="15 18 9 12 15 6"/></svg> 上一步</button>
@@ -331,7 +333,7 @@ button{font-family:inherit;cursor:pointer;}
     <div class="panel" id="p3">
       <div class="card">
         <div class="cttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>填寫基本資料</div>
-        <div class="fg"><label class="flbl">姓名<em>*</em></label><input class="finp" id="f_name" placeholder="請輸入真實姓名" maxlength="10"><div class="ferr" id="e_name">請輸入姓名</div></div>
+        <div class="fg"><label class="flbl">姓名<em>*</em></label><input class="finp" id="f_name" placeholder="請輸入真實姓名" maxlength="10"><div class="ferr" id="e_name">* 請輸入姓名</div></div>
         <div class="fg">
           <label class="flbl">民國生日<em>*</em></label>
           <div class="bday-row">
@@ -341,9 +343,9 @@ button{font-family:inherit;cursor:pointer;}
             <span class="bsep">/</span>
             <input class="finp" id="f_d" placeholder="日" maxlength="2" inputmode="numeric" style="width:58px;">
           </div>
-          <div class="ferr" id="e_bday">請輸入完整生日</div>
+          <div class="ferr" id="e_bday">* 請輸入完整生日</div>
         </div>
-        <div class="fg"><label class="flbl">聯絡電話<em>*</em></label><input class="finp" id="f_phone" placeholder="例：0912-345-678" inputmode="tel" maxlength="15"><div class="ferr" id="e_phone">請輸入聯絡電話</div></div>
+        <div class="fg"><label class="flbl">聯絡電話<em>*</em></label><input class="finp" id="f_phone" placeholder="例：0912-345-678" inputmode="tel" maxlength="15"><div class="ferr" id="e_phone">* 請輸入聯絡電話</div></div>
         <div class="fg"><label class="flbl">備註（選填）</label><input class="finp" id="f_note" placeholder="過敏史、用藥史或其他說明" maxlength="100"></div>
       </div>
       <div class="brow">
@@ -357,14 +359,14 @@ button{font-family:inherit;cursor:pointer;}
       <div class="card">
         <div class="cttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>預約確認</div>
         <div class="pv-blk">
-          <div class="pv-ttl">手術資訊</div>
+          <div class="pv-ttl" style="display:flex;align-items:center;gap:5px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px;height:12px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>手術資訊</div>
           <div class="pv-row"><div class="pv-k">醫師</div><div class="pv-v" id="pv_doc"></div></div>
           <div class="pv-row"><div class="pv-k">術式</div><div class="pv-v" id="pv_op"></div></div>
           <div class="pv-row"><div class="pv-k">日期</div><div class="pv-v" id="pv_date"></div></div>
           <div class="pv-row"><div class="pv-k">時段</div><div class="pv-v" id="pv_slot"></div></div>
         </div>
         <div class="pv-blk">
-          <div class="pv-ttl">病人資料</div>
+          <div class="pv-ttl" style="display:flex;align-items:center;gap:5px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px;height:12px;"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>病人資料</div>
           <div class="pv-row"><div class="pv-k">姓名</div><div class="pv-v" id="pv_name"></div></div>
           <div class="pv-row"><div class="pv-k">生日</div><div class="pv-v" id="pv_bday"></div></div>
           <div class="pv-row"><div class="pv-k">電話</div><div class="pv-v" id="pv_phone"></div></div>
@@ -372,7 +374,7 @@ button{font-family:inherit;cursor:pointer;}
         </div>
         <div class="notice">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          <p>送出後需 <strong>1–2 個工作天</strong> 審核<br>審核結果將透過 <strong>LINE</strong> 通知您<br>如有疑問，請來電 <strong>（07）350-9200</strong></p>
+          <p>送出後審核需 <strong>1–2 個工作天</strong><br>審核結果將透過 <strong>LINE</strong> 通知您<br>如有疑問，請來電 <strong>（07）350-9200</strong></p>
         </div>
       </div>
       <div class="brow">
@@ -462,12 +464,20 @@ function toStep2(){
 }
 function toStep1(){show('p1');setStep(1);}
 function toStep3(){
-  if(!sel.date||!sel.slot){
+  if(!sel.date){
     document.getElementById('dateErr').classList.add('on');
-    document.getElementById('dateErr').closest('.card').scrollIntoView({behavior:'smooth',block:'start'});
+    document.getElementById('slotErr').classList.remove('on');
+    document.getElementById('dateErr').scrollIntoView({behavior:'smooth',block:'center'});
     return;
   }
   document.getElementById('dateErr').classList.remove('on');
+  document.getElementById('slotErr').classList.remove('on');
+  if(!sel.slot){
+    document.getElementById('slotErr').classList.add('on');
+    document.getElementById('slotErr').scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
+  document.getElementById('slotErr').classList.remove('on');
   show('p3');setStep(3);
 }
 function toStep4(){
@@ -667,6 +677,7 @@ function pickDate(ds){
 function pickSlot(s){
   sel.slot=s;
   document.querySelectorAll('.slot-btn:not(.booked)').forEach(b=>b.classList.toggle('sel',b.textContent.trim()===s));
+  document.getElementById('slotErr').classList.remove('on');
 }
 function calNav(d){calDate.setMonth(calDate.getMonth()+d);sel.date=null;sel.slot=null;document.getElementById('slotCard').style.display='none';renderCal();}
 function show(id){document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));document.getElementById(id).classList.add('on');window.scrollTo({top:0,behavior:'smooth'});}
