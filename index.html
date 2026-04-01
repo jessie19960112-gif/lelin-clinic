@@ -854,8 +854,8 @@ function renderBookings(){
     <td>${lineCol(b)}</td>
     <td style="font-size:12px;color:var(--text2);width:130px;max-width:130px;white-space:normal;word-break:break-all;line-height:1.5;">${b.note||'—'}</td>
     <td><div class="act-row">
-      <button class="icon-btn ib-detail" title="詳情 / 編輯" onclick="openDetail(${b.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></button>
-      <button class="icon-btn ib-del" title="刪除" onclick="deleteBooking(${b.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg></button>
+      <button class="icon-btn ib-detail" title="詳情 / 編輯" onclick="openDetail('${b.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></button>
+      <button class="icon-btn ib-del" title="刪除" onclick="deleteBooking('${b.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg></button>
     </div></td>
   </tr>`).join('')}</tbody>`;
 }
@@ -871,7 +871,7 @@ function lineCol(b){
     return `<span class="line-toggle disabled" title="請先核准再通知"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px;height:12px;"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>未通知</span>`;
   }
   // approved or rejected — can click to notify
-  return `<button class="line-toggle unsent" onclick="toggleLine(${b.id})" title="點擊標記為已通知"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px;height:12px;"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>未通知</button>`;
+  return `<button class="line-toggle unsent" onclick="toggleLine('${b.id}')" title="點擊標記為已通知"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px;height:12px;"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>未通知</button>`;
 }
 
 window.toggleLine = function(id){
@@ -947,11 +947,11 @@ window._renderDetailModal = function(b, editMode, isPast=false){
         </div>
       </div>
       <div class="edit-row"><label class="edit-label">聯絡電話</label><input class="edit-inp" id="e_phone" value="${b.phone}"></div>
-      <div class="edit-row"><label class="edit-label">醫師</label><select class="edit-inp" id="e_doc" onchange="onEditDocChange(${b.id})">${docOpts}</select></div>
+      <div class="edit-row"><label class="edit-label">醫師</label><select class="edit-inp" id="e_doc" onchange="onEditDocChange('${b.id}')">${docOpts}</select></div>
       <div class="edit-row"><label class="edit-label">術式</label><select class="edit-inp" id="e_op">${opOpts}</select></div>
       <div class="edit-row edit-row-split">
-        <div style="flex:1"><label class="edit-label">手術日期</label><input class="edit-inp" id="e_date" type="date" value="${b.date}" onchange="updateEditSlots(${b.id})"></div>
-        <div style="flex:1"><label class="edit-label">時段</label><select class="edit-inp" id="e_slot" onchange="checkEditConflict(${b.id})">${buildSlotOptions(b.date,b.slot,b.id)}</select></div>
+        <div style="flex:1"><label class="edit-label">手術日期</label><input class="edit-inp" id="e_date" type="date" value="${b.date}" onchange="updateEditSlots('${b.id}')"></div>
+        <div style="flex:1"><label class="edit-label">時段</label><select class="edit-inp" id="e_slot" onchange="checkEditConflict('${b.id}')">${buildSlotOptions(b.date,b.slot,b.id)}</select></div>
       </div>
       <div class="conflict-warn" id="e_conflict">⚠ 此時段已有其他預約，請選擇其他時間</div>
       <div class="edit-row"><label class="edit-label">備註</label><input class="edit-inp" id="e_note" value="${b.note}"></div>
@@ -964,8 +964,8 @@ window._renderDetailModal = function(b, editMode, isPast=false){
         <div style="flex:1"><label class="edit-label">LINE 通知</label><select class="edit-inp" id="e_line">${lineOpts}</select></div>
       </div>`;
     document.getElementById('modalFoot').innerHTML=`<div class="modal-acts">
-      <button class="mbtn mbtn-approve" id="e_save_btn" onclick="saveEdit(${b.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>儲存</button>
-      <button class="mbtn mbtn-close" onclick="_renderDetailModal(bookings.find(x=>x.id===${b.id}),false)">取消</button>
+      <button class="mbtn mbtn-approve" id="e_save_btn" onclick="saveEdit('${b.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>儲存</button>
+      <button class="mbtn mbtn-close" onclick="_renderDetailModal(bookings.find(x=>x.id==='${b.id}'),false)">取消</button>
     </div>`;
   } else {
     // line toggle for card (same style as table, but locked in view mode)
@@ -997,7 +997,7 @@ window._renderDetailModal = function(b, editMode, isPast=false){
     document.getElementById('modalFoot').innerHTML=`<div class="modal-acts">
       ${isPast
         ? `<span style="font-size:12px;color:var(--text3);display:flex;align-items:center;gap:5px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0"/></svg>過去日期資料不可編輯</span>`
-        : `<button class="mbtn mbtn-approve" onclick="_renderDetailModal(bookings.find(x=>x.id===${b.id}),true,false)" style="background:var(--orange);">
+        : `<button class="mbtn mbtn-approve" onclick="_renderDetailModal(bookings.find(x=>x.id==='${b.id}'),true,false)" style="background:var(--orange);">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:15px;height:15px;"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>編輯資料
         </button>`}
       <button class="mbtn mbtn-close" onclick="closeModal()">關閉</button>
@@ -1218,7 +1218,7 @@ window.saveAddPatient = function(){
   const bd=document.getElementById('a_bday_d').value.trim();
   const bday=composeBday(by,bm,bd);
   bookings.push({
-    id:nextId++, name, bday,
+    id:String(nextId++), name, bday,
     phone, date, slot, op:document.getElementById('a_op').value,
     note:document.getElementById('a_note').value.trim(),
     status:'pending', lineNotified:false, docId, ts:Date.now()
@@ -1279,7 +1279,7 @@ function renderMonthCal(){
     let cls='cal-cell';
     if(dow===0)cls+=' sun';if(dow===6)cls+=' sat';
     if(dt.toDateString()===today)cls+=' today';
-    const evHtml=evs.slice(0,3).map(e=>`<div class="ev" ${evStyle(e)} onclick="openDetail(${e.id})">${e.slot} ${e.name}</div>`).join('');
+    const evHtml=evs.slice(0,3).map(e=>`<div class="ev" ${evStyle(e)} onclick="openDetail('${e.id}')">${e.slot} ${e.name}</div>`).join('');
     const more=evs.length>3?`<div class="ev more">+${evs.length-3} 筆</div>`:'';
     cells+=`<div class="${cls}"><div class="cal-cell-d">${d}</div>${evHtml}${more}</div>`;
   }
@@ -1315,7 +1315,7 @@ function renderWeekCal(){
       const ds=`${w.getFullYear()}-${String(w.getMonth()+1).padStart(2,'0')}-${String(w.getDate()).padStart(2,'0')}`;
       let evs=bookings.filter(b=>b.date===ds&&b.slot.startsWith(hr)&&b.status==='approved');
       if(calDocFilter!=='all') evs=evs.filter(b=>b.docId===calDocFilter);
-      bodyRows+=`<div class="cal-wslot">${evs.map(e=>`<div class="wev" ${evStyle(e)} onclick="openDetail(${e.id})">${e.slot} ${e.name}</div>`).join('')}</div>`;
+      bodyRows+=`<div class="cal-wslot">${evs.map(e=>`<div class="wev" ${evStyle(e)} onclick="openDetail('${e.id}')">${e.slot} ${e.name}</div>`).join('')}</div>`;
     });
   });
 
@@ -1334,7 +1334,7 @@ function renderDayCal(){
   let rows='';
   hours.forEach(hr=>{
     const slotEvs=evs.filter(e=>e.slot.startsWith(hr));
-    rows+=`<div class="cal-dhl">${hr}:00</div><div class="cal-dslot">${slotEvs.map(e=>`<div class="dev" ${evStyle(e)} onclick="openDetail(${e.id})"><span>${e.slot} ${e.name}</span><span style="font-size:11px;opacity:.7;">${e.op}</span></div>`).join('')}</div>`;
+    rows+=`<div class="cal-dhl">${hr}:00</div><div class="cal-dslot">${slotEvs.map(e=>`<div class="dev" ${evStyle(e)} onclick="openDetail('${e.id}')"><span>${e.slot} ${e.name}</span><span style="font-size:11px;opacity:.7;">${e.op}</span></div>`).join('')}</div>`;
   });
   document.getElementById('calBody').innerHTML=`<div class="cal-day-wrap">
     <div class="cal-day-head"><span style="font-size:14px;font-weight:700;">${evs.length?evs.length+' 個手術排程':'今日無手術排程'}</span></div>
@@ -2000,8 +2000,8 @@ function renderReview(){
       <td style="font-size:12px;color:var(--text2);max-width:100px;" title="${b.note||''}">${b.note?(b.note.length>10?b.note.slice(0,10)+'…':b.note):'—'}</td>
       <td><div class="act-row">
         ${unlocked
-          ?`<button class="icon-btn ib-approve" title="核准" onclick="reviewApprove(${b.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></button>
-            <button class="icon-btn ib-reject" title="拒絕" onclick="reviewReject(${b.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`
+          ?`<button class="icon-btn ib-approve" title="核准" onclick="reviewApprove('${b.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></button>
+            <button class="icon-btn ib-reject" title="拒絕" onclick="reviewReject('${b.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`
           :`<span style="font-size:11px;color:var(--text3);">請先解鎖</span>`}
       </div></td>
     </tr>`;
@@ -2102,7 +2102,7 @@ updateReviewBadge();
     bookings = snap.docs.map(d=>{
       const v=d.data();
       return {
-        id:v.id||d.id, fbId:d.id,
+        id:d.id, fbId:d.id,
         name:v.name||'', bday:v.bday||'',
         phone:v.phone||'', date:v.date||'',
         slot:v.slot||'', op:v.op||'',
