@@ -216,6 +216,29 @@ tr:hover td{background:#C3D9EE;}
 .add-doctor-btn:hover{border-color:var(--orange);color:var(--orange);}
 .add-doctor-btn svg{width:18px;height:18px;}
 
+
+/* ── ADD PATIENT MINI CALENDAR ── */
+.add-cal-wrap{border:1.5px solid var(--border);border-radius:var(--rx);padding:10px 12px;background:white;}
+.add-cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.add-cal-lbl{font-size:13px;font-weight:700;color:var(--text);}
+.add-cal-nb{width:24px;height:24px;border-radius:50%;border:1px solid var(--border);background:white;color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .12s;}
+.add-cal-nb:hover{border-color:var(--orange);color:var(--orange);}
+.add-cal-nb svg{width:10px;height:10px;}
+.add-cal-hd{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:3px;}
+.add-cal-dow{text-align:center;font-size:9px;font-weight:700;color:var(--text3);padding:2px 0;}
+.add-cal-dow:first-child{color:#E05252;}.add-cal-dow:last-child{color:#3B82F6;}
+.add-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+.acd{aspect-ratio:1;border-radius:6px;border:1.5px solid transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;font-weight:500;cursor:pointer;transition:all .12s;position:relative;line-height:1;}
+.acd.other{opacity:0;pointer-events:none;}
+.acd.past{color:var(--text3);cursor:default;opacity:.35;}
+.acd.noslot{color:var(--text3);opacity:.45;cursor:default;}
+.acd.has{border-color:var(--ob);background:var(--op);color:var(--orange);font-weight:700;}
+.acd.has:hover{background:var(--orange);color:white;border-color:var(--orange);}
+.acd.picked{background:var(--orange)!important;color:white!important;border-color:var(--orange)!important;font-weight:700;}
+.acd.sun{color:#E05252;}.acd.sat{color:#3B82F6;}
+.acd.today-marker{font-weight:700;}
+.acd-dot{width:3px;height:3px;border-radius:50%;background:var(--orange);margin-top:1px;}
+.acd.picked .acd-dot{background:rgba(255,255,255,.7);}
 /* ── CALENDAR ── */
 .cal-tb{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;flex:1;}
 .cal-mnav{display:flex;align-items:center;gap:6px;}
@@ -799,8 +822,8 @@ function renderBookings(){
     pending: base.filter(b=>b.status==='pending').length,
     approved: base.filter(b=>b.status==='approved').length,
     rejected: base.filter(b=>b.status==='rejected').length,
-    // LINE 待通知: approved but not yet notified
-    unnotified: base.filter(b=>b.status==='approved'&&!b.lineNotified).length,
+    // LINE 待通知: approved 或 rejected 但尚未通知
+    unnotified: base.filter(b=>(b.status==='approved'||b.status==='rejected')&&!b.lineNotified).length,
   };
   ['all','pending','approved','rejected','unnotified'].forEach(k=>{
     const el=document.getElementById('fc_'+k);
@@ -815,7 +838,7 @@ function renderBookings(){
 
   let data=[...base];
   if(bookingStatusFilter==='unnotified'){
-    data=data.filter(b=>b.status==='approved'&&!b.lineNotified);
+    data=data.filter(b=>(b.status==='approved'||b.status==='rejected')&&!b.lineNotified);
   } else if(bookingStatusFilter!=='all'){
     data=data.filter(b=>b.status===bookingStatusFilter);
   }
@@ -1135,10 +1158,20 @@ window.openAddPatient = function(){
       <select class="edit-inp" id="a_doc" onchange="onAddDocChange()">${docOpts}</select>
     </div>
     <div class="edit-row"><label class="edit-label">術式</label><select class="edit-inp" id="a_op"><option value="">— 先選醫師 —</option></select></div>
-    <div class="edit-row edit-row-split">
-      <div style="flex:1"><label class="edit-label">手術日期 *</label><input class="edit-inp" id="a_date" type="date" onchange="onAddDateChange()"></div>
-      <div style="flex:1"><label class="edit-label">手術時段 *</label><select class="edit-inp" id="a_slot" onchange="checkAddConflict()"><option value="">— 先選日期 —</option></select></div>
+    <div class="edit-row">
+      <label class="edit-label">手術日期 *</label>
+      <input type="hidden" id="a_date">
+      <div class="add-cal-wrap">
+        <div class="add-cal-nav">
+          <button type="button" class="add-cal-nb" onclick="addCalNav(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+          <span class="add-cal-lbl" id="addCalLbl"></span>
+          <button type="button" class="add-cal-nb" onclick="addCalNav(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+        </div>
+        <div class="add-cal-hd"><div class="add-cal-dow">日</div><div class="add-cal-dow">一</div><div class="add-cal-dow">二</div><div class="add-cal-dow">三</div><div class="add-cal-dow">四</div><div class="add-cal-dow">五</div><div class="add-cal-dow">六</div></div>
+        <div class="add-cal-grid" id="addCalGrid"></div>
+      </div>
     </div>
+    <div class="edit-row"><label class="edit-label">手術時段 *</label><select class="edit-inp" id="a_slot" onchange="checkAddConflict()"><option value="">— 先選日期 —</option></select></div>
     <div class="conflict-warn" id="a_conflict">⚠ 此時段已有其他預約，請選擇其他時間</div>
     <div class="edit-row"><label class="edit-label">備註</label><input class="edit-inp" id="a_note" placeholder="選填"></div>`;
 
@@ -1146,6 +1179,7 @@ window.openAddPatient = function(){
     <button class="mbtn mbtn-approve" id="a_save_btn" onclick="saveAddPatient()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>新增</button>
     <button class="mbtn mbtn-close" onclick="closeModal()">取消</button>
   </div>`;
+  renderAddCal();
   openOverlay();
 }
 
@@ -1162,7 +1196,23 @@ function onAddDateChange(){
     return;
   }
 
-  const configured=getDocSlots(docId,date);
+  let configured=getDocSlots(docId,date);
+  // 過濾過去時段：若為今天，只保留未來時段
+  const now=new Date();
+  const todayStr=now.toISOString().slice(0,10);
+  if(date===todayStr){
+    configured=configured.filter(s=>{
+      const[hh,mm]=s.split(':').map(Number);
+      const t=new Date();t.setHours(hh,mm,0,0);
+      return t>now;
+    });
+  }
+  // 若日期小於今天，完全不允許
+  if(date<todayStr){
+    slotSel.innerHTML=`<option value="">— 不可選擇過去日期 —</option>`;
+    document.getElementById('a_conflict').classList.remove('show');
+    return;
+  }
   if(!configured.length){
     slotSel.innerHTML=`<option value="">— 該日無可用時段 —</option>`;
     document.getElementById('a_conflict').classList.remove('show');
@@ -1200,12 +1250,70 @@ function onAddDocChange(){
   const opSel = document.getElementById('a_op');
   if(!doc){ opSel.innerHTML='<option value="">— 先選醫師 —</option>'; return; }
   opSel.innerHTML = doc.ops.map(o=>`<option value="${o}">${o}</option>`).join('');
-  // also refresh slot options if date is already selected
+  // also refresh mini cal and slot options when doctor changes
+  renderAddCal();
   const date=document.getElementById('a_date').value;
   if(date) onAddDateChange();
 }
 
-window.saveAddPatient = function(){
+
+/* ── ADD PATIENT MINI CALENDAR ── */
+let addCalDate = new Date();
+
+window.addCalNav = function(d){
+  addCalDate.setMonth(addCalDate.getMonth()+d);
+  renderAddCal();
+}
+
+function renderAddCal(){
+  const y=addCalDate.getFullYear(), m=addCalDate.getMonth();
+  const MN2=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  const lbl=document.getElementById('addCalLbl');
+  if(lbl) lbl.textContent=`${y} 年 ${MN2[m]}`;
+  const grid=document.getElementById('addCalGrid');
+  if(!grid) return;
+  const docId=parseInt(document.getElementById('a_doc')?.value)||null;
+  const first=new Date(y,m,1).getDay(), days=new Date(y,m+1,0).getDate();
+  const now=new Date();
+  const todayStr=now.toISOString().slice(0,10);
+  const selDate=document.getElementById('a_date')?.value||'';
+  let h='';
+  for(let i=0;i<first;i++) h+=`<div class="acd other"></div>`;
+  for(let dd=1;dd<=days;dd++){
+    const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+    const dt=new Date(y,m,dd);
+    const dow=dt.getDay();
+    // 取得該醫師該日時段
+    let ss=docId?getDocSlots(docId,ds):[];
+    // 今天：過濾已過時段
+    if(ds===todayStr){
+      ss=ss.filter(s=>{const[hh,mi]=s.split(':').map(Number);const t=new Date();t.setHours(hh,mi,0,0);return t>now;});
+    }
+    const isPast=ds<todayStr;
+    const has=ss.length>0&&!isPast;
+    const picked=ds===selDate;
+    let cls='acd';
+    if(dow===0)cls+=' sun'; if(dow===6)cls+=' sat';
+    if(ds===todayStr) cls+=' today-marker';
+    if(isPast) cls+=' past';
+    else if(!has) cls+=' noslot';
+    else cls+=' has';
+    if(picked) cls+=' picked';
+    const dot=has?`<div class="acd-dot"></div>`:'';
+    const click=has?`onclick="pickAddDate('${ds}')"`:'';
+    h+=`<div class="${cls}" ${click}>${dd}${dot}</div>`;
+  }
+  grid.innerHTML=h;
+}
+
+window.pickAddDate = function(ds){
+  const inp=document.getElementById('a_date');
+  if(inp){ inp.value=ds; }
+  renderAddCal();
+  onAddDateChange();
+}
+
+window.saveAddPatient = async function(){
   const name  = document.getElementById('a_name').value.trim();
   const phone = document.getElementById('a_phone').value.trim();
   const date  = document.getElementById('a_date').value;
@@ -1217,13 +1325,31 @@ window.saveAddPatient = function(){
   const bm=document.getElementById('a_bday_m').value.trim();
   const bd=document.getElementById('a_bday_d').value.trim();
   const bday=composeBday(by,bm,bd);
-  bookings.push({
-    id:String(nextId++), name, bday,
-    phone, date, slot, op:document.getElementById('a_op').value,
+  const docObj=doctors.find(d=>d.id===docId);
+  const data={
+    name, bday, phone, date, slot,
+    op:document.getElementById('a_op').value,
     note:document.getElementById('a_note').value.trim(),
-    status:'pending', lineNotified:false, docId, ts:Date.now()
-  });
-  closeModal();renderBookings();toast('success','新病人預約已建立');
+    docId, docName:docObj?docObj.name:'',
+    status:'pending', lineNotified:false,
+    createdAt:firebase.firestore.FieldValue.serverTimestamp()
+  };
+  const btn=document.getElementById('a_save_btn');
+  if(btn){btn.disabled=true;btn.textContent='儲存中…';}
+  try{
+    if(window._fbAddBooking){
+      await window._fbAddBooking(data);
+    } else {
+      // fallback: local only
+      bookings.push({id:String(nextId++), ...data, ts:Date.now()});
+      renderBookings();
+    }
+    closeModal();
+    toast('success','新病人預約已建立並同步至雲端');
+  } catch(e){
+    toast('err','儲存失敗：'+e.message);
+    if(btn){btn.disabled=false;btn.textContent='新增';}
+  }
 }
 
 /* ═══════════════════════════════════════
@@ -2195,6 +2321,9 @@ updateReviewBadge();
   window._fbSaveEdit = function(fbId,data){
     db.collection('bookings').doc(fbId).update(data)
       .catch(e=>toast('err','儲存失敗'));
+  };
+  window._fbAddBooking = async function(data){
+    await db.collection('bookings').add(data);
   };
 
 })();
