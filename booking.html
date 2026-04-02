@@ -222,6 +222,15 @@ button{font-family:inherit;cursor:pointer;}
 .ferr-doc.on{display:block;}
 .ferr-date{font-size:11px;color:#D03020;font-weight:600;margin-left:8px;display:none;}
 .ferr-date.on{display:inline;}
+/* ── SELFPAY ITEMS (frontend) ── */
+.fe-sp-item{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1.5px solid var(--border);border-radius:var(--rs);margin-bottom:8px;background:white;cursor:pointer;transition:all .15s;}
+.fe-sp-item:hover{border-color:var(--ob);}
+.fe-sp-item.sel{border-color:var(--o1);background:var(--op);}
+.fe-sp-item input[type=checkbox]{width:16px;height:16px;accent-color:var(--o1);flex-shrink:0;cursor:pointer;}
+.fe-sp-name{flex:1;font-size:13px;font-weight:600;color:var(--ink);}
+.fe-sp-price{font-size:12px;color:var(--ink2);}
+.fe-sp-qty{width:62px;padding:6px 8px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;text-align:center;outline:none;font-family:inherit;}
+.fe-sp-qty:focus{border-color:var(--o1);}
 /* ANIM */
 @keyframes fU{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
 @keyframes fD{from{opacity:0;transform:translateY(-10px);}to{opacity:1;transform:translateY(0);}}
@@ -249,7 +258,7 @@ button{font-family:inherit;cursor:pointer;}
     </div>
 
     <div class="home-title">線上手術<br>預約系統</div>
-    <div class="home-sub">選醫師・選時段・填資料<br>三步驟完成預約申請</div>
+    <div class="home-sub">選醫師・選時段・填資料・自費項目<br>四步驟完成預約申請</div>
 
     <button class="home-btn" onclick="enterBooking()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -284,7 +293,8 @@ button{font-family:inherit;cursor:pointer;}
       <div class="step active" id="s1"><div class="step-n">1</div><div class="step-l">選醫師</div></div>
       <div class="step" id="s2"><div class="step-n">2</div><div class="step-l">選時段</div></div>
       <div class="step" id="s3"><div class="step-n">3</div><div class="step-l">填資料</div></div>
-      <div class="step" id="s4"><div class="step-n">4</div><div class="step-l">確認</div></div>
+      <div class="step" id="s35"><div class="step-n">4</div><div class="step-l">自費項目</div></div>
+      <div class="step" id="s4"><div class="step-n">5</div><div class="step-l">確認</div></div>
     </div>
 
     <!-- P1 -->
@@ -335,7 +345,7 @@ button{font-family:inherit;cursor:pointer;}
         <div class="cttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>填寫基本資料</div>
         <div class="fg"><label class="flbl">姓名<em>*</em></label><input class="finp" id="f_name" placeholder="請輸入真實姓名" maxlength="10"><div class="ferr" id="e_name">* 請輸入姓名</div></div>
         <div class="fg">
-          <label class="flbl">民國年/月/日<em>*</em></label>
+          <label class="flbl">生日（民國年/月/日）<em>*</em></label>
           <div class="bday-row">
             <input class="finp" id="f_y" placeholder="年" maxlength="3" inputmode="numeric" style="width:70px;">
             <span class="bsep">/</span>
@@ -350,6 +360,27 @@ button{font-family:inherit;cursor:pointer;}
       </div>
       <div class="brow">
         <button class="btn-s" style="flex:1;" onclick="toStep2()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><polyline points="15 18 9 12 15 6"/></svg> 上一步</button>
+        <button class="btn-p" style="flex:2;" onclick="toStep35()">下一步：自費項目 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><polyline points="9 18 15 12 9 6"/></svg></button>
+      </div>
+    </div>
+
+    <!-- P3.5 -->
+    <div class="panel" id="p35">
+      <div class="card">
+        <div class="cttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>自費項目<span style="font-size:11px;font-weight:400;color:var(--ink3);margin-left:6px;">（選填）</span></div>
+        <div style="font-size:12px;color:var(--ink3);margin-bottom:12px;">請勾選需要的自費項目並輸入數量，若不需要可直接跳過。</div>
+        <div id="fe_sp_list">
+          <div style="text-align:center;padding:20px;color:var(--ink3);font-size:12px;">載入中…</div>
+        </div>
+        <div id="fe_sp_total" style="display:none;margin-top:12px;padding:12px 14px;background:var(--op);border:1px solid var(--ob);border-radius:var(--rs);">
+          <div style="display:flex;justify-content:space-between;align-items:center;font-weight:700;">
+            <span style="font-size:13px;">自費合計</span>
+            <span style="font-size:16px;color:var(--o1);" id="fe_sp_total_amt"></span>
+          </div>
+        </div>
+      </div>
+      <div class="brow">
+        <button class="btn-s" style="flex:1;" onclick="toStep3FromSP()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><polyline points="15 18 9 12 15 6"/></svg> 上一步</button>
         <button class="btn-p" style="flex:2;" onclick="toStep4()">預覽確認 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><polyline points="9 18 15 12 9 6"/></svg></button>
       </div>
     </div>
@@ -372,13 +403,20 @@ button{font-family:inherit;cursor:pointer;}
           <div class="pv-row"><div class="pv-k">電話</div><div class="pv-v" id="pv_phone"></div></div>
           <div class="pv-row" id="pv_nr"><div class="pv-k">備註</div><div class="pv-v" id="pv_note"></div></div>
         </div>
+        <div class="pv-blk" id="pv_sp_blk" style="display:none;">
+          <div class="pv-ttl" style="display:flex;align-items:center;gap:5px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px;height:12px;"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>自費項目</div>
+          <div id="pv_sp_rows"></div>
+          <div style="border-top:1px solid var(--border);margin-top:6px;padding-top:6px;display:flex;justify-content:space-between;font-weight:700;font-size:13px;">
+            <span>合計</span><span style="color:var(--o1);" id="pv_sp_total"></span>
+          </div>
+        </div>
         <div class="notice">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           <p>送出後審核需 <strong>1–2 個工作天</strong><br>審核結果將透過 <strong>LINE</strong> 通知您<br>如有疑問，請來電 <strong>（07）350-9200</strong></p>
         </div>
       </div>
       <div class="brow">
-        <button class="btn-s" style="flex:1;" onclick="toStep3()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><polyline points="15 18 9 12 15 6"/></svg> 修改</button>
+        <button class="btn-s" style="flex:1;" onclick="toStep35Back()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><polyline points="15 18 9 12 15 6"/></svg> 修改</button>
         <button class="btn-p" style="flex:2;" onclick="submitBookingToFirebase()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>確認送出</button>
       </div>
     </div>
@@ -480,6 +518,105 @@ function toStep3(){
   document.getElementById('slotErr').classList.remove('on');
   show('p3');setStep(3);
 }
+/* ── SELF-PAY STEP ── */
+let feSelfPayCatalog = []; // loaded from Firebase
+window._feSelSelfPay = []; // selected items
+
+function renderFeSelfPay(){
+  const list=document.getElementById('fe_sp_list');
+  if(!list)return;
+  if(!feSelfPayCatalog.length){
+    list.innerHTML='<div style="text-align:center;padding:24px;color:var(--ink3);font-size:13px;">目前診所尚未設定自費項目</div>';
+    return;
+  }
+  let html='';
+  const selected=window._feSelSelfPay||[];
+  feSelfPayCatalog.forEach(function(it){
+    const ex=selected.find(function(s){return s.id===it.id;});
+    const checked=!!ex; const qty=ex?ex.qty:1;
+    html+='<div class="fe-sp-item'+(checked?' sel':'')+'" id="fe_spi_'+it.id+'">';
+    html+='<input type="checkbox" id="fe_spc_'+it.id+'" '+(checked?'checked':'')+' onchange="toggleFeSp(''+it.id+'')">';
+    html+='<div class="fe-sp-name">'+it.name+'</div>';
+    html+='<div class="fe-sp-price">$'+it.price+'/'+it.unit+'</div>';
+    html+='<input type="number" class="fe-sp-qty" id="fe_spq_'+it.id+'" value="'+qty+'" min="1" max="999" oninput="updateFeSpTotal()">';
+    html+='</div>';
+  });
+  list.innerHTML=html;
+  updateFeSpTotal();
+}
+
+window.toggleFeSp = function(id){
+  const cb=document.getElementById('fe_spc_'+id);
+  const row=document.getElementById('fe_spi_'+id);
+  row.classList.toggle('sel',cb.checked);
+  updateFeSpTotal();
+}
+
+function updateFeSpTotal(){
+  let total=0;
+  feSelfPayCatalog.forEach(function(it){
+    const cb=document.getElementById('fe_spc_'+it.id);
+    if(cb&&cb.checked){
+      const q=parseInt((document.getElementById('fe_spq_'+it.id)||{value:'1'}).value)||1;
+      total+=it.price*q;
+    }
+  });
+  const totEl=document.getElementById('fe_sp_total');
+  const amtEl=document.getElementById('fe_sp_total_amt');
+  if(totEl&&amtEl){
+    if(total>0){totEl.style.display='block';amtEl.textContent='$'+total.toLocaleString();}
+    else totEl.style.display='none';
+  }
+}
+
+function collectFeSp(){
+  const items=[];
+  feSelfPayCatalog.forEach(function(it){
+    const cb=document.getElementById('fe_spc_'+it.id);
+    if(cb&&cb.checked){
+      const q=Math.max(1,parseInt((document.getElementById('fe_spq_'+it.id)||{value:'1'}).value)||1);
+      items.push({id:it.id,name:it.name,price:it.price,unit:it.unit,qty:q});
+    }
+  });
+  return items;
+}
+
+function toStep35(){
+  // Validate P3 first (same as old toStep4 but without submit)
+  const name=document.getElementById('f_name').value.trim();
+  const yv=document.getElementById('f_y').value.trim();
+  const mv=document.getElementById('f_m').value.trim();
+  const dv=document.getElementById('f_d').value.trim();
+  const phone=document.getElementById('f_phone').value.trim();
+  let ok=true;
+  document.getElementById('e_name').classList.toggle('on',!name);
+  if(!name) ok=false;
+  const yi=parseInt(yv),mi=parseInt(mv),di=parseInt(dv);
+  const todayRoc=new Date().getFullYear()-1911;
+  let bdayErrMsg='';
+  if(!yv||!mv||!dv||isNaN(yi)||isNaN(mi)||isNaN(di)){bdayErrMsg='請輸入完整生日';}
+  else if(yi<1||yi>todayRoc){bdayErrMsg='民國年請填 1～'+todayRoc;}
+  else if(mi<1||mi>12){bdayErrMsg='月份請填 1～12';}
+  else{
+    const maxD=new Date(yi+1911,mi,0).getDate();
+    if(di<1||di>maxD){bdayErrMsg=mi+'月份日期請填 1～'+maxD;}
+    else if(new Date(yi+1911,mi-1,di)>new Date()){bdayErrMsg='生日不能是未來日期';}
+  }
+  const bdayEl=document.getElementById('e_bday');
+  bdayEl.textContent=bdayErrMsg||'* 請輸入完整生日';
+  bdayEl.classList.toggle('on',!!bdayErrMsg);
+  if(bdayErrMsg) ok=false;
+  document.getElementById('e_phone').classList.toggle('on',!phone);
+  if(!phone) ok=false;
+  if(!ok) return;
+  renderFeSelfPay();
+  show('p35');setStep(3.5);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function toStep3FromSP(){show('p3');setStep(3);window.scrollTo({top:0,behavior:'smooth'});}
+function toStep35Back(){show('p35');setStep(3.5);window.scrollTo({top:0,behavior:'smooth'});}
+
 function toStep4(){
   const name=document.getElementById('f_name').value.trim();
   const yv=document.getElementById('f_y').value.trim();
@@ -506,7 +643,7 @@ function toStep4(){
     else if(new Date(yi+1911,mi-1,di)>new Date()){ bdayErrMsg='生日不能是未來日期'; }
   }
   const bdayEl=document.getElementById('e_bday');
-  bdayEl.textContent=bdayErrMsg||'請輸入完整生日';
+  bdayEl.textContent=bdayErrMsg||'* 請輸入完整生日';
   bdayEl.classList.toggle('on',!!bdayErrMsg);
   if(bdayErrMsg) ok=false;
 
@@ -514,6 +651,8 @@ function toStep4(){
   if(!phone) ok=false;
 
   if(!ok) return;
+  // collect selfpay selection
+  window._feSelSelfPay=collectFeSp();
   const doc=doctors.find(dd=>dd.id===sel.docId);
   const note=document.getElementById('f_note').value.trim();
   document.getElementById('pv_doc').textContent=`${doc.name} 醫師`;
@@ -526,6 +665,18 @@ function toStep4(){
   const nr=document.getElementById('pv_nr');
   if(note){document.getElementById('pv_note').textContent=note;nr.style.display='flex';}
   else nr.style.display='none';
+  // fill selfpay preview in p4
+  const spBlk=document.getElementById('pv_sp_blk');
+  const spItems=window._feSelSelfPay||[];
+  if(spItems.length&&spBlk){
+    const rows=spItems.map(x=>'<div class="pv-row"><div class="pv-k">'+x.name+'</div><div class="pv-v">'+x.unit+' x '+x.qty+' = $'+(x.price*x.qty).toLocaleString()+'</div></div>').join('');
+    document.getElementById('pv_sp_rows').innerHTML=rows;
+    const total=spItems.reduce(function(s,x){return s+x.price*x.qty;},0);
+    document.getElementById('pv_sp_total').textContent='$'+total.toLocaleString();
+    spBlk.style.display='block';
+  } else if(spBlk){
+    spBlk.style.display='none';
+  }
   show('p4');setStep(4);
 }
 function submitBooking(){
@@ -547,6 +698,7 @@ function enterBooking(){
 }
 function goHome(){
   sel={docId:null,op:null,date:null,slot:null};
+  window._feSelSelfPay=[];
   ['f_name','f_y','f_m','f_d','f_phone','f_note'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('opWrap').innerHTML='<div style="font-size:12px;color:var(--ink3);padding:4px 0;">請先選擇醫師，術式將自動帶入</div>';
   document.getElementById('slotCard').style.display='none';
@@ -721,15 +873,19 @@ function pickSlot(s){
 }
 function calNav(d){calDate.setMonth(calDate.getMonth()+d);sel.date=null;sel.slot=null;document.getElementById('slotCard').style.display='none';renderCal();}
 function show(id){document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));document.getElementById(id).classList.add('on');window.scrollTo({top:0,behavior:'smooth'});}
+// setStep replaced above
 function setStep(n){
-  for(let i=1;i<=4;i++){
-    const s=document.getElementById('s'+i);
-    s.classList.remove('active','done');
-    const num=s.querySelector('.step-n');
-    if(i<n){s.classList.add('done');num.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" style="width:11px;height:11px;"><polyline points="20 6 9 17 4 12"/></svg>`;}
-    else if(i===n){s.classList.add('active');num.textContent=i;}
-    else{num.textContent=i;}
-  }
+  // n: 1=s1, 2=s2, 3=s3, 3.5=s35, 4=s4
+  const steps=[{id:'s1',v:1},{id:'s2',v:2},{id:'s3',v:3},{id:'s35',v:3.5},{id:'s4',v:4}];
+  steps.forEach(function(s){
+    const el=document.getElementById(s.id);
+    if(!el)return;
+    el.className='step'+(s.v<n?' done':s.v===n?' active':'');
+    const num=el.querySelector('.step-n');
+    if(!num)return;
+    if(s.v<n){num.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" style="width:11px;height:11px;"><polyline points="20 6 9 17 4 12"/></svg>';}
+    else{num.textContent=s.v===3.5?'4':String(s.v<3.5?s.v:s.v+1);}
+  });
 }
 function fmtDs(ds){if(!ds)return'';const[y,m,d]=ds.split('-');return`${y}年${parseInt(m)}月${parseInt(d)}日`;}
 
@@ -742,7 +898,11 @@ window.pickOp        = pickOp;
 window.toStep1       = toStep1;
 window.toStep2       = toStep2;
 window.toStep3       = toStep3;
+window.toStep35      = toStep35;
+window.toStep3FromSP = toStep3FromSP;
+window.toStep35Back  = toStep35Back;
 window.toStep4       = toStep4;
+window.toggleFeSp    = toggleFeSp;
 window.submitBooking = submitBooking;
 window.calNav        = calNav;
 window.pickDate      = pickDate;
@@ -791,6 +951,15 @@ window.renderSlots   = renderSlots;
     Object.keys(slots).forEach(k=>delete slots[k]);
     snap.docs.forEach(d=>{ const v=d.data(); if(v.slots) slots[d.id]=v.slots; });
     if(document.getElementById('bookingApp').style.display!=='none') renderCal();
+  });
+
+  // ── 即時監聽自費項目清單 ──
+  db.collection('selfpay').doc('items').onSnapshot(snap=>{
+    if(snap.exists){
+      feSelfPayCatalog=(snap.data().items||[]);
+    } else {
+      feSelfPayCatalog=[];
+    }
   });
 
   // ── 即時監聽 bookings → 計算已預約數，即時更新畫面 ──
@@ -850,6 +1019,7 @@ window.renderSlots   = renderSlots;
         name, bday:`${yv}/${mv}/${dv}`,
         phone, note, status:'pending',
         lineNotified:false,
+        selfPayItems:window._feSelSelfPay||[],
         createdAt:firebase.firestore.FieldValue.serverTimestamp()
       });
       submitBooking();
