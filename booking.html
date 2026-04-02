@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>樂霖診所 — 線上預約</title>
+<title>樂霖診所 • 手術預約系統</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -335,7 +335,7 @@ button{font-family:inherit;cursor:pointer;}
         <div class="cttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>填寫基本資料</div>
         <div class="fg"><label class="flbl">姓名<em>*</em></label><input class="finp" id="f_name" placeholder="請輸入真實姓名" maxlength="10"><div class="ferr" id="e_name">* 請輸入姓名</div></div>
         <div class="fg">
-          <label class="flbl">民國生日<em>*</em></label>
+          <label class="flbl">民國年/月/日<em>*</em></label>
           <div class="bday-row">
             <input class="finp" id="f_y" placeholder="年" maxlength="3" inputmode="numeric" style="width:70px;">
             <span class="bsep">/</span>
@@ -559,6 +559,44 @@ function goHome(){
   document.getElementById('homePage').style.display='flex';
   window.scrollTo({top:0,behavior:'smooth'});
 }
+
+// 取得日期所在的自然週字串（週一為起點）YYYY-WW
+function getWeekKey(ds){
+  const dt=new Date(ds);
+  const day=dt.getDay(); // 0=日
+  const mon=new Date(dt);
+  mon.setDate(dt.getDate()-(day===0?6:day-1)); // 週一
+  return mon.toISOString().slice(0,10);
+}
+
+// 計算該醫師某週已有幾天被預約（pending/approved 至少一筆算一天）
+function getDocBookedDaysInWeek(docId, weekMonStr){
+  if(!window._bookedSlots) return 0;
+  const bookedDates=new Set();
+  Object.keys(window._bookedSlots).forEach(key=>{
+    const [did,date]=key.split(':');
+    if(parseInt(did)===docId && window._bookedSlots[key]>0){
+      const weekMon=getWeekKey(date);
+      if(weekMon===weekMonStr) bookedDates.add(date);
+    }
+  });
+  return bookedDates.size;
+}
+
+// 判斷某天是否因週限制而關閉（不顯示額滿，直接視為無開放）
+function isWeekLimitClosed(docId, ds){
+  const doc=doctors.find(d=>d.id===docId);
+  if(!doc||!doc.weekLimit||doc.weekLimit<=0) return false;
+  const weekMon=getWeekKey(ds);
+  const bookedDays=getDocBookedDaysInWeek(docId, weekMon);
+  if(bookedDays<doc.weekLimit) return false;
+  // 已達週限制，但若該天本身就有預約，不關閉（已被使用的天不受影響）
+  const hasSelfBooking=Object.keys(window._bookedSlots||{}).some(key=>{
+    const [did,date]=key.split(':');
+    return parseInt(did)===docId && date===ds && window._bookedSlots[key]>0;
+  });
+  return !hasSelfBooking;
+}
 // 判斷某天的上午或下午是否達到配額
 function isSessionFull(docId, ds, isAM){
   if(!window._bookedSlots) return false;
@@ -621,18 +659,20 @@ function renderCal(){
       return true;
     });
     const has=availSS.length>0;
-    const full=has&&isDayFull(sel.docId,ds,availSS);
+    const weekClosed=has&&isWeekLimitClosed(sel.docId,ds);
+    const full=has&&!weekClosed&&isDayFull(sel.docId,ds,availSS);
     const picked=sel.date===ds;
     let cls='cday';
     if(dow===0)cls+=' sun';if(dow===6)cls+=' sat';
     if(isPast||(!has&&ss.length>0))cls+=' past'; // 今天時段全過了也視為過去
+    else if(weekClosed)cls+=' noslot'; // 週限制關閉，不顯示額滿
     else if(full)cls+=' full';
     else if(!has)cls+=' noslot';
     else cls+=' has';
     if(picked)cls+=' picked';
-    const dot=has&&!full?`<div class="cday-dot"></div>`:'';
+    const dot=(has&&!full&&!weekClosed)?`<div class="cday-dot"></div>`:'';
     const fullLbl=full?`<div class="cday-full-lbl">額滿</div>`:'';
-    const click=(has&&!full)?`onclick="pickDate('${ds}')"`:'';
+    const click=(has&&!full&&!weekClosed)?`onclick="pickDate('${ds}')"`:'';
     h+=`<div class="${cls}" ${click}>${dd}${dot}${fullLbl}</div>`;
   }
   document.getElementById('calGrid').innerHTML=h;
@@ -735,7 +775,7 @@ window.renderSlots   = renderSlots;
       const v=d.data();
       return {id:v.id, name:v.name||'', title:v.title||'',
         color:colorFromId(v.colorId), ops:v.ops||[],
-        limitAM:v.limitAM??3, limitPM:v.limitPM??3};
+        limitAM:v.limitAM??3, limitPM:v.limitPM??3, weekLimit:v.weekLimit||0};
     }).sort((a,b)=>a.id-b.id);
     renderDoctors();
     // 若已選醫師被刪除則重置
