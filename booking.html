@@ -546,7 +546,7 @@ function renderFeSelfPay(){
     const checked=!!ex;
     const qty=ex?ex.qty:1;
     html+='<div class="fe-sp-item'+(checked?' sel':'')+'" id="fespi_'+it.id+'">';
-    html+='<input type="checkbox" id="fespc_'+it.id+'" '+(checked?'checked':'')+' onchange="onFeSpCheck(''+it.id+'')">';
+    html+='<input type="checkbox" id="fespc_'+it.id+'" '+(checked?'checked':'')+' onchange="onFeSpCheck(this.dataset.id)" data-id="'+it.id+'">';
     html+='<div class="fe-sp-name">'+it.name+'</div>';
     html+='<div class="fe-sp-price">$'+it.price+'/'+it.unit+'</div>';
     html+='<input type="number" class="fe-sp-qty" id="fespq_'+it.id+'" value="'+qty+'" min="1" max="999" oninput="calcFeSpTotal()">';
