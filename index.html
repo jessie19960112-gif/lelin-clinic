@@ -2,755 +2,2323 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>樂霖診所 • 手術預約系統</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>樂霖後台管理系統</title>
+<!-- Firebase compat SDK 提前載入，確保所有功能正常運作 -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <style>
-:root{
-  --o1:#F47B20;--o2:#FF9A3C;--o3:#FFB865;--op:#FFF4EB;--ob:#FFD4A8;
-  --white:#FFF;--ink:#1A1A1A;--ink2:#4A4A4A;--ink3:#9A9A9A;
-  --bg:#F9F7F4;--border:#EDE8E2;--r:14px;--rs:10px;
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700;900&display=swap');
+:root {
+  --orange:#F47B20; --ol:#FFA855; --op:#FFF4EB; --ob:#FFD4A8;
+  --white:#fff; --bg:#F4F6F9; --sb:#1C2333; --sbh:#273047;
+  --text:#1A1A2E; --text2:#64748B; --text3:#B0B8C8;
+  --border:#E2E8F0; --card:#fff;
+  --green:#22C55E; --gp:#F0FDF4; --gb:#BBF7D0;
+  --red:#EF4444; --rp:#FEF2F2; --rb:#FECACA;
+  --yellow:#F59E0B; --yp:#FFFBEB; --yb:#FDE68A;
+  --blue:#3B82F6; --bp:#EFF6FF; --bb:#BFDBFE;
+  --line:#06C755;
+  --r:12px; --rs:8px; --rx:6px;
+  --sh:0 1px 3px rgba(0,0,0,.08),0 4px 12px rgba(0,0,0,.04);
+  --shm:0 4px 20px rgba(0,0,0,.12);
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-html,body{min-height:100%;overflow-x:hidden;}
-body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.6;}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;font-size:14px;}
 button{font-family:inherit;cursor:pointer;}
 
-/* HOME */
-#homePage{
-  min-height:100vh;
-  background:linear-gradient(145deg,#F47B20 0%,#FF9A3C 42%,#FFB865 75%,#FFCF90 100%);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  position:relative;overflow:hidden;padding:40px 24px;
-}
-.geo{position:absolute;border-radius:50%;opacity:.13;}
-.geo1{width:340px;height:340px;background:white;top:-90px;right:-90px;}
-.geo2{width:200px;height:200px;background:white;bottom:50px;left:-65px;}
-.geo3{width:110px;height:110px;background:white;bottom:190px;right:25px;border-radius:26px;transform:rotate(22deg);}
-.geo4{width:55px;height:55px;background:white;top:110px;left:38px;}
-.geo5{width:170px;height:170px;border:3px solid rgba(255,255,255,.22);background:transparent;border-radius:38px;position:absolute;top:42%;left:50%;transform:translate(-50%,-50%) rotate(14deg);}
+/* ── SIDEBAR ── */
+.sb{width:210px;background:var(--sb);display:flex;flex-direction:column;flex-shrink:0;position:fixed;top:0;left:0;height:100vh;z-index:200;}
+.sb-logo{padding:20px 16px 16px;border-bottom:1px solid rgba(255,255,255,.08);}
+.sb-logo-row{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+.sb-icon{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--orange),var(--ol));display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.sb-icon svg{width:18px;height:18px;}
+.sb-name{font-size:12.5px;font-weight:700;color:#fff;line-height:1.3;}
+.sb-sub{font-size:9.5px;color:rgba(255,255,255,.4);}
+.sb-badge{display:inline-block;background:rgba(244,123,32,.22);color:var(--ol);font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;letter-spacing:.06em;}
+.sb-nav{padding:14px 10px;flex:1;overflow-y:auto;}
+.sb-sec{font-size:9px;color:rgba(255,255,255,.28);font-weight:700;letter-spacing:.12em;padding:0 8px;margin-bottom:5px;margin-top:14px;}
+.sb-sec:first-child{margin-top:0;}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--rx);cursor:pointer;color:rgba(255,255,255,.5);font-size:12.5px;font-weight:500;transition:all .16s;margin-bottom:1px;border:none;background:none;width:100%;}
+.ni svg{width:15px;height:15px;flex-shrink:0;}
+.ni:hover{background:var(--sbh);color:rgba(255,255,255,.88);}
+.ni.active{background:rgba(244,123,32,.18);color:var(--ol);font-weight:600;}
 
-.home-wrap{position:relative;z-index:1;text-align:center;max-width:360px;width:100%;}
-.home-pill{
-  display:inline-flex;align-items:center;gap:10px;
-  background:rgba(255,255,255,.2);backdrop-filter:blur(8px);
-  border:1px solid rgba(255,255,255,.32);border-radius:50px;padding:10px 22px;
-  margin-bottom:38px;animation:fU .6s ease both;
-}
-.home-pill-ico{width:26px;height:26px;background:white;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.home-pill-ico svg{width:15px;height:15px;}
-.home-pill-txt{font-size:15px;font-weight:700;color:white;letter-spacing:.04em;text-shadow:0 1px 8px rgba(140,55,0,.3);}
-.home-title{font-family:'Noto Serif TC',serif;font-size:40px;font-weight:900;color:white;line-height:1.2;margin-bottom:12px;animation:fU .6s .1s ease both;text-shadow:0 2px 12px rgba(140,55,0,.35),0 4px 24px rgba(140,55,0,.25);}
-.home-sub{font-size:13px;color:rgba(255,255,255,.95);line-height:1.85;margin-bottom:50px;animation:fU .6s .2s ease both;text-shadow:0 1px 8px rgba(140,55,0,.3);}
-.home-btn{
-  display:inline-flex;align-items:center;gap:10px;
-  background:white;color:var(--o1);border:none;border-radius:50px;
-  padding:16px 38px;font-size:16px;font-weight:700;letter-spacing:.05em;
-  box-shadow:0 8px 32px rgba(170,70,0,.28);transition:all .22s;
-  animation:fU .6s .3s ease both;
-}
-.home-btn:hover{transform:translateY(-3px);box-shadow:0 16px 40px rgba(170,70,0,.36);}
-.home-btn:active{transform:translateY(0);}
-.home-btn svg{width:17px;height:17px;}
-.home-info{margin-top:50px;display:flex;flex-direction:column;gap:8px;animation:fU .6s .4s ease both;}
-.home-info-row{display:flex;align-items:center;justify-content:center;gap:7px;font-size:12px;color:rgba(255,255,255,.9);text-shadow:0 1px 6px rgba(140,55,0,.3);}
-.home-info-row svg{width:13px;height:13px;flex-shrink:0;}
+/* ── TOPBAR ── */
+.main{margin-left:210px;flex:1;display:flex;flex-direction:column;min-height:100vh;}
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 24px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.topbar-title{font-size:15px;font-weight:700;color:var(--text);}
+.tb-btn{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rx);border:1.5px solid var(--border);background:var(--white);color:var(--text2);font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s;}
+.tb-btn:hover{border-color:var(--orange);color:var(--orange);}
+.tb-btn.primary{background:var(--orange);border-color:var(--orange);color:white;}
+.tb-btn.primary:hover{background:var(--ol);border-color:var(--ol);}
+.tb-btn svg{width:14px;height:14px;}
 
-/* BOOKING */
-#bookingApp{display:none;}
-#bookingApp.on{display:block;}
-.bk-hd{
-  background:white;border-bottom:1px solid var(--border);padding:0 20px;height:56px;
-  display:flex;align-items:center;justify-content:space-between;
-  position:sticky;top:0;z-index:100;box-shadow:0 1px 6px rgba(0,0,0,.05);
-}
-.bk-hd-l{display:flex;align-items:center;gap:10px;}
-.bk-ico{width:32px;height:32px;background:var(--o1);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.bk-ico svg{width:17px;height:17px;}
-.bk-nm{font-size:13px;font-weight:700;color:var(--ink);}
-.bk-back{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--ink3);background:none;border:none;padding:6px 10px;border-radius:8px;transition:all .15s;}
-.bk-back:hover{color:var(--o1);background:var(--op);}
-.bk-back svg{width:14px;height:14px;}
-.bk-main{max-width:600px;margin:0 auto;padding:20px 18px 60px;}
+.content{padding:22px 24px;flex:1;}
+.panel{display:none;}.panel.active{display:block;}
 
-/* STEPS */
-.steps{display:flex;align-items:flex-start;margin-bottom:22px;}
-.step{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;position:relative;}
-.step:not(:last-child)::after{content:'';position:absolute;top:12px;left:calc(50% + 13px);width:calc(100% - 26px);height:2px;background:var(--border);transition:background .3s;}
-.step.done:not(:last-child)::after{background:var(--o1);}
-.step-n{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;border:2px solid var(--border);background:white;color:var(--ink3);transition:all .25s;z-index:1;}
-.step.active .step-n{border-color:var(--o1);background:var(--o1);color:white;}
-.step.done .step-n{border-color:var(--o1);background:var(--o1);color:white;}
-.step-l{font-size:10px;color:var(--ink3);text-align:center;font-weight:500;}
-.step.active .step-l,.step.done .step-l{color:var(--o1);font-weight:700;}
+/* ── CARDS / TABLES ── */
+.card{background:var(--card);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh);}
+.sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.sec-hd h2{font-size:14.5px;font-weight:700;}
+.sec-hd-acts{display:flex;gap:8px;}
 
-/* CARD */
-.card{background:white;border-radius:var(--r);border:1px solid var(--border);padding:20px 18px;margin-bottom:14px;box-shadow:0 2px 10px rgba(0,0,0,.04);animation:fU .28s ease both;}
-.cttl{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
-.cttl svg{width:16px;height:16px;color:var(--o1);}
-.sbar{display:none;}
+.tbl-wrap{background:var(--card);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh);overflow:hidden;}
+.tbl-filters{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1;}
+.ft{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--white);color:var(--text2);transition:all .15s;}
+.ft.active{border-color:var(--orange);background:var(--op);color:var(--orange);}
 
-/* DOCTOR */
-.doc-list{display:flex;flex-direction:column;gap:8px;}
-.doc-item{border:2px solid var(--border);border-radius:var(--rs);padding:13px 15px;cursor:pointer;display:flex;align-items:center;gap:13px;transition:all .18s;background:white;}
-.doc-item:hover{border-color:var(--ob);}
-.doc-item.sel{border-color:var(--o1);background:var(--op);}
-.doc-av{width:42px;height:42px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Noto Serif TC',serif;font-size:16px;font-weight:900;color:white;}
-.doc-nm{font-size:14px;font-weight:700;color:var(--ink);}
-.doc-tt{font-size:11px;color:var(--ink3);margin-top:1px;}
+/* sortable column headers */
+th.sortable{cursor:pointer;user-select:none;}
+th.sortable:hover{color:var(--orange);}
+th.sortable .sort-icon{display:inline-block;margin-left:4px;opacity:.4;font-size:10px;}
+th.sortable.asc .sort-icon::after{content:'↑';}
+th.sortable.desc .sort-icon::after{content:'↓';}
+th.sortable:not(.asc):not(.desc) .sort-icon::after{content:'↕';}
+th.sortable.asc .sort-icon,th.sortable.desc .sort-icon{opacity:1;color:var(--orange);}
 
-/* OPS — large card style (same as doctor) */
-.op-wrap{display:flex;flex-direction:column;gap:8px;}
-.op-chip{border:2px solid var(--border);border-radius:var(--rs);padding:13px 15px;cursor:pointer;display:flex;align-items:center;gap:13px;transition:all .18s;background:white;}
-.op-chip:hover{border-color:var(--ob);}
-.op-chip.sel{border-color:var(--o1);background:var(--op);}
-.op-chip-name{font-size:14px;font-weight:700;color:var(--ink);}
-.op-chip.sel .op-chip-name{color:var(--o1);}
-.op-placeholder{font-size:12px;color:var(--ink3);padding:4px 0;}
+/* global time settings */
+.global-time-modal .modal-body{padding-bottom:0;}
+.global-slots-wrap{display:flex;flex-direction:column;gap:8px;}
+.global-slot-row{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#F8FAFC;border-radius:var(--rx);border:1px solid var(--border);}
+.global-slot-time{font-size:13px;font-weight:700;color:var(--text);flex:1;}
+.global-slot-del{width:24px;height:24px;border-radius:50%;border:none;background:var(--rp);color:var(--red);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+.global-slot-del svg{width:11px;height:11px;}
+.global-slot-add{display:flex;gap:8px;margin-top:6px;}
+.global-slot-add input{flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--rx);font-family:inherit;font-size:13px;outline:none;}
+.global-slot-add input:focus{border-color:var(--orange);}
+.global-slot-add-btn{padding:8px 14px;background:var(--orange);color:white;border:none;border-radius:var(--rx);font-size:13px;font-weight:700;cursor:pointer;}
 
-.cday.full{color:var(--ink3);cursor:default;opacity:.55;}
-.cday.full .cday-full-lbl{font-size:8px;font-weight:700;color:var(--ink3);position:absolute;bottom:1px;left:50%;transform:translateX(-50%);white-space:nowrap;}
-/* CAL */
-.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
-.cal-m{font-size:15px;font-weight:700;}
-.cal-nb{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--border);background:white;color:var(--ink2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;}
-.cal-nb:hover{border-color:var(--o1);color:var(--o1);}
-.cal-nb svg{width:13px;height:13px;}
-.cal-hd{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px;}
-.cal-dow{text-align:center;font-size:10px;font-weight:700;color:var(--ink3);padding:4px 0;}
-.cal-dow:first-child{color:#E05252;}.cal-dow:last-child{color:var(--o1);}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
-.cday{aspect-ratio:1;border-radius:8px;border:1.5px solid transparent;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;position:relative;}
-.cday.other{opacity:0;pointer-events:none;}
-.cday.past{color:var(--ink3);cursor:default;opacity:.4;}
-.cday.noslot{color:var(--ink3);cursor:default;opacity:.45;}
-.cday.sun{color:#E05252;}.cday.sat{color:var(--o1);}
-.cday.has{border-color:var(--ob);background:var(--op);color:var(--o1);font-weight:700;}
-.cday.has:hover{background:var(--o1);color:white;border-color:var(--o1);}
-.cday.picked{background:var(--o1);color:white!important;border-color:var(--o1);font-weight:700;}
-.cday-dot{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--o1);}
-.cday.picked .cday-dot{background:rgba(255,255,255,.7);}
+/* day detail modal */
+.day-detail-slots{display:flex;flex-direction:column;gap:6px;}
+.dds-item{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#F8FAFC;border-radius:var(--rx);border:1px solid var(--border);}
+.dds-time{font-size:13px;font-weight:700;flex:1;}
+.dds-booked{font-size:11px;color:var(--text3);background:var(--border);padding:2px 8px;border-radius:10px;}
+.dds-del{width:24px;height:24px;border-radius:50%;border:none;background:var(--rp);color:var(--red);display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.dds-del svg{width:11px;height:11px;}
+.dds-add-row{display:flex;gap:8px;margin-top:8px;}
+.dds-add-inp{flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--rx);font-family:inherit;font-size:13px;outline:none;}
+.dds-add-inp:focus{border-color:var(--orange);}
+.dds-add-btn{padding:8px 14px;background:var(--orange);color:white;border:none;border-radius:var(--rx);font-size:13px;font-weight:700;cursor:pointer;}
 
-/* SLOTS */
-.slot-sec{margin-top:14px;}
-.slot-sec-lbl{font-size:10px;font-weight:700;color:var(--ink3);letter-spacing:.08em;margin-bottom:8px;}
-.slot-grid{display:flex;flex-wrap:wrap;gap:7px;}
-.slot-btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;border:1.5px solid var(--border);background:white;color:var(--ink2);cursor:pointer;transition:all .15s;}
-.slot-btn:hover{border-color:var(--o1);color:var(--o1);}
-.slot-btn.sel{background:var(--o1);border-color:var(--o1);color:white;}
-.slot-btn.booked{color:var(--ink3);border-color:var(--border);background:#F5F5F5;cursor:default;text-decoration:line-through;opacity:.6;}
+/* ops tag input */
+.ops-tags{display:flex;flex-wrap:wrap;gap:5px;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--rx);min-height:42px;cursor:text;}
+.ops-tags:focus-within{border-color:var(--orange);}
+.ops-tag{display:flex;align-items:center;gap:4px;background:var(--op);color:var(--orange);border:1px solid var(--ob);border-radius:10px;padding:2px 8px;font-size:12px;font-weight:600;}
+.ops-tag-del{width:14px;height:14px;border-radius:50%;background:none;border:none;color:var(--orange);cursor:pointer;font-size:12px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;}
+.ops-tag-inp{border:none;outline:none;font-family:inherit;font-size:12px;background:transparent;min-width:80px;flex:1;padding:2px 4px;}
 
-/* FORM */
-.fg{margin-bottom:14px;}.fg:last-child{margin-bottom:0;}
-.flbl{font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:5px;display:block;}
-.flbl em{color:var(--o1);font-style:normal;margin-left:2px;}
-.finp{width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:var(--rs);font-family:'Noto Sans TC',sans-serif;font-size:16px;color:var(--ink);background:white;outline:none;transition:border-color .2s;}
-.finp:focus{border-color:var(--o1);}
-.finp::placeholder{color:var(--ink3);}
-.bday-row{display:flex;align-items:center;gap:6px;}
-.bday-row .finp{text-align:center;}
-.bsep{font-size:14px;font-weight:700;color:var(--ink3);}
-.ferr{font-size:11px;color:#D03020;margin-top:4px;display:none;}
-.ferr.on{display:block;}
-
-/* PREVIEW */
-.pv-blk{background:#FBF9F7;border-radius:var(--rs);border:1px solid var(--border);padding:14px;margin-bottom:12px;}
-.pv-ttl{font-size:10px;font-weight:700;color:var(--o1);letter-spacing:.1em;margin-bottom:10px;}
-.pv-row{display:flex;padding:7px 0;border-bottom:1px solid var(--border);}
-.pv-row:last-child{border-bottom:none;}
-.pv-k{font-size:12px;color:var(--ink3);width:68px;flex-shrink:0;}
-.pv-v{font-size:13px;font-weight:600;color:var(--ink);}
-
-/* NOTICE */
-.notice{background:var(--op);border:1px solid var(--ob);border-radius:var(--rs);padding:12px 14px;display:flex;gap:10px;align-items:flex-start;margin-bottom:14px;}
-.notice svg{width:15px;height:15px;color:var(--o1);flex-shrink:0;margin-top:1px;}
-.notice p{font-size:12px;color:var(--ink2);line-height:1.75;}
-.notice strong{color:var(--o1);}
-
-/* BUTTONS */
-.btn-p{width:100%;padding:14px;background:var(--o1);color:white;border:none;border-radius:var(--rs);font-size:14px;font-weight:700;letter-spacing:.04em;cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:8px;}
-.btn-p:hover{background:#E06C10;}.btn-p:active{transform:scale(.98);}
-.btn-s{width:100%;padding:12px;background:white;color:var(--ink2);border:1.5px solid var(--border);border-radius:var(--rs);font-size:13px;font-weight:600;cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:6px;}
-.btn-s:hover{border-color:var(--o1);color:var(--o1);}
-.brow{display:flex;gap:10px;}.brow .btn-p,.brow .btn-s{margin:0;}
-
-/* PANELS */
-.panel{display:none;}.panel.on{display:block;}
-
-/* SUCCESS */
-#successPage{display:none;min-height:100vh;background:linear-gradient(160deg,#F47B20 0%,#FFB865 100%);padding:24px 20px;}
-#successPage.on{display:flex;flex-direction:column;align-items:center;justify-content:center;}
-.suc-wrap{background:white;border-radius:20px;padding:36px 24px;max-width:380px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(180,80,0,.2);animation:fU .4s ease both;}
-.suc-ico{width:68px;height:68px;border-radius:50%;background:var(--op);border:2px solid var(--ob);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;}
-.suc-ico svg{width:30px;height:30px;stroke:var(--o1);}
-.suc-title{font-family:'Noto Serif TC',serif;font-size:22px;font-weight:900;color:var(--ink);margin-bottom:8px;}
-.suc-sub{font-size:13px;color:var(--ink2);line-height:1.85;margin-bottom:22px;}
-.suc-cards{display:flex;flex-direction:column;gap:8px;text-align:left;margin-bottom:24px;}
-.suc-card{background:var(--op);border-radius:var(--rs);padding:12px 14px;display:flex;align-items:flex-start;gap:10px;}
-.suc-card svg{width:15px;height:15px;stroke:var(--o1);flex-shrink:0;margin-top:2px;}
-.suc-card-t{font-size:12px;color:var(--ink2);line-height:1.7;}
-.suc-card-t strong{color:var(--ink);display:block;margin-bottom:1px;}
-.suc-btn{width:100%;padding:13px;background:var(--o1);color:white;border:none;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;transition:all .18s;letter-spacing:.04em;display:flex;align-items:center;justify-content:center;gap:8px;}
-.suc-btn:hover{background:#E06C10;}
-.suc-info-card{background:var(--op);border:1px solid var(--ob);border-radius:var(--rs);padding:14px 16px;margin-bottom:12px;text-align:left;}
-.suc-info-ttl{font-size:10px;font-weight:700;color:var(--o1);letter-spacing:.1em;margin-bottom:10px;}
-.suc-info-row{display:flex;padding:7px 0;border-bottom:1px solid var(--ob);}
-.suc-info-row:last-child{border-bottom:none;}
-.suc-info-k{font-size:12px;color:var(--o1);width:52px;flex-shrink:0;font-weight:600;}
-.suc-info-v{font-size:13px;font-weight:700;color:var(--ink);}
-.suc-contact-card{background:#F8F8F6;border:1px solid var(--border);border-radius:var(--rs);padding:12px 14px;margin-bottom:16px;text-align:left;display:flex;flex-direction:column;gap:8px;}
-.suc-contact-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink2);font-weight:500;}
-.suc-contact-row svg{width:13px;height:13px;stroke:var(--ink2);flex-shrink:0;}
+/* ── DOCTOR TABS (schedule) ── */
+.doc-tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:20px;overflow-x:auto;scrollbar-width:none;}
+.doc-tabs::-webkit-scrollbar{display:none;}
+.doc-tab{padding:8px 18px;font-size:12.5px;font-weight:600;color:var(--text2);cursor:pointer;border:none;background:none;border-bottom:2.5px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all .15s;}
+.doc-tab:hover{color:var(--orange);}
+.doc-tab.active{color:var(--orange);border-bottom-color:var(--orange);}
 
 
-/* CUSTOM MODAL */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .22s;}
-.modal-overlay.on{opacity:1;pointer-events:auto;}
-.modal-box{background:white;border-radius:20px;padding:28px 24px;max-width:340px;width:100%;box-shadow:0 20px 60px rgba(180,80,0,.22);transform:translateY(16px);transition:transform .22s;text-align:center;}
-.modal-overlay.on .modal-box{transform:translateY(0);}
-.modal-ico{width:56px;height:56px;border-radius:50%;background:var(--op);border:2px solid var(--ob);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;}
-.modal-ico svg{width:26px;height:26px;stroke:var(--o1);}
-.modal-ttl{font-size:16px;font-weight:700;color:var(--ink);margin-bottom:8px;}
-.modal-msg{font-size:13px;color:var(--ink2);line-height:1.75;margin-bottom:20px;}
-.modal-btn{width:100%;padding:13px;background:var(--o1);color:white;border:none;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;transition:background .18s;}
-.modal-btn:hover{background:#E06C10;}
-/* doc/date error */
-.ferr-doc{font-size:11px;color:#D03020;margin-top:8px;display:none;}
-.ferr-doc.on{display:block;}
-.ferr-date{font-size:11px;color:#D03020;font-weight:600;margin-left:8px;display:none;}
-.ferr-date.on{display:inline;}
-/* ANIM */
-@keyframes fU{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
-@keyframes fD{from{opacity:0;transform:translateY(-10px);}to{opacity:1;transform:translateY(0);}}
-.home-pill{animation:fD .6s ease both;}
-.home-title{animation:fU .6s .1s ease both;}
-.home-sub{animation:fU .6s .2s ease both;}
-.home-btn{animation:fU .6s .3s ease both;}
-.home-info{animation:fU .6s .4s ease both;}
+
+/* slot summary (v2 style restored) */
+.slot-summary{margin-top:18px;}
+.slot-summary-title{font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px;}
+.slot-summary-item{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--white);border-radius:var(--rx);border:1px solid var(--border);margin-bottom:6px;}
+.slot-summary-date{font-size:13px;font-weight:700;color:var(--text);min-width:90px;}
+.slot-summary-chips{display:flex;gap:5px;flex-wrap:wrap;flex:1;}
+.slot-summary-chip{font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;background:var(--op);color:var(--orange);border:1px solid var(--ob);}
+.slot-summary-chip.booked{background:#F1F5F9;color:var(--text3);border-color:var(--border);}
+.slot-summary-del{width:22px;height:22px;border-radius:50%;border:none;background:var(--rp);color:var(--red);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+.slot-summary-del svg{width:11px;height:11px;}
+
+/* day-slot add row */
+.dds-add-row{display:flex;gap:6px;margin-top:10px;align-items:center;}
+.dds-select{padding:7px 10px;border:1.5px solid var(--border);border-radius:var(--rx);font-family:inherit;font-size:13px;outline:none;background:white;}
+.dds-select:focus{border-color:var(--orange);}
+.dds-add-btn{padding:7px 14px;background:var(--orange);color:white;border:none;border-radius:var(--rx);font-size:13px;font-weight:700;cursor:pointer;}
+
+.search-inp{padding:6px 11px;border-radius:var(--rx);border:1.5px solid var(--border);font-family:inherit;font-size:12px;color:var(--text);outline:none;width:160px;}
+.search-inp:focus{border-color:var(--orange);}
+table{width:100%;border-collapse:collapse;}
+thead tr{background:#F8FAFC;border-bottom:1px solid var(--border);}
+th{padding:9px 14px;font-size:11px;font-weight:700;color:var(--text2);text-align:left;letter-spacing:.04em;white-space:nowrap;}
+td{padding:10px 14px;font-size:13px;border-bottom:1px solid #F1F5F9;vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:#C3D9EE;}
+.td-name{font-weight:600;}
+.td-date{color:var(--text2);font-size:12px;}
+.td-slot{font-weight:700;color:var(--orange);font-size:12px;}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;}
+.b-pending{background:var(--yp);color:#92400E;border:1px solid var(--yb);}
+.b-approved{background:var(--gp);color:#15803D;border:1px solid var(--gb);}
+.b-notified{background:var(--bp);color:#1D4ED8;border:1px solid var(--bb);}
+.b-rejected{background:var(--rp);color:#DC2626;border:1px solid var(--rb);}
+
+/* ICON BTNS */
+.icon-btn{width:30px;height:30px;border-radius:var(--rx);border:1.5px solid;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0;}
+.icon-btn svg{width:13px;height:13px;}
+.ib-approve{border-color:var(--gb);color:#15803D;background:var(--gp);}
+.ib-approve:hover{background:#DCFCE7;}
+.ib-reject{border-color:var(--rb);color:#DC2626;background:var(--rp);}
+.ib-reject:hover{background:#FEE2E2;}
+.ib-line{border-color:#A7F3D0;color:var(--line);background:#F0FDF4;}
+.ib-line:hover{background:#DCFCE7;}
+.ib-line-undo{border-color:var(--border);color:var(--text2);background:var(--white);font-size:10px;}
+.ib-line-undo:hover{border-color:var(--red);color:var(--red);}
+.ib-edit{border-color:var(--border);color:var(--text2);background:var(--white);}
+.ib-edit:hover{border-color:var(--orange);color:var(--orange);}
+.ib-del{border-color:var(--rb);color:#DC2626;background:var(--rp);}
+.ib-del:hover{background:#FEE2E2;}
+.ib-detail{border-color:var(--bb);color:#1D4ED8;background:var(--bp);}
+.ib-detail:hover{background:#DBEAFE;}
+.act-row{display:flex;gap:5px;align-items:center;}
+.ib-done{font-size:11px;color:var(--line);font-weight:700;display:flex;align-items:center;gap:3px;white-space:nowrap;}
+.ib-done svg{width:12px;height:12px;}
+
+/* ── SCHEDULE SETTINGS ── */
+.slot-picker-wrap{background:var(--card);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh);padding:22px;}
+.slot-picker-hd{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
+.slot-month-nav{display:flex;align-items:center;gap:8px;}
+.slot-mnav-btn{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--border);background:var(--white);color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;}
+.slot-mnav-btn:hover{border-color:var(--orange);color:var(--orange);}
+.slot-mnav-btn svg{width:11px;height:11px;}
+.slot-month-label{font-size:15px;font-weight:700;min-width:120px;text-align:center;}
+.slot-save-btn{margin-left:auto;padding:8px 18px;background:var(--orange);color:white;border:none;border-radius:var(--rx);font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;}
+.slot-save-btn:hover{background:var(--ol);}
+
+
+.time-slot-panel{background:#F8FAFC;border-radius:var(--rs);border:1px solid var(--border);padding:14px 16px;}
+.ts-panel-title{font-size:12px;font-weight:700;color:var(--text2);margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+.ts-panel-title svg{width:14px;height:14px;color:var(--orange);}
+.no-date-hint{text-align:center;padding:28px 0;color:var(--text3);font-size:13px;}
+
+.slot-summary{margin-top:0;}
+.slot-summary-title{font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px;}
+.slot-summary-date{font-size:13px;font-weight:700;color:var(--text);min-width:90px;}
+.slot-summary-chips{display:flex;gap:5px;flex-wrap:wrap;flex:1;}
+.slot-summary-chip{font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;background:var(--op);color:var(--orange);border:1px solid var(--ob);}
+.slot-summary-chip.booked{background:#F1F5F9;color:var(--text3);border-color:var(--border);}
+.slot-summary-del{width:22px;height:22px;border-radius:50%;border:none;background:var(--rp);color:var(--red);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+.slot-summary-del svg{width:11px;height:11px;}
+
+
+/* ── WEEK LIMIT TOGGLE ── */
+.wl-toggle-row{display:flex;align-items:center;gap:10px;margin-top:10px;}
+.wl-toggle-lbl{font-size:12px;color:var(--text2);font-weight:600;flex:1;}
+.wl-toggle{position:relative;width:38px;height:22px;flex-shrink:0;}
+.wl-toggle input{opacity:0;width:0;height:0;position:absolute;}
+.wl-slider{position:absolute;inset:0;background:var(--border);border-radius:11px;cursor:pointer;transition:background .2s;}
+.wl-slider::before{content:'';position:absolute;width:16px;height:16px;left:3px;top:3px;background:white;border-radius:50%;transition:transform .2s;}
+.wl-toggle input:checked+.wl-slider{background:var(--orange);}
+.wl-toggle input:checked+.wl-slider::before{transform:translateX(16px);}
+.wl-days-inp{display:none;align-items:center;gap:6px;margin-top:8px;font-size:12px;color:var(--text2);}
+.wl-days-inp.on{display:flex;}
+.wl-days-inp input{width:60px;text-align:center;padding:5px 8px;border:1.5px solid var(--border);border-radius:var(--rx);font-family:inherit;font-size:13px;outline:none;}
+.wl-days-inp input:focus{border-color:var(--orange);}
+/* ── DOCTOR SETTINGS ── */
+.doctors-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+.doctor-card{background:var(--card);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh);padding:18px 18px 14px;}
+.dc-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.dc-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--orange),var(--ol));display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:white;flex-shrink:0;}
+.dc-name{font-size:14px;font-weight:700;}
+.dc-title{font-size:11px;color:var(--text2);margin-top:1px;}
+.dc-acts{margin-left:auto;display:flex;gap:6px;}
+.dc-ops-label{font-size:11px;font-weight:700;color:var(--text2);margin-bottom:7px;}
+.dc-op-chips{display:flex;flex-wrap:wrap;gap:5px;}
+.dc-op-chip{font-size:11px;font-weight:600;padding:3px 9px;border-radius:10px;background:#F1F5F9;color:var(--text2);border:1px solid var(--border);}
+.dc-op-chip.orange{background:var(--op);color:var(--orange);border-color:var(--ob);}
+.add-doctor-btn{display:flex;align-items:center;gap:8px;padding:16px 18px;background:var(--white);border-radius:var(--r);border:2px dashed var(--border);color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;width:100%;justify-content:center;}
+.add-doctor-btn:hover{border-color:var(--orange);color:var(--orange);}
+.add-doctor-btn svg{width:18px;height:18px;}
+
+
+/* ── ADD PATIENT MINI CALENDAR ── */
+.add-cal-wrap{border:1.5px solid var(--border);border-radius:var(--rx);padding:10px 12px;background:white;}
+.add-cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.add-cal-lbl{font-size:13px;font-weight:700;color:var(--text);}
+.add-cal-nb{width:24px;height:24px;border-radius:50%;border:1px solid var(--border);background:white;color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .12s;}
+.add-cal-nb:hover{border-color:var(--orange);color:var(--orange);}
+.add-cal-nb svg{width:10px;height:10px;}
+.add-cal-hd{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:3px;}
+.add-cal-dow{text-align:center;font-size:9px;font-weight:700;color:var(--text3);padding:2px 0;}
+.add-cal-dow:first-child{color:#E05252;}.add-cal-dow:last-child{color:#3B82F6;}
+.add-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+.acd{aspect-ratio:1;border-radius:6px;border:1.5px solid transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;font-weight:500;cursor:pointer;transition:all .12s;position:relative;line-height:1;}
+.acd.other{opacity:0;pointer-events:none;}
+.acd.past{color:var(--text3);cursor:default;opacity:.35;}
+.acd.noslot{color:var(--text3);opacity:.45;cursor:default;}
+.acd.has{border-color:var(--ob);background:var(--op);color:var(--orange);font-weight:700;}
+.acd.has:hover{background:var(--orange);color:white;border-color:var(--orange);}
+.acd.picked{background:var(--orange)!important;color:white!important;border-color:var(--orange)!important;font-weight:700;}
+.acd.sun{color:#E05252;}.acd.sat{color:#3B82F6;}
+.acd.today-marker{font-weight:700;}
+.acd-dot{width:3px;height:3px;border-radius:50%;background:var(--orange);margin-top:1px;}
+.acd.full{color:var(--text3);cursor:default;opacity:.55;}
+.acd-full-lbl{font-size:7px;font-weight:700;color:var(--text3);line-height:1;}
+.acd.picked .acd-dot{background:rgba(255,255,255,.7);}
+/* ── CALENDAR ── */
+.cal-tb{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;flex:1;}
+.cal-mnav{display:flex;align-items:center;gap:6px;}
+.cal-nb{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--border);background:var(--white);color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;}
+.cal-nb:hover{border-color:var(--orange);color:var(--orange);}
+.cal-nb svg{width:11px;height:11px;}
+.cal-ttl{font-size:15px;font-weight:700;min-width:150px;text-align:center;}
+.cal-today{padding:5px 12px;border-radius:20px;border:1.5px solid var(--border);background:var(--white);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;}
+.cal-today:hover{border-color:var(--orange);color:var(--orange);}
+.cal-view-tabs{margin-left:auto;display:flex;background:#F1F5F9;border-radius:var(--rx);padding:3px;}
+.cvt{padding:5px 13px;border-radius:calc(var(--rx) - 2px);font-size:12px;font-weight:600;cursor:pointer;color:var(--text2);transition:all .15s;border:none;background:none;}
+.cvt.active{background:var(--white);color:var(--orange);box-shadow:0 1px 4px rgba(0,0,0,.1);}
+
+.cal-month-grid{background:var(--card);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh);overflow:hidden;}
+.cal-month-head{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--border);}
+.cal-mhd{padding:9px;text-align:center;font-size:11px;font-weight:700;color:var(--text2);}
+.cal-mhd:first-child{color:var(--red);}
+.cal-mhd:last-child{color:#3B82F6;}
+.cal-month-body{display:grid;grid-template-columns:repeat(7,1fr);}
+.cal-cell{min-height:72px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:4px 5px;}
+.cal-cell:nth-child(7n){border-right:none;}
+.cal-cell.other .cal-cell-d{color:var(--text3);opacity:.4;}
+.cal-cell.today .cal-cell-d{background:var(--orange);color:white;border-radius:50%;}
+.cal-cell.sun .cal-cell-d{color:#E05252;}
+.cal-cell.sat .cal-cell-d{color:#3B82F6;}
+.cal-cell.today.sun .cal-cell-d,.cal-cell.today.sat .cal-cell-d{color:white;}
+.cal-cell-d{width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:600;margin-bottom:3px;border-radius:50%;}
+.ev{border-radius:3px;padding:2px 5px;font-size:10px;font-weight:600;margin-bottom:2px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ev:hover{opacity:.8;}
+.ev.pending{background:var(--yp);color:#92400E;border-left:2px solid #F59E0B;}
+.ev.approved{background:var(--gp);color:#15803D;border-left:2px solid var(--green);}
+.ev.notified{background:var(--bp);color:#1D4ED8;border-left:2px solid var(--blue);}
+.ev.more{background:#F1F5F9;color:var(--text2);}
+
+/* FIX10: clean week view */
+.cal-week-wrap,.cal-day-wrap{background:var(--card);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh);overflow:hidden;}
+.cal-week-head{display:grid;grid-template-columns:56px repeat(7,1fr);border-bottom:1px solid var(--border);}
+.cal-whc{padding:9px 6px;text-align:center;border-right:1px solid var(--border);font-size:11px;}
+.cal-whc:last-child{border-right:none;}
+.cal-whc-dow{font-weight:700;color:var(--text2);font-size:10px;letter-spacing:.04em;}
+.cal-whc-date{font-size:18px;font-weight:900;color:var(--text);margin-top:2px;line-height:1;}
+.cal-whc-date.today{background:var(--orange);color:white;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;margin:2px auto 0;font-size:14px;}
+.cal-week-body{display:grid;grid-template-columns:56px repeat(7,1fr);max-height:520px;overflow-y:auto;}
+.cal-hl{padding:8px 6px 0;font-size:10px;color:var(--text3);font-weight:600;border-right:1px solid var(--border);text-align:right;white-space:nowrap;border-bottom:1px solid #F1F5F9;}
+.cal-wslot{min-height:44px;border-right:1px solid var(--border);border-bottom:1px solid #F1F5F9;padding:3px 4px;}
+.cal-wslot:last-child{border-right:none;}
+.wev{border-radius:4px;padding:3px 5px;font-size:10px;font-weight:600;margin-bottom:2px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;}
+.wev:hover{opacity:.8;}
+.wev.pending{background:var(--yp);color:#92400E;border-left:2px solid #F59E0B;}
+.wev.approved{background:var(--gp);color:#15803D;border-left:2px solid var(--green);}
+.wev.notified{background:var(--bp);color:#1D4ED8;border-left:2px solid var(--blue);}
+
+.cal-day-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.cal-day-body{display:grid;grid-template-columns:56px 1fr;max-height:520px;overflow-y:auto;}
+.cal-dhl{padding:8px 6px 0;font-size:10px;color:var(--text3);border-right:1px solid var(--border);text-align:right;}
+.cal-dslot{min-height:50px;border-bottom:1px solid #F1F5F9;padding:4px 10px;}
+.dev{border-radius:6px;padding:7px 10px;font-size:12px;font-weight:600;margin-bottom:3px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;}
+
+/* ── MODAL ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:500;align-items:center;justify-content:center;}
+.overlay.open{display:flex;}
+.modal{background:var(--white);border-radius:var(--r);padding:26px 24px;width:460px;max-width:95vw;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.18);animation:mi .2s ease;}
+.modal.wide{width:540px;}
+@keyframes mi{from{opacity:0;transform:scale(.96);}to{opacity:1;transform:scale(1);}}
+.modal-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.modal-hd h2{font-size:15px;font-weight:700;}
+.modal-x{width:26px;height:26px;border-radius:50%;border:none;background:#F1F5F9;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.modal-x svg{width:13px;height:13px;}
+.modal-info-grid{background:#F8FAFC;border-radius:var(--rs);border:1px solid var(--border);padding:14px;margin-bottom:14px;}
+.mir{display:flex;gap:10px;margin-bottom:8px;}
+.mir:last-child{margin-bottom:0;}
+.mik{font-size:11.5px;color:var(--text2);font-weight:600;width:62px;flex-shrink:0;padding-top:1px;}
+.miv{font-size:13px;color:var(--text);font-weight:500;}
+.modal-acts{display:flex;gap:9px;margin-top:18px;}
+.mbtn{flex:1;padding:10px;border-radius:var(--rx);font-size:13px;font-weight:700;cursor:pointer;border:none;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s;}
+.mbtn svg{width:15px;height:15px;}
+.mbtn-approve{background:var(--green);color:white;}
+.mbtn-approve:hover{background:#16A34A;}
+.mbtn-reject{background:var(--rp);color:var(--red);border:1.5px solid var(--rb);}
+.mbtn-reject:hover{background:#FEE2E2;}
+.mbtn-line{background:var(--line);color:white;}
+.mbtn-line:hover{background:#05A847;}
+.mbtn-close{background:#F1F5F9;color:var(--text2);}
+.modal-divider{height:1px;background:var(--border);margin:16px 0;}
+
+.edit-row{margin-bottom:12px;}
+.edit-label{font-size:11.5px;font-weight:700;color:var(--text2);margin-bottom:5px;display:block;}
+.edit-inp{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--rx);font-family:inherit;font-size:13px;color:var(--text);outline:none;transition:border-color .2s;}
+.edit-inp:focus{border-color:var(--orange);}
+.edit-row-split{display:flex;gap:8px;}
+.edit-row-split .edit-inp{flex:1;}
+
+/* conflict warning */
+.conflict-warn{background:var(--rp);border:1px solid var(--rb);border-radius:var(--rx);padding:8px 12px;font-size:12px;color:var(--red);font-weight:600;margin-top:6px;display:none;}
+.conflict-warn.show{display:block;}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--sb);color:white;padding:11px 16px;border-radius:var(--rs);font-size:12.5px;font-weight:600;z-index:9999;display:flex;align-items:center;gap:8px;box-shadow:var(--shm);transform:translateY(60px);opacity:0;transition:all .25s;pointer-events:none;}
+.toast svg{width:15px;height:15px;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{border-left:4px solid var(--green);}
+.toast.info{border-left:4px solid var(--blue);}
+.toast.warn{border-left:4px solid var(--yellow);}
+.toast.err{border-left:4px solid var(--red);}
+
+/* line toggle button */
+.line-toggle{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;border:1.5px solid;cursor:pointer;transition:all .15s;background:none;}
+.line-toggle.sent{color:var(--line);border-color:#A7F3D0;background:#F0FDF4;}
+.line-toggle.sent:hover{background:#DCFCE7;border-color:var(--line);}
+.line-toggle.unsent{color:var(--text3);border-color:var(--border);background:var(--white);}
+.line-toggle.unsent:hover{color:var(--line);border-color:#A7F3D0;background:#F0FDF4;}
+
+/* filter count badges */
+.ft-count{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;border-radius:10px;font-size:10px;font-weight:700;background:rgba(0,0,0,.08);color:inherit;margin-left:2px;}
+.ft.active .ft-count{background:rgba(244,123,32,.2);}
+
+/* stats bar */
+.tbl-stats{margin-left:auto;font-size:12px;color:var(--text2);white-space:nowrap;}
+.tbl-stats strong{color:var(--text);font-weight:700;}
+
+/* per-button count badge */
+.ft-cnt{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;border-radius:10px;font-size:10px;font-weight:700;background:rgba(0,0,0,.08);color:inherit;margin-left:3px;}
+.ft.active .ft-cnt{background:rgba(244,123,32,.22);}
+
+/* filter select */
+.filter-select{padding:5px 10px;border-radius:var(--rx);border:1.5px solid var(--border);font-family:inherit;font-size:12px;color:var(--text2);background:var(--white);outline:none;cursor:pointer;transition:border-color .15s;}
+.filter-select:focus,.filter-select:hover{border-color:var(--orange);color:var(--text);}
+
+/* filter separator */
+.tbl-filter-sep{width:1px;height:22px;background:var(--border);margin:0 2px;}
+
+/* table row hover */
+tr:hover td{background:#FFF9F5;}
+
+/* line toggle — locked (notified) and disabled (pending) */
+.line-toggle.locked{cursor:default;pointer-events:none;}
+.line-toggle.disabled{color:var(--text3);border-color:var(--border);background:var(--white);cursor:not-allowed;opacity:.5;}
+
+/* detail cards */
+.detail-card{background:#F8FAFC;border-radius:var(--rs);border:1px solid var(--border);padding:14px 16px;}
+.detail-card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.detail-card-title{font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.06em;text-transform:uppercase;}
+.detail-card-badges{display:flex;align-items:center;gap:5px;}
+
+/* schedule layout: left 40% fixed, right 60% scrollable */
+.slot-layout{display:flex;gap:0;align-items:flex-start;min-width:0;}
+.slot-left{width:40%;min-width:260px;flex-shrink:0;padding-right:28px;box-sizing:border-box;}
+.slot-divider{width:1px;background:var(--border);align-self:stretch;flex-shrink:0;min-height:420px;margin:0 4px;}
+.slot-right{flex:1;min-width:0;padding-left:20px;max-height:560px;overflow-y:auto;}
+
+/* slot cal grid — grid-auto-rows ensures all cells same height per row */
+.slot-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:36px;gap:5px;margin-bottom:14px;padding-right:16px;}
+.slot-day{border-radius:var(--rx);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;cursor:pointer;border:1.5px solid transparent;transition:all .15s;position:relative;background:transparent;}
+.slot-day.empty{cursor:default;color:#C5CDD9;pointer-events:none;}
+.slot-day.past{color:var(--text3);cursor:not-allowed;}
+.slot-day.selected{color:white;box-shadow:0 2px 8px rgba(0,0,0,.18);}
+.slot-day:not(.empty):not(.past):not(.selected):hover{border-color:var(--slot-hover-border,var(--ob));background:var(--slot-hover-bg,var(--op));}
+.slot-day.sunday:not(.selected){color:#E05252;}
+.slot-day.saturday:not(.selected){color:#5B8DD9;}
+.slot-day-dot{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--orange);}
+.slot-day.selected .slot-day-dot{background:rgba(255,255,255,.7);}
+
+/* time panel embedded below cal */
+.time-slot-panel{background:#F8FAFC;border-radius:var(--rs);border:1px solid var(--border);padding:14px 16px;margin-top:0;}
+
+/* slot summary on right — hover rows, chips wrap */
+.slot-summary-chips{display:flex;gap:5px;flex-wrap:wrap;flex:1;}
+.slot-summary-item{display:flex;align-items:flex-start;gap:10px;padding:8px 12px;background:var(--white);border-radius:var(--rx);border:1px solid var(--border);margin-bottom:6px;transition:all .15s;cursor:pointer;}
+.slot-summary-item:hover{border-color:var(--slot-hover-border,var(--ob));background:var(--slot-hover-bg,#FFFAF5);}
+.slot-summary-item.summary-active{border-color:var(--orange);background:var(--op);}
+
+/* color dropdown */
+.color-dropdown-wrap{position:relative;display:inline-block;width:100%;}
+.color-dropdown-btn{display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--rx);background:var(--white);cursor:pointer;font-family:inherit;font-size:13px;color:var(--text);transition:border-color .2s;justify-content:center;}
+.color-dropdown-btn:hover,.color-dropdown-btn:focus{border-color:var(--orange);outline:none;}
+.color-dropdown-dot{width:22px;height:22px;border-radius:50%;flex-shrink:0;}
+.color-dropdown-list{position:absolute;top:calc(100% + 4px);left:0;background:var(--white);border:1.5px solid var(--border);border-radius:var(--rx);box-shadow:var(--shm);z-index:400;display:none;min-width:48px;}
+.color-dropdown-list.open{display:block;}
+.color-dropdown-opt{display:flex;align-items:center;justify-content:center;padding:8px 12px;cursor:pointer;transition:background .12s;}
+.color-dropdown-opt:hover{background:#F8FAFC;}
+.color-dropdown-opt.active{background:var(--op);}
+.color-dropdown-opt-dot{width:22px;height:22px;border-radius:50%;flex-shrink:0;}
+
+/* dow chips for global time settings */
+.dow-chip{padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid;cursor:pointer;transition:all .15s;}
+.dow-chip:hover{opacity:.85;}
+
+/* sidebar badge for pending count */
+.ni-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:10px;background:var(--red);color:white;font-size:10px;font-weight:700;margin-left:auto;}
+
+/* stats grid */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px;}
+.stat-card{background:var(--card);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh);padding:20px 22px;}
+.stat-card-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:16px;}
+.stat-chart{width:100%;height:200px;display:flex;align-items:flex-end;gap:6px;}
+.stat-bar-wrap{display:flex;flex-direction:column;align-items:center;flex:1;gap:4px;}
+.stat-bar{width:100%;border-radius:4px 4px 0 0;transition:height .3s;}
+.stat-bar-label{font-size:10px;color:var(--text2);text-align:center;white-space:nowrap;}
+.stat-bar-val{font-size:10px;font-weight:700;color:var(--text);}
+.stat-pie-wrap{display:flex;align-items:center;gap:20px;padding:8px 0;}
+.stat-pie-legend{display:flex;flex-direction:column;gap:7px;flex:1;}
+.stat-pie-item{display:flex;align-items:center;gap:7px;font-size:12px;}
+.stat-pie-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.stat-doc-bars{display:flex;flex-direction:column;gap:10px;}
+.stat-doc-row{display:flex;align-items:center;gap:10px;}
+.stat-doc-name{font-size:12px;font-weight:600;color:var(--text);width:60px;flex-shrink:0;}
+.stat-doc-bar-bg{flex:1;height:18px;background:#F1F5F9;border-radius:10px;overflow:hidden;}
+.stat-doc-bar-fill{height:100%;border-radius:10px;transition:width .4s;}
+.stat-doc-count{font-size:12px;font-weight:700;color:var(--text);width:24px;text-align:right;}
+
+/* review lock button */
+.review-lock-btn{border-color:var(--border)!important;color:var(--text3)!important;background:var(--white)!important;}
+.review-lock-btn:hover{border-color:var(--orange)!important;color:var(--orange)!important;}
+
+/* review row hover with doctor color */
+#panel-review tr.rev-row:hover td{background:var(--rev-hover-bg,#EDF2F7);}
+
+/* review table */
+.review-empty{text-align:center;padding:60px 20px;color:var(--text3);}
+.review-empty svg{width:48px;height:48px;opacity:.3;display:block;margin:0 auto 12px;}
+
+.empty{text-align:center;padding:40px 20px;color:var(--text3);font-size:13px;}
 </style>
 </head>
 <body>
 
-<!-- ══ HOME ══ -->
-<div id="homePage">
-  <div class="geo geo1"></div><div class="geo geo2"></div>
-  <div class="geo geo3"></div><div class="geo geo4"></div>
-  <div class="geo5"></div>
-
-  <div class="home-wrap">
-    <div class="home-pill">
-      <div class="home-pill-ico">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#F47B20" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.8 2.3A.3.3 0 105 2H4a2 2 0 00-2 2v5a6 6 0 006 6 6 6 0 006-6V4a2 2 0 00-2-2h-1a.2.2 0 10.3.3"/><path d="M8 15v1a6 6 0 006 6h0a6 6 0 006-6v-4"/><circle cx="20" cy="10" r="2"/></svg>
+<!-- SIDEBAR -->
+<nav class="sb">
+  <div class="sb-logo">
+    <div class="sb-logo-row">
+      <div class="sb-icon">
+        <!-- minimal hospital icon -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="6" width="18" height="15" rx="1" fill="white" fill-opacity=".15" stroke="white"/>
+          <path d="M3 9h18" stroke="white" stroke-opacity=".6"/>
+          <line x1="9" y1="3" x2="9" y2="6"/>
+          <line x1="15" y1="3" x2="15" y2="6"/>
+          <line x1="12" y1="13" x2="12" y2="18"/>
+          <line x1="9.5" y1="15.5" x2="14.5" y2="15.5"/>
+        </svg>
       </div>
-      <span class="home-pill-txt">樂霖耳鼻喉科•內科診所</span>
+      <div>
+        <div class="sb-name">樂霖耳鼻喉科<br>手術預約</div>
+      </div>
     </div>
-
-    <div class="home-title">線上手術<br>預約系統</div>
-    <div class="home-sub">選醫師・選時段・填資料<br>三步驟完成預約申請</div>
-
-    <button class="home-btn" onclick="enterBooking()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-      立即預約
+    <div class="sb-badge">後台管理系統</div>
+  </div>
+  <div class="sb-nav">
+    <div class="sb-sec">預約管理</div>
+    <button class="ni active" onclick="nav('bookings')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      預約清單
     </button>
+    <button class="ni" onclick="nav('calendar')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      手術排程
+    </button>
+    <div class="sb-sec">審核</div>
+    <button class="ni" onclick="nav('review')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      醫師審核
+      <span class="ni-badge" id="reviewBadge" style="display:none;"></span>
+    </button>
+    <div class="sb-sec">系統設定</div>
+    <button class="ni" onclick="nav('schedule')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      預約時段設定
+    </button>
+    <button class="ni" onclick="nav('doctors')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      醫師與術式
+    </button>
+  </div>
+</nav>
 
-    <div class="home-info">
-      <div class="home-info-row">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-        高雄市三民區鼎力路199號
-      </div>
-      <div class="home-info-row">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.4 1.13 2 2 0 012.38.02h3a2 2 0 012 1.72 11 11 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 11 11 0 002.81.7A2 2 0 0122 16.92z"/></svg>
-        （07）350-9200
-      </div>
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbarTitle">預約清單</div>
+    <div class="topbar-right" id="topbarRight">
+      <button class="tb-btn primary" onclick="openAddPatient()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        新增病人
+      </button>
     </div>
   </div>
-</div>
 
-<!-- ══ BOOKING ══ -->
-<div id="bookingApp">
-  <div class="bk-hd">
-    <div class="bk-hd-l">
-      <div class="bk-ico"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.8 2.3A.3.3 0 105 2H4a2 2 0 00-2 2v5a6 6 0 006 6 6 6 0 006-6V4a2 2 0 00-2-2h-1a.2.2 0 10.3.3"/><path d="M8 15v1a6 6 0 006 6h0a6 6 0 006-6v-4"/><circle cx="20" cy="10" r="2"/></svg></div>
-      <span class="bk-nm">樂霖診所 • 手術預約系統</span>
-    </div>
+  <div class="content">
 
-  </div>
-
-  <div class="bk-main">
-    <div class="steps" id="stepBar">
-      <div class="step active" id="s1"><div class="step-n">1</div><div class="step-l">選醫師</div></div>
-      <div class="step" id="s2"><div class="step-n">2</div><div class="step-l">選時段</div></div>
-      <div class="step" id="s3"><div class="step-n">3</div><div class="step-l">填資料</div></div>
-      <div class="step" id="s4"><div class="step-n">4</div><div class="step-l">確認</div></div>
-    </div>
-
-    <!-- P1 -->
-    <div class="panel on" id="p1">
-      <div class="card">
-        <div class="cttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>選擇醫師</div>
-        <div class="doc-list" id="docList"></div>
-        <div class="ferr-doc" id="docErr">* 請先選擇醫師</div>
-      </div>
-      <div class="card" id="opCard">
-        <div class="cttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>選擇術式</div>
-        <div class="op-wrap" id="opWrap"><div style="font-size:12px;color:var(--ink3);padding:4px 0;">請先選擇醫師，術式將自動帶入</div></div>
-        <div class="ferr" id="opErr">* 請選擇術式</div>
-      </div>
-      <div class="brow">
-        <button class="btn-s" style="flex:1;" onclick="goHome()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><polyline points="15 18 9 12 15 6"/></svg> 返回首頁</button>
-        <button class="btn-p" style="flex:2;" onclick="toStep2()">下一步：選擇時段 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><polyline points="9 18 15 12 9 6"/></svg></button>
+    <!-- ══ BOOKINGS ══ -->
+    <div class="panel active" id="panel-bookings">
+      <div class="tbl-wrap">
+        <div class="tbl-filters">
+          <button class="ft active" data-type="status" id="ft_all" onclick="setStatusFilter('all',this)">全部 <span class="ft-cnt" id="fc_all"></span></button>
+          <button class="ft" data-type="status" id="ft_pending" onclick="setStatusFilter('pending',this)">待審核 <span class="ft-cnt" id="fc_pending"></span></button>
+          <button class="ft" data-type="status" id="ft_approved" onclick="setStatusFilter('approved',this)">核准 <span class="ft-cnt" id="fc_approved"></span></button>
+          <button class="ft" data-type="status" id="ft_rejected" onclick="setStatusFilter('rejected',this)">拒絕 <span class="ft-cnt" id="fc_rejected"></span></button>
+          <button class="ft" data-type="status" id="ft_unnotified" onclick="setStatusFilter('unnotified',this)">LINE 待通知 <span class="ft-cnt" id="fc_unnotified" style="background:var(--red);color:white;"></span></button>
+          <div class="tbl-filter-sep"></div>
+          <select class="filter-select" id="bookingDocSel" onchange="setBookingDocFilter(this.value)">
+            <option value="all">全部醫師</option>
+          </select>
+          <input class="search-inp" placeholder="🔍 搜尋姓名…" id="searchInp" oninput="renderBookings()">
+        </div>
+        <table id="bookingsTable"></table>
       </div>
     </div>
 
-    <!-- P2 -->
-    <div class="panel" id="p2">
-      <div class="card">
-        <div class="cttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>選擇日期</div>
-        <div class="cal-nav">
+    <!-- ══ CALENDAR ══ -->
+    <div class="panel" id="panel-calendar">
+      <div class="cal-tb">
+        <div class="cal-mnav">
           <button class="cal-nb" onclick="calNav(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg></button>
-          <div class="cal-m" id="calM"></div>
+          <div class="cal-ttl" id="calTtl"></div>
           <button class="cal-nb" onclick="calNav(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></button>
         </div>
-        <div class="cal-hd"><div class="cal-dow">日</div><div class="cal-dow">一</div><div class="cal-dow">二</div><div class="cal-dow">三</div><div class="cal-dow">四</div><div class="cal-dow">五</div><div class="cal-dow">六</div></div>
-        <div class="cal-grid" id="calGrid"></div>
-        <div class="ferr" id="dateErr" style="margin-top:10px;">* 請選擇日期</div>
+        <button class="cal-today" onclick="calGoToday()">今天</button>
+        <select class="filter-select" id="calDocSel" onchange="setCalDocFilter(this.value)">
+          <option value="all">全部醫師</option>
+        </select>
+        <div class="cal-view-tabs">
+          <button class="cvt active" onclick="setCalView('month',this)">月</button>
+          <button class="cvt" onclick="setCalView('week',this)">週</button>
+          <button class="cvt" onclick="setCalView('day',this)">日</button>
+        </div>
       </div>
-      <div class="card" id="slotCard" style="display:none;">
-        <div class="cttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>選擇時段<span style="font-size:11px;font-weight:400;color:var(--ink3);margin-left:4px;" id="slotDtLbl"></span></div>
-        <div class="slot-grid" id="slotAll"></div>
-        <div class="ferr" id="slotErr" style="margin-top:10px;">* 請選擇時段</div>
-      </div>
-      <div class="brow">
-        <button class="btn-s" style="flex:1;" onclick="toStep1()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><polyline points="15 18 9 12 15 6"/></svg> 上一步</button>
-        <button class="btn-p" style="flex:2;" onclick="toStep3()">下一步：填寫資料 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><polyline points="9 18 15 12 9 6"/></svg></button>
-      </div>
+      <div id="calBody"></div>
     </div>
 
-    <!-- P3 -->
-    <div class="panel" id="p3">
-      <div class="card">
-        <div class="cttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>填寫基本資料</div>
-        <div class="fg"><label class="flbl">姓名<em>*</em></label><input class="finp" id="f_name" placeholder="請輸入真實姓名" maxlength="10"><div class="ferr" id="e_name">* 請輸入姓名</div></div>
-        <div class="fg">
-          <label class="flbl">民國年/月/日<em>*</em></label>
-          <div class="bday-row">
-            <input class="finp" id="f_y" placeholder="年" maxlength="3" inputmode="numeric" style="width:70px;">
-            <span class="bsep">/</span>
-            <input class="finp" id="f_m" placeholder="月" maxlength="2" inputmode="numeric" style="width:58px;">
-            <span class="bsep">/</span>
-            <input class="finp" id="f_d" placeholder="日" maxlength="2" inputmode="numeric" style="width:58px;">
+    <!-- ══ SCHEDULE SETTINGS ══ -->
+    <div class="panel" id="panel-schedule">
+      <div class="slot-picker-wrap">
+        <div id="slotDocTabs" class="doc-tabs"></div>
+        <div class="slot-picker-hd">
+          <div class="slot-month-nav">
+            <button class="slot-mnav-btn" onclick="slotCalNav(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+            <div class="slot-month-label" id="slotMonthLabel"></div>
+            <button class="slot-mnav-btn" onclick="slotCalNav(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></button>
           </div>
-          <div class="ferr" id="e_bday">* 請輸入完整生日</div>
         </div>
-        <div class="fg"><label class="flbl">聯絡電話<em>*</em></label><input class="finp" id="f_phone" placeholder="例：0912-345-678" inputmode="tel" maxlength="15"><div class="ferr" id="e_phone">* 請輸入聯絡電話</div></div>
-        <div class="fg"><label class="flbl">備註（選填）</label><input class="finp" id="f_note" placeholder="過敏史、用藥史或其他說明" maxlength="100"></div>
-      </div>
-      <div class="brow">
-        <button class="btn-s" style="flex:1;" onclick="toStep2()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><polyline points="15 18 9 12 15 6"/></svg> 上一步</button>
-        <button class="btn-p" style="flex:2;" onclick="toStep4()">預覽確認 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><polyline points="9 18 15 12 9 6"/></svg></button>
+        <div class="slot-layout">
+          <!-- LEFT: calendar + time panel below -->
+          <div class="slot-left">
+            <div class="slot-cal-grid" id="slotCalGrid">
+              <div class="slot-dow">日</div><div class="slot-dow">一</div><div class="slot-dow">二</div>
+              <div class="slot-dow">三</div><div class="slot-dow">四</div><div class="slot-dow">五</div><div class="slot-dow">六</div>
+            </div>
+            <div class="time-slot-panel" id="timeSlotPanel">
+              <div class="no-date-hint">↑ 請點選上方日期來設定時段</div>
+            </div>
+          </div>
+          <!-- DIVIDER -->
+          <div class="slot-divider"></div>
+          <!-- RIGHT: monthly summary -->
+          <div class="slot-right">
+            <div class="slot-summary" id="slotSummary"></div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- P4 -->
-    <div class="panel" id="p4">
-      <div class="card">
-        <div class="cttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>預約確認</div>
-        <div class="pv-blk">
-          <div class="pv-ttl" style="display:flex;align-items:center;gap:5px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px;height:12px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>手術資訊</div>
-          <div class="pv-row"><div class="pv-k">醫師</div><div class="pv-v" id="pv_doc"></div></div>
-          <div class="pv-row"><div class="pv-k">術式</div><div class="pv-v" id="pv_op"></div></div>
-          <div class="pv-row"><div class="pv-k">日期</div><div class="pv-v" id="pv_date"></div></div>
-          <div class="pv-row"><div class="pv-k">時段</div><div class="pv-v" id="pv_slot"></div></div>
-        </div>
-        <div class="pv-blk">
-          <div class="pv-ttl" style="display:flex;align-items:center;gap:5px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px;height:12px;"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>病人資料</div>
-          <div class="pv-row"><div class="pv-k">姓名</div><div class="pv-v" id="pv_name"></div></div>
-          <div class="pv-row"><div class="pv-k">生日</div><div class="pv-v" id="pv_bday"></div></div>
-          <div class="pv-row"><div class="pv-k">電話</div><div class="pv-v" id="pv_phone"></div></div>
-          <div class="pv-row" id="pv_nr"><div class="pv-k">備註</div><div class="pv-v" id="pv_note"></div></div>
-        </div>
-        <div class="notice">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          <p>送出後審核需 <strong>1–2 個工作天</strong><br>審核結果將透過 <strong>LINE</strong> 通知您<br>如有疑問，請來電 <strong>（07）350-9200</strong></p>
-        </div>
-      </div>
-      <div class="brow">
-        <button class="btn-s" style="flex:1;" onclick="toStep3()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><polyline points="15 18 9 12 15 6"/></svg> 修改</button>
-        <button class="btn-p" style="flex:2;" onclick="submitBookingToFirebase()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>確認送出</button>
+    <!-- ══ DOCTORS ══ -->
+    <div class="panel" id="panel-doctors">
+      <div class="doctors-grid" id="doctorsGrid"></div>
+    </div>
+
+    <!-- ══ REVIEW ══ -->
+    <div class="panel" id="panel-review">
+      <div class="tbl-wrap">
+        <div id="reviewDocTabs" class="doc-tabs" style="padding:0 16px;border-bottom:1px solid var(--border);"></div>
+        <table id="reviewTable"></table>
       </div>
     </div>
+
   </div>
 </div>
 
-<!-- ══ SUCCESS ══ -->
-<div id="successPage">
-  <div class="suc-wrap">
-    <div class="suc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-    <div class="suc-title">預約申請已送出！</div>
-    <div class="suc-sub">我們將盡快安排審核，請靜候<br><strong>1–2 個工作天</strong>，結果將透過 <strong>LINE</strong> 通知您。</div>
-
-    <div class="suc-info-card">
-      <div class="suc-info-ttl" style="font-size:12px;letter-spacing:.06em;display:flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;flex-shrink:0;"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="13" y2="15"/></svg>手術預約詳情</div>
-      <div class="suc-info-row"><div class="suc-info-k">醫師</div><div class="suc-info-v" id="suc_doc"></div></div>
-      <div class="suc-info-row"><div class="suc-info-k">術式</div><div class="suc-info-v" id="suc_op"></div></div>
-      <div class="suc-info-row"><div class="suc-info-k">日期</div><div class="suc-info-v" id="suc_date"></div></div>
-      <div class="suc-info-row"><div class="suc-info-k">時段</div><div class="suc-info-v" id="suc_slot"></div></div>
+<!-- MODAL -->
+<div class="overlay" id="overlay" onclick="closeOverlay(event)">
+  <div class="modal" id="modal">
+    <div class="modal-hd">
+      <h2 id="modalTitle">詳情</h2>
     </div>
-
-    <div class="suc-contact-card">
-      <div class="suc-contact-row">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.4 1.13 2 2 0 012.38.02h3a2 2 0 012 1.72 11 11 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 11 11 0 002.81.7A2 2 0 0122 16.92z"/></svg>
-        <span>（07）350-9200</span>
-      </div>
-      <div class="suc-contact-row">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-        <span>高雄市三民區鼎力路199號</span>
-      </div>
-    </div>
-
-    <button class="suc-btn" onclick="goHome()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>返回首頁</button>
+    <div id="modalBody"></div>
+    <div id="modalFoot"></div>
   </div>
 </div>
+
+<!-- MODAL 2 (day detail / global slots) -->
+<div class="overlay" id="overlay2" onclick="closeOverlay2(event)">
+  <div class="modal wide" id="modal2">
+    <div class="modal-hd">
+      <h2 id="modal2Title">設定</h2>
+      <button class="modal-x" onclick="closeModal2()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div id="modal2Body"></div>
+    <div id="modal2Foot"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg><span id="toastMsg"></span></div>
 
 <script>
-let doctors=[];
-let slots={};
-const MN=['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
-let sel={docId:null,op:null,date:null,slot:null};
-let calDate=new Date();
+/* ═══════════════════════════════════════
+   DATA
+═══════════════════════════════════════ */
+const OPS_LIST = ['下鼻甲消融','鼻內電燒','減重','其他手術'];
 
-renderDoctors(); renderCal();
+// 8 preset doctor colours: [bg, border, text, dot]
+const DOC_COLORS = [
+  {id:'c1', bg:'#EFF6FF', border:'#BFDBFE', text:'#1D4ED8', dot:'#3B82F6'},
+  {id:'c2', bg:'#F0FDF4', border:'#BBF7D0', text:'#15803D', dot:'#22C55E'},
+  {id:'c3', bg:'#FFF7ED', border:'#FED7AA', text:'#C2410C', dot:'#F97316'},
+  {id:'c4', bg:'#FDF4FF', border:'#E9D5FF', text:'#7E22CE', dot:'#A855F7'},
+  {id:'c5', bg:'#FFF1F2', border:'#FECDD3', text:'#BE123C', dot:'#F43F5E'},
+  {id:'c6', bg:'#F0FDFA', border:'#99F6E4', text:'#0F766E', dot:'#14B8A6'},
+  {id:'c7', bg:'#FEFCE8', border:'#FEF08A', text:'#A16207', dot:'#EAB308'},
+  {id:'c8', bg:'#F8FAFC', border:'#CBD5E1', text:'#475569', dot:'#64748B'},
+];
 
-function showModal(ttl, msg, btnTxt='重新選擇'){
-  document.getElementById('modalTtl').textContent=ttl;
-  document.getElementById('modalMsg').textContent=msg;
-  document.getElementById('customModal').querySelector('.modal-btn').textContent=btnTxt;
-  document.getElementById('customModal').classList.add('on');
+function docColor(docId){
+  const d=doctors.find(x=>x.id===docId);
+  if(!d||!d.colorId) return DOC_COLORS[0];
+  return DOC_COLORS.find(c=>c.id===d.colorId)||DOC_COLORS[0];
 }
-function closeModal(){ document.getElementById('customModal').classList.remove('on'); }
 
-function renderDoctors(){
-  document.getElementById('docList').innerHTML=doctors.map(d=>`
-    <div class="doc-item${sel.docId===d.id?' sel':''}" id="di_${d.id}" onclick="pickDoc(${d.id})">
-      <div class="doc-av" style="background:${d.color};">${d.name[0]}</div>
-      <div><div class="doc-nm">${d.name} 醫師</div><div class="doc-tt">${d.title}</div></div>
-    </div>`).join('');
-}
-function pickDoc(id){
-  sel.docId=id; sel.op=null;
-  renderDoctors();
-  document.getElementById('docErr').classList.remove('on');
-  const doc=doctors.find(d=>d.id===id);
-  document.getElementById('opWrap').innerHTML=doc.ops.length
-    ? doc.ops.map(o=>`<div class="op-chip${sel.op===o?' sel':''}" onclick="pickOp('${o}')">
-        <span class="op-chip-name">${o}</span>
-      </div>`).join('')
-    : '<div class="op-placeholder">此醫師尚未設定術式</div>';
-  document.getElementById('opErr').classList.remove('on');
-}
-function pickOp(o){
-  if(sel.op===o){ sel.op=null; document.querySelectorAll('.op-chip').forEach(c=>c.classList.remove('sel')); return; }
-  sel.op=o;
-  document.querySelectorAll('.op-chip').forEach(c=>c.classList.toggle('sel',c.querySelector('.op-chip-name')?.textContent===o));
-  document.getElementById('opErr').classList.remove('on');
-}
-function toStep2(){
-  if(!sel.docId){document.getElementById('docErr').classList.add('on');return;}
-  if(!sel.op){document.getElementById('opErr').classList.add('on');return;}
-  show('p2');setStep(2);renderCal();
-}
-function toStep1(){show('p1');setStep(1);}
-function toStep3(){
-  if(!sel.date){
-    document.getElementById('dateErr').classList.add('on');
-    document.getElementById('slotErr').classList.remove('on');
-    document.getElementById('dateErr').scrollIntoView({behavior:'smooth',block:'center'});
-    return;
-  }
-  document.getElementById('dateErr').classList.remove('on');
-  document.getElementById('slotErr').classList.remove('on');
-  if(!sel.slot){
-    document.getElementById('slotErr').classList.add('on');
-    document.getElementById('slotErr').scrollIntoView({behavior:'smooth',block:'center'});
-    return;
-  }
-  document.getElementById('slotErr').classList.remove('on');
-  show('p3');setStep(3);
-}
-function toStep4(){
-  const name=document.getElementById('f_name').value.trim();
-  const yv=document.getElementById('f_y').value.trim();
-  const mv=document.getElementById('f_m').value.trim();
-  const dv=document.getElementById('f_d').value.trim();
-  const phone=document.getElementById('f_phone').value.trim();
-  let ok=true;
+let doctors = [
+  {id:1, name:'楊昆霖', title:'耳鼻喉科', colorId:'c1', limitAM:3, limitPM:3, ops:['下鼻甲消融','鼻內電燒']},
+  {id:2, name:'吳書婷', title:'新陳代謝科', colorId:'c2', limitAM:3, limitPM:3, ops:['減重']},
+];
 
-  document.getElementById('e_name').classList.toggle('on',!name);
-  if(!name) ok=false;
+let bookings = [];
+let nextId = 7;
 
-  const yi=parseInt(yv),mi=parseInt(mv),di=parseInt(dv);
-  const todayRoc=new Date().getFullYear()-1911;
-  let bdayErrMsg='';
-  if(!yv||!mv||!dv||isNaN(yi)||isNaN(mi)||isNaN(di)){
-    bdayErrMsg='請輸入完整生日';
-  } else if(yi<1||yi>todayRoc){
-    bdayErrMsg=`民國年請填 1～${todayRoc}`;
-  } else if(mi<1||mi>12){
-    bdayErrMsg='月份請填 1～12';
+// slotSettings: keyed as "docId:YYYY-MM-DD" → [slots]
+let slotSettings = {
+  '1:2026-04-02':['09:00','09:30','10:00','10:30','11:00'],
+  '1:2026-04-09':['09:00','09:30','10:00','10:30'],
+  '1:2026-04-16':['09:00','09:30','10:00','10:30','11:00','11:30'],
+  '1:2026-04-23':['09:00','09:30','10:00'],
+  '2:2026-04-16':['10:00','10:30','11:00'],
+};
+
+const ALL_MORNING   = ['09:00','09:30','10:00','10:30','11:00','11:30'];
+const ALL_AFTERNOON = ['13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30'];
+const ALL_SLOTS     = [...ALL_MORNING, ...ALL_AFTERNOON];
+
+let calView = 'month', calDate = new Date(2026,3,1);
+let slotCalDate = new Date(2026,3,1), slotSelectedDay = null;
+
+/* ═══════════════════════════════════════
+   NAV
+═══════════════════════════════════════ */
+const panelNames = {bookings:'預約清單',review:'醫師審核',calendar:'手術排程',schedule:'預約時段設定',doctors:'醫師與術式管理'};
+
+window.nav = function(id) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  document.getElementById('topbarTitle').textContent = panelNames[id];
+  document.querySelectorAll('.ni').forEach(b=>{
+    if(b.getAttribute('onclick')&&b.getAttribute('onclick').includes("'"+id+"'"))b.classList.add('active');
+  });
+  // topbar right: context-specific
+  const tr = document.getElementById('topbarRight');
+  if(id==='bookings'){
+    tr.innerHTML=`<button class="tb-btn primary" onclick="openAddPatient()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>新增病人</button>`;
+  } else if(id==='schedule'){
+    tr.innerHTML=`
+      <button class="tb-btn primary" onclick="saveSlotsToDB()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:14px;height:14px;"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        儲存時段
+      </button>`;
+  } else if(id==='doctors'){
+    tr.innerHTML=`<button class="tb-btn primary" onclick="saveDoctorsToDB()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:14px;height:14px;"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      儲存醫師</button>`;
   } else {
-    const maxD=new Date(yi+1911,mi,0).getDate();
-    if(di<1||di>maxD){ bdayErrMsg=`${mi}月份日期請填 1～${maxD}`; }
-    else if(new Date(yi+1911,mi-1,di)>new Date()){ bdayErrMsg='生日不能是未來日期'; }
+    tr.innerHTML='';
   }
-  const bdayEl=document.getElementById('e_bday');
-  bdayEl.textContent=bdayErrMsg||'請輸入完整生日';
-  bdayEl.classList.toggle('on',!!bdayErrMsg);
-  if(bdayErrMsg) ok=false;
-
-  document.getElementById('e_phone').classList.toggle('on',!phone);
-  if(!phone) ok=false;
-
-  if(!ok) return;
-  const doc=doctors.find(dd=>dd.id===sel.docId);
-  const note=document.getElementById('f_note').value.trim();
-  document.getElementById('pv_doc').textContent=`${doc.name} 醫師`;
-  document.getElementById('pv_op').textContent=sel.op;
-  document.getElementById('pv_date').textContent=fmtDs(sel.date);
-  document.getElementById('pv_slot').textContent=sel.slot;
-  document.getElementById('pv_name').textContent=name;
-  document.getElementById('pv_bday').textContent=`民國 ${yi}年${mi}月${di}日`;
-  document.getElementById('pv_phone').textContent=phone;
-  const nr=document.getElementById('pv_nr');
-  if(note){document.getElementById('pv_note').textContent=note;nr.style.display='flex';}
-  else nr.style.display='none';
-  show('p4');setStep(4);
-}
-function submitBooking(){
-  const doc=doctors.find(d=>d.id===sel.docId);
-  document.getElementById('suc_doc').textContent=`${doc.name} 醫師`;
-  document.getElementById('suc_op').textContent=sel.op;
-  document.getElementById('suc_date').textContent=fmtDs(sel.date);
-  document.getElementById('suc_slot').textContent=sel.slot;
-  document.getElementById('bookingApp').style.display='none';
-  const sp=document.getElementById('successPage');
-  sp.style.display='flex';sp.classList.add('on');
-  window.scrollTo({top:0,behavior:'smooth'});
-}
-function enterBooking(){
-  document.getElementById('homePage').style.display='none';
-  const ba=document.getElementById('bookingApp');
-  ba.style.display='block';ba.classList.add('on');
-  window.scrollTo({top:0,behavior:'smooth'});
-}
-function goHome(){
-  sel={docId:null,op:null,date:null,slot:null};
-  ['f_name','f_y','f_m','f_d','f_phone','f_note'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('opWrap').innerHTML='<div style="font-size:12px;color:var(--ink3);padding:4px 0;">請先選擇醫師，術式將自動帶入</div>';
-  document.getElementById('slotCard').style.display='none';
-  calDate=new Date();
-  renderDoctors();renderCal();show('p1');setStep(1);
-  const ba=document.getElementById('bookingApp');
-  ba.style.display='none';ba.classList.remove('on');
-  const sp=document.getElementById('successPage');
-  sp.style.display='none';sp.classList.remove('on');
-  document.getElementById('homePage').style.display='flex';
-  window.scrollTo({top:0,behavior:'smooth'});
+  if(id==='bookings') renderBookings();
+  if(id==='review')   renderReview();
+  if(id==='calendar') renderCal();
+  if(id==='schedule') renderSlotCal();
+  if(id==='doctors')  renderDoctors();
+  updateReviewBadge();
 }
 
-// 取得日期所在的自然週字串（週一為起點）YYYY-WW
-function getWeekKey(ds){
-  const dt=new Date(ds);
-  const day=dt.getDay(); // 0=日
-  const mon=new Date(dt);
-  mon.setDate(dt.getDate()-(day===0?6:day-1)); // 週一
-  return mon.toISOString().slice(0,10);
+/* ═══════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════ */
+function fmtDate(ds){const[y,m,d]=ds.split('-');return`${y}/${parseInt(m)}/${parseInt(d)}`;}
+function docName(id,fallback){const d=doctors.find(x=>x.id===id);return d?d.name:(fallback||'（已離職）');}
+
+let toastTimer;
+function toast(type,msg){
+  const t=document.getElementById('toast');
+  document.getElementById('toastMsg').textContent=msg;
+  t.className='toast '+type+' show';
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),3000);
 }
 
-// 計算該醫師某週已有幾天被預約（pending/approved 至少一筆算一天）
-function getDocBookedDaysInWeek(docId, weekMonStr){
-  if(!window._bookedSlots) return 0;
-  const bookedDates=new Set();
-  Object.keys(window._bookedSlots).forEach(key=>{
-    const [did,date]=key.split(':');
-    if(parseInt(did)===docId && window._bookedSlots[key]>0){
-      const weekMon=getWeekKey(date);
-      if(weekMon===weekMonStr) bookedDates.add(date);
-    }
-  });
-  return bookedDates.size;
+/* conflict check — returns existing booking if slot is taken */
+function getConflict(date, slot, excludeId=null) {
+  return bookings.find(b =>
+    b.date === date &&
+    b.slot === slot &&
+    b.status !== 'rejected' &&
+    b.id !== excludeId
+  );
 }
 
-// 判斷某天是否因週限制而關閉（不顯示額滿，直接視為無開放）
-function isWeekLimitClosed(docId, ds){
-  const doc=doctors.find(d=>d.id===docId);
-  if(!doc||!doc.weekLimit||doc.weekLimit<=0) return false;
-  const weekMon=getWeekKey(ds);
-  const bookedDays=getDocBookedDaysInWeek(docId, weekMon);
-  if(bookedDays<doc.weekLimit) return false;
-  // 已達週限制，但若該天本身就有預約，不關閉（已被使用的天不受影響）
-  const hasSelfBooking=Object.keys(window._bookedSlots||{}).some(key=>{
-    const [did,date]=key.split(':');
-    return parseInt(did)===docId && date===ds && window._bookedSlots[key]>0;
-  });
-  return !hasSelfBooking;
-}
-// 判斷某天的上午或下午是否達到配額
-function isSessionFull(docId, ds, isAM){
-  if(!window._bookedSlots) return false;
-  const doc=doctors.find(d=>d.id===docId);
-  if(!doc) return false;
-  const lim=isAM?(doc.limitAM??99):(doc.limitPM??99);
-  if(!lim||lim<=0) return false;
-  // 計算該天同一時段（上午/下午）的總預約數
-  const total=Object.entries(window._bookedSlots).reduce((sum,[key,cnt])=>{
-    const [did,date,slot]=key.split(':');
-    if(parseInt(did)===docId && date===ds && (parseInt(slot)<12)===isAM) return sum+cnt;
-    return sum;
-  },0);
-  return total>=lim;
+/* ═══════════════════════════════════════
+   BOOKINGS
+═══════════════════════════════════════ */
+let bookingSort = {col:'date', dir:'asc'};
+let bookingStatusFilter = 'all';
+let bookingDocFilter = 'all';
+let calDocFilter = 'all';
+
+window.setStatusFilter = function(f, btn){
+  bookingStatusFilter = f;
+  document.querySelectorAll('.ft[data-type="status"]').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderBookings();
 }
 
-function isDayFull(docId, ds, ss){
-  if(!window._bookedSlots||!ss||!ss.length) return false;
-  const doc=doctors.find(d=>d.id===docId);
-  if(!doc) return false;
-  // 每個時段：若所屬上午/下午配額已滿，或該時段自身已被預約，則視為不可用
-  return ss.every(slot=>{
-    const am=parseInt(slot)<12;
-    return isSessionFull(docId,ds,am);
-  });
+function setBookingDocFilter(val){
+  bookingDocFilter = val==='all'?'all':parseInt(val);
+  renderBookings();
 }
 
-function isSlotUnavailable(docId, ds, slot){
-  // 該時段已被預約（booked > 0）
-  const key=`${docId}:${ds}:${slot}`;
-  const booked=(window._bookedSlots||{})[key]||0;
-  if(booked>0) return 'booked'; // 已被佔走
-  // 所屬上午/下午配額已滿
-  const am=parseInt(slot)<12;
-  if(isSessionFull(docId,ds,am)) return 'full';
-  return null;
+function countFilter(f){
+  if(f==='notified') return bookings.filter(b=>b.status==='approved'&&b.lineNotified).length;
+  if(f==='all') return bookings.length;
+  return bookings.filter(b=>b.status===f).length;
 }
 
-function renderCal(){
-  const y=calDate.getFullYear(),m=calDate.getMonth();
-  document.getElementById('calM').textContent=`${y} 年 ${MN[m]}`;
-  const first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate();
-  const now=new Date();
-  const today=new Date(now);today.setHours(0,0,0,0);
-  let h='';
-  for(let i=0;i<first;i++) h+=`<div class="cday other"></div>`;
-  for(let dd=1;dd<=days;dd++){
-    const dt=new Date(y,m,dd);
-    const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
-    const dow=dt.getDay();
-    const isPast=dt<today;
-    const ss=sel.docId?(slots[sel.docId+':'+ds]||[]):[];
-    // 今天：過濾掉已過的時段
-    const availSS=isPast?[]:ss.filter(s=>{
-      if(dt.getTime()===today.getTime()){
-        const [hh,mm2]=s.split(':').map(Number);
-        const slotTime=new Date(dt);slotTime.setHours(hh,mm2,0,0);
-        return slotTime>now;
+window.setSort = function(col){
+  if(bookingSort.col===col) bookingSort.dir=bookingSort.dir==='asc'?'desc':'asc';
+  else {bookingSort.col=col;bookingSort.dir='asc';}
+  renderBookings();
+}
+
+function badge(s){
+  const m={pending:['b-pending','待審核'],approved:['b-approved','核准'],rejected:['b-rejected','拒絕']};
+  const[c,l]=m[s]||['b-pending','待審核'];
+  return`<span class="badge ${c}">${l}</span>`;
+}
+
+function renderBookings(){
+  // purge bookings older than 12 months
+  const cutoff=new Date();
+  cutoff.setMonth(cutoff.getMonth()-12);
+  const cutoffStr=cutoff.toISOString().slice(0,10);
+  bookings=bookings.filter(b=>b.date>=cutoffStr);
+
+  // today string for filtering past dates from display
+  const todayStr=new Date().toISOString().slice(0,10);
+
+  // build doctor filter select options
+  const bdf=document.getElementById('bookingDocSel');
+  if(bdf){
+    const prev=bdf.value;
+    bdf.innerHTML=`<option value="all">全部醫師</option>`+doctors.map(d=>`<option value="${d.id}">${d.name} 醫師</option>`).join('');
+    if(prev&&prev!=='all') bdf.value=prev;
+  }
+
+  const q=(document.getElementById('searchInp')||{value:''}).value.toLowerCase();
+
+  // base: filtered by doctor, and only today or future dates
+  let base=[...bookings].filter(b=>b.date>=todayStr);
+  if(bookingDocFilter!=='all') base=base.filter(b=>b.docId===bookingDocFilter);
+
+  // per-button counts (respect doctor filter, ignore status filter)
+  const cnt={
+    all: base.length,
+    pending: base.filter(b=>b.status==='pending').length,
+    approved: base.filter(b=>b.status==='approved').length,
+    rejected: base.filter(b=>b.status==='rejected').length,
+    // LINE 待通知: approved 或 rejected 但尚未通知
+    unnotified: base.filter(b=>(b.status==='approved'||b.status==='rejected')&&!b.lineNotified).length,
+  };
+  ['all','pending','approved','rejected','unnotified'].forEach(k=>{
+    const el=document.getElementById('fc_'+k);
+    if(el){
+      el.textContent=cnt[k];
+      if(k==='unnotified'){
+        el.style.background=cnt[k]>0?'var(--red)':'rgba(0,0,0,.08)';
+        el.style.color=cnt[k]>0?'white':'inherit';
       }
-      return true;
-    });
-    const has=availSS.length>0;
-    const weekClosed=has&&isWeekLimitClosed(sel.docId,ds);
-    const full=has&&!weekClosed&&isDayFull(sel.docId,ds,availSS);
-    const picked=sel.date===ds;
-    let cls='cday';
-    if(dow===0)cls+=' sun';if(dow===6)cls+=' sat';
-    if(isPast||(!has&&ss.length>0))cls+=' past'; // 今天時段全過了也視為過去
-    else if(weekClosed)cls+=' noslot'; // 週限制關閉，不顯示額滿
-    else if(full)cls+=' full';
-    else if(!has)cls+=' noslot';
-    else cls+=' has';
-    if(picked)cls+=' picked';
-    const dot=(has&&!full&&!weekClosed)?`<div class="cday-dot"></div>`:'';
-    const fullLbl=full?`<div class="cday-full-lbl">額滿</div>`:'';
-    const click=(has&&!full&&!weekClosed)?`onclick="pickDate('${ds}')"`:'';
-    h+=`<div class="${cls}" ${click}>${dd}${dot}${fullLbl}</div>`;
+    }
+  });
+
+  let data=[...base];
+  if(bookingStatusFilter==='unnotified'){
+    data=data.filter(b=>(b.status==='approved'||b.status==='rejected')&&!b.lineNotified);
+  } else if(bookingStatusFilter!=='all'){
+    data=data.filter(b=>b.status===bookingStatusFilter);
   }
-  document.getElementById('calGrid').innerHTML=h;
+  if(q) data=data.filter(b=>b.name.includes(q));
+
+  const statusOrder={pending:0,approved:1,rejected:2};
+  const {col,dir}=bookingSort;
+  data.sort((a,b2)=>{
+    let av,bv;
+    if(col==='date'){av=a.date+a.slot;bv=b2.date+b2.slot;}
+    else if(col==='status'){av=statusOrder[a.status]??9;bv=statusOrder[b2.status]??9;}
+    else if(col==='lineNotified'){av=a.lineNotified?1:0;bv=b2.lineNotified?1:0;}
+    else {av=a[col]||'';bv=b2[col]||'';}
+    return dir==='asc'?(av<bv?-1:av>bv?1:0):(av>bv?-1:av<bv?1:0);
+  });
+
+  const t=document.getElementById('bookingsTable');
+  if(!data.length){t.innerHTML=`<tbody><tr><td colspan="9"><div class="empty">沒有符合的預約記錄</div></td></tr></tbody>`;return;}
+
+  function thSort(col,label){
+    const active=bookingSort.col===col;
+    const d=active?bookingSort.dir:'';
+    return`<th class="sortable${active?' '+d:''}" onclick="setSort('${col}')">${label}<span class="sort-icon"></span></th>`;
+  }
+
+  t.innerHTML=`<thead><tr>
+    <th>姓名</th>${thSort('date','手術日期')}<th>時段</th>
+    <th>術式</th><th>醫師</th>${thSort('status','狀態')}${thSort('lineNotified','LINE')}<th>備註</th><th>操作</th>
+  </tr></thead><tbody>${data.map(b=>`<tr>
+    <td class="td-name">${b.name}</td>
+    <td class="td-date">${fmtDate(b.date)}</td>
+    <td style="font-weight:700;font-size:13px;color:var(--text);">${b.slot}</td>
+    <td style="font-size:12px;">${b.op||'—'}</td>
+    <td style="font-size:12px;color:var(--text2);">${docName(b.docId,b.docName)||'—'}</td>
+    <td>${badge(b.status)}</td>
+    <td>${lineCol(b)}</td>
+    <td style="font-size:12px;color:var(--text2);width:130px;max-width:130px;white-space:normal;word-break:break-all;line-height:1.5;">${b.note||'—'}</td>
+    <td><div class="act-row">
+      <button class="icon-btn ib-detail" title="詳情 / 編輯" onclick="openDetail('${b.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></button>
+      <button class="icon-btn ib-del" title="刪除" onclick="deleteBooking('${b.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg></button>
+    </div></td>
+  </tr>`).join('')}</tbody>`;
 }
 
-function renderSlots(ds){
-  const now=new Date();
-  const today=new Date(now);today.setHours(0,0,0,0);
-  const dt=new Date(ds);
-  const ss=slots[sel.docId+':'+ds]||[];
-  // 過濾今天已過的時段
-  const filtered=ss.filter(s=>{
-    if(dt.getTime()===today.getTime()){
-      const [hh,mm2]=s.split(':').map(Number);
-      const slotTime=new Date(dt);slotTime.setHours(hh,mm2,0,0);
-      return slotTime>now;
-    }
-    return true;
-  });
-  if(!filtered.length){
-    return `<div style="font-size:12px;color:var(--ink3);">此日期暫無可預約時段</div>`;
+/* LINE column */
+function lineCol(b){
+  if(b.lineNotified){
+    // locked — only editable inside detail modal
+    return `<span class="line-toggle sent locked" title="如需修改請進入編輯"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:12px;height:12px;"><polyline points="20 6 9 17 4 12"/></svg>已通知</span>`;
   }
-  return filtered.map(s=>{
-    const unavail=isSlotUnavailable(sel.docId,ds,s);
-    if(unavail){
-      return `<button class="slot-btn booked" disabled>${s}</button>`;
-    }
-    const isSel=sel.slot===s;
-    return `<button class="slot-btn${isSel?' sel':''}" onclick="pickSlot('${s}')">${s}</button>`;
+  if(b.status==='pending'){
+    // pending — cannot notify yet
+    return `<span class="line-toggle disabled" title="請先核准再通知"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px;height:12px;"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>未通知</span>`;
+  }
+  // approved or rejected — can click to notify
+  return `<button class="line-toggle unsent" onclick="toggleLine('${b.id}')" title="點擊標記為已通知"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px;height:12px;"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>未通知</button>`;
+}
+
+window.toggleLine = function(id){
+  const b=bookings.find(x=>x.id===id);if(!b)return;
+  if(b.status==='pending'){toast('warn','請先核准後再進行 LINE 通知');return;}
+  b.lineNotified=true;
+  if(b.fbId && window._fbToggleLine) window._fbToggleLine(b.fbId);
+  renderBookings();
+  toast('info',`${b.name} 已標記 LINE 已通知`);
+}
+window.deleteBooking = function(id){
+  const b=bookings.find(x=>x.id===id);if(!b)return;
+  if(!confirm(`確定要刪除 ${b.name} 的預約？`))return;
+  if(b.fbId && window._fbDelete) window._fbDelete(b.fbId);
+  bookings=bookings.filter(x=>x.id!==id);
+  renderBookings();
+  if(document.getElementById('panel-schedule').classList.contains('active')) renderSlotCal();
+  updateReviewBadge();
+  toast('warn','預約已刪除');
+}
+
+/* Combined Detail + Edit modal */
+window.openDetail = function(id){
+  const b=bookings.find(x=>x.id===id);if(!b)return;
+  const todayStr=new Date().toISOString().slice(0,10);
+  const isPast=b.date<todayStr;
+  _renderDetailModal(b, false, isPast);
+}
+
+// bday stored as "72/03/15", display same
+function fmtBday(s){
+  if(!s) return '—';
+  // normalise: ensure 2-digit month and day
+  const p=s.split('/');
+  if(p.length===3) return `${p[0]}/${String(p[1]).padStart(2,'0')}/${String(p[2]).padStart(2,'0')}`;
+  return s;
+}
+// parse "72/03/15" or "72/3/15" → {y,m,d}
+function parseBday(s){
+  if(!s) return {y:'',m:'',d:''};
+  // legacy "民國 72年3月15日"
+  const old=s.match(/(\d+)年(\d+)月(\d+)日/);
+  if(old) return {y:old[1],m:String(old[2]).padStart(2,'0'),d:String(old[3]).padStart(2,'0')};
+  const p=s.split('/');
+  if(p.length===3) return {y:p[0],m:String(p[1]).padStart(2,'0'),d:String(p[2]).padStart(2,'0')};
+  return {y:'',m:'',d:''};
+}
+function composeBday(y,m,d){
+  if(!y||!m||!d) return '';
+  return `${y}/${String(m).padStart(2,'0')}/${String(d).padStart(2,'0')}`;
+}
+
+window._renderDetailModal = function(b, editMode, isPast=false){
+  document.getElementById('modal').className='modal wide';
+  const docOpts=`<option value="">— 請選擇醫師 —</option>`+doctors.map(d=>`<option value="${d.id}"${b.docId===d.id?' selected':''}>${d.name} 醫師</option>`).join('');
+  const selDoc=doctors.find(d=>d.id===b.docId);
+  const opOpts=(selDoc?selDoc.ops:OPS_LIST).map(o=>`<option value="${o}"${b.op===o?' selected':''}>${o}</option>`).join('');
+  const lineOpts=`<option value="0"${!b.lineNotified?' selected':''}>未通知</option><option value="1"${b.lineNotified?' selected':''}>已通知</option>`;
+
+  if(editMode){
+    const bp=parseBday(b.bday);
+    document.getElementById('modalTitle').textContent='編輯預約';
+    document.getElementById('modalBody').innerHTML=`
+      <div class="edit-row"><label class="edit-label">姓名</label><input class="edit-inp" id="e_name" value="${b.name}"></div>
+      <div class="edit-row">
+        <label class="edit-label">生日（民國年/月/日）</label>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <input class="edit-inp" id="e_bday_y" value="${bp.y}" placeholder="年" style="width:64px;text-align:center;">
+          <span style="font-size:13px;color:var(--text2);font-weight:600;">/</span>
+          <input class="edit-inp" id="e_bday_m" value="${bp.m}" placeholder="月" style="width:52px;text-align:center;">
+          <span style="font-size:13px;color:var(--text2);font-weight:600;">/</span>
+          <input class="edit-inp" id="e_bday_d" value="${bp.d}" placeholder="日" style="width:52px;text-align:center;">
+        </div>
+      </div>
+      <div class="edit-row"><label class="edit-label">聯絡電話</label><input class="edit-inp" id="e_phone" value="${b.phone}"></div>
+      <div class="edit-row"><label class="edit-label">醫師</label><select class="edit-inp" id="e_doc" onchange="onEditDocChange('${b.id}')">${docOpts}</select></div>
+      <div class="edit-row"><label class="edit-label">術式</label><select class="edit-inp" id="e_op">${opOpts}</select></div>
+      <div class="edit-row edit-row-split">
+        <div style="flex:1"><label class="edit-label">手術日期</label><input class="edit-inp" id="e_date" type="date" value="${b.date}" onchange="updateEditSlots('${b.id}')"></div>
+        <div style="flex:1"><label class="edit-label">時段</label><select class="edit-inp" id="e_slot" onchange="checkEditConflict('${b.id}')">${buildSlotOptions(b.date,b.slot,b.id)}</select></div>
+      </div>
+      <div class="conflict-warn" id="e_conflict">⚠ 此時段已有其他預約，請選擇其他時間</div>
+      <div class="edit-row"><label class="edit-label">備註</label><input class="edit-inp" id="e_note" value="${b.note}"></div>
+      <div class="edit-row edit-row-split">
+        <div style="flex:1"><label class="edit-label">狀態</label><select class="edit-inp" id="e_status">
+          <option value="pending"${b.status==='pending'?' selected':''}>待審核</option>
+          <option value="approved"${b.status==='approved'?' selected':''}>核准</option>
+          <option value="rejected"${b.status==='rejected'?' selected':''}>拒絕</option>
+        </select></div>
+        <div style="flex:1"><label class="edit-label">LINE 通知</label><select class="edit-inp" id="e_line">${lineOpts}</select></div>
+      </div>`;
+    document.getElementById('modalFoot').innerHTML=`<div class="modal-acts">
+      <button class="mbtn mbtn-approve" id="e_save_btn" onclick="saveEdit('${b.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>儲存</button>
+      <button class="mbtn mbtn-close" onclick="_renderDetailModal(bookings.find(x=>x.id==='${b.id}'),false)">取消</button>
+    </div>`;
+  } else {
+    // line toggle for card (same style as table, but locked in view mode)
+    const lineTagCard = b.lineNotified
+      ? `<span class="line-toggle sent locked" title="如需修改請進入編輯"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:12px;height:12px;"><polyline points="20 6 9 17 4 12"/></svg>已通知</span>`
+      : `<span class="line-toggle disabled"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px;height:12px;"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>未通知</span>`;
+
+    document.getElementById('modalTitle').innerHTML=`預約詳情`;
+    document.getElementById('modalBody').innerHTML=`
+      <div class="detail-card">
+        <div class="detail-card-hd">
+          <span class="detail-card-title">病人資料</span>
+          <div class="detail-card-badges">${badge(b.status)}${lineTagCard}</div>
+        </div>
+        <div class="mir"><div class="mik">姓名</div><div class="miv">${b.name}</div></div>
+        <div class="mir"><div class="mik">生日</div><div class="miv">${fmtBday(b.bday)||'—'}</div></div>
+        <div class="mir"><div class="mik">電話</div><div class="miv">${b.phone}</div></div>
+      </div>
+      <div class="detail-card" style="margin-top:10px;">
+        <div class="detail-card-hd">
+          <span class="detail-card-title">手術資料</span>
+        </div>
+        <div class="mir"><div class="mik">醫師</div><div class="miv">${docName(b.docId,b.docName)||'—'}</div></div>
+        <div class="mir"><div class="mik">術式</div><div class="miv">${b.op||'—'}</div></div>
+        <div class="mir"><div class="mik">手術日期</div><div class="miv" style="font-weight:700;">${fmtDate(b.date)}</div></div>
+        <div class="mir"><div class="mik">時段</div><div class="miv" style="font-weight:700;color:var(--text);">${b.slot}</div></div>
+        <div class="mir"><div class="mik">備註</div><div class="miv">${b.note||'—'}</div></div>
+      </div>`;
+    document.getElementById('modalFoot').innerHTML=`<div class="modal-acts">
+      ${isPast
+        ? `<span style="font-size:12px;color:var(--text3);display:flex;align-items:center;gap:5px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0"/></svg>過去日期資料不可編輯</span>`
+        : `<button class="mbtn mbtn-approve" onclick="_renderDetailModal(bookings.find(x=>x.id==='${b.id}'),true,false)" style="background:var(--orange);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:15px;height:15px;"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>編輯資料
+        </button>`}
+      <button class="mbtn mbtn-close" onclick="closeModal()">關閉</button>
+    </div>`;
+  }
+  openOverlay();
+}
+
+window.saveEdit = function(id){
+  const b=bookings.find(x=>x.id===id);if(!b)return;
+  const date=document.getElementById('e_date').value||b.date;
+  const slot=document.getElementById('e_slot').value;
+  if(!slot){toast('err','請選擇手術時段');return;}
+  if(getConflict(date,slot,id)){toast('err','時段衝突，請更換時間');return;}
+  b.name=document.getElementById('e_name').value.trim()||b.name;
+  const by=document.getElementById('e_bday_y').value.trim();
+  const bm=document.getElementById('e_bday_m').value.trim();
+  const bd=document.getElementById('e_bday_d').value.trim();
+  if(by&&bm&&bd) b.bday=composeBday(by,bm,bd);
+  b.phone=document.getElementById('e_phone').value.trim()||b.phone;
+  b.date=date; b.slot=slot;
+  b.docId=parseInt(document.getElementById('e_doc').value)||null;
+  if(!b.docId){toast('err','請指定負責醫師');return;}
+  b.op=document.getElementById('e_op').value;
+  b.status=document.getElementById('e_status').value;
+  b.lineNotified=document.getElementById('e_line').value==='1';
+  b.note=document.getElementById('e_note').value.trim();
+  closeModal();
+  if(b.fbId && window._fbSaveEdit) window._fbSaveEdit(b.fbId,{
+    name:b.name,bday:b.bday,phone:b.phone,
+    date:b.date,slot:b.slot,docId:b.docId,
+    op:b.op,status:b.status,lineNotified:b.lineNotified,note:b.note
+  });
+  renderBookings();
+  // refresh calendar if visible
+  if(document.getElementById('panel-calendar').classList.contains('active')) renderCal();
+  updateReviewBadge();
+  toast('success','資料已更新');
+}
+
+window.onEditDocChange = function(){
+  const docId=parseInt(document.getElementById('e_doc').value);
+  const doc=doctors.find(d=>d.id===docId);
+  const opSel=document.getElementById('e_op');
+  const ops=doc?doc.ops:OPS_LIST;
+  opSel.innerHTML=ops.map(o=>`<option value="${o}">${o}</option>`).join('');
+}
+
+function buildSlotOptions(date, selectedSlot, excludeId=null){
+  const b2=bookings.find(x=>x.id===excludeId);
+  const docId=b2?b2.docId:null;
+  const doc=doctors.find(d=>d.id===docId);
+
+  // base: slots configured for this doctor on this date
+  let configuredSlots=docId?getDocSlots(docId,date):[];
+
+  // always include the original slot even if removed from settings
+  if(selectedSlot && !configuredSlots.includes(selectedSlot)){
+    configuredSlots=[...configuredSlots,selectedSlot].sort();
+  }
+
+  if(!configuredSlots.length){
+    return `<option value="">— 該日無可用時段 —</option>`;
+  }
+
+  // count bookings excluding this patient to check limit correctly
+  const countExcludingSelf = (ds, slot) => {
+    return bookings.filter(b=>
+      b.date===ds && b.docId===docId && b.id!==excludeId &&
+      (b.status==='pending'||b.status==='approved') &&
+      isAM(b.slot)===isAM(slot)
+    ).length;
+  };
+
+  return configuredSlots.map(s=>{
+    const conflict=getConflict(date,s,excludeId);
+    // check limit excluding self: get the right limit for AM/PM
+    const lim=doc?(isAM(s)?doc.limitAM??99:doc.limitPM??99):99;
+    const limit=(lim===0||lim>0)?lim:99;
+    const bookedCountExSelf=countExcludingSelf(date,s);
+    const limitFull=bookedCountExSelf>=limit;
+    // original slot is always selectable
+    const isOriginal=(s===selectedSlot);
+    const unavailable=conflict||(limitFull&&!isOriginal);
+    const disabled=unavailable?' disabled style="color:#ccc"':'';
+    let label=s;
+    if(conflict) label=`${s}（已預約）`;
+    else if(limitFull&&!isOriginal) label=`${s}（額滿）`;
+    return`<option value="${s}"${s===selectedSlot?' selected':''}${disabled}>${label}</option>`;
   }).join('');
 }
 
-function pickDate(ds){
-  sel.date=ds; sel.slot=null; renderCal();
-  document.getElementById('dateErr').classList.remove('on');
-  const[yy,mm,dd]=ds.split('-');
-  document.getElementById('slotDtLbl').textContent=`${yy}年${parseInt(mm)}月${parseInt(dd)}日`;
-  document.getElementById('slotAll').innerHTML=renderSlots(ds);
-  document.getElementById('slotCard').style.display='block';
-  document.getElementById('slotCard').scrollIntoView({behavior:'smooth',block:'nearest'});
+window.updateEditSlots = function(excludeId){
+  const date=document.getElementById('e_date').value;
+  document.getElementById('e_slot').innerHTML=buildSlotOptions(date,'',excludeId);
+  checkEditConflict(excludeId);
 }
-function pickSlot(s){
-  sel.slot=s;
-  document.querySelectorAll('.slot-btn:not(.booked)').forEach(b=>b.classList.toggle('sel',b.textContent.trim()===s));
-  document.getElementById('slotErr').classList.remove('on');
+
+window.checkEditConflict = function(excludeId){
+  const date=document.getElementById('e_date').value;
+  const slot=document.getElementById('e_slot').value;
+  const warn=document.getElementById('e_conflict');
+  const btn=document.getElementById('e_save_btn');
+  if(!warn||!btn)return;
+  const conflict=getConflict(date,slot,excludeId);
+  if(conflict){warn.classList.add('show');btn.disabled=true;btn.style.opacity='.5';}
+  else{warn.classList.remove('show');btn.disabled=false;btn.style.opacity='1';}
 }
-function calNav(d){calDate.setMonth(calDate.getMonth()+d);sel.date=null;sel.slot=null;document.getElementById('slotCard').style.display='none';renderCal();}
-function show(id){document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));document.getElementById(id).classList.add('on');window.scrollTo({top:0,behavior:'smooth'});}
-function setStep(n){
-  for(let i=1;i<=4;i++){
-    const s=document.getElementById('s'+i);
-    s.classList.remove('active','done');
-    const num=s.querySelector('.step-n');
-    if(i<n){s.classList.add('done');num.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" style="width:11px;height:11px;"><polyline points="20 6 9 17 4 12"/></svg>`;}
-    else if(i===n){s.classList.add('active');num.textContent=i;}
-    else{num.textContent=i;}
+
+/* ═══════════════════════════════════════
+   ADD PATIENT  (FIX2 + FIX6 + FIX1)
+═══════════════════════════════════════ */
+window.openAddPatient = function(){
+  document.getElementById('modalTitle').textContent='新增病人預約';
+  document.getElementById('modal').className='modal wide';
+
+  // FIX2: doctor selector with ops
+  const docOpts=`<option value="">— 請選擇醫師 —</option>`+doctors.map(d=>`<option value="${d.id}">${d.name} 醫師</option>`).join('');
+
+  document.getElementById('modalBody').innerHTML=`
+    <div class="edit-row"><label class="edit-label">姓名 <span style="color:var(--red);">*</span></label><input class="edit-inp" id="a_name" placeholder="請輸入真實姓名"><div class="ferr" id="a_err_name" style="display:none;font-size:11px;color:var(--red);margin-top:4px;"></div></div>
+    <div class="edit-row">
+      <label class="edit-label">生日（民國年/月/日）<span style="color:var(--red);">*</span></label>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <input class="edit-inp" id="a_bday_y" placeholder="年" style="width:64px;text-align:center;">
+        <span style="font-size:13px;color:var(--text2);font-weight:600;">/</span>
+        <input class="edit-inp" id="a_bday_m" placeholder="月" style="width:52px;text-align:center;">
+        <span style="font-size:13px;color:var(--text2);font-weight:600;">/</span>
+        <input class="edit-inp" id="a_bday_d" placeholder="日" style="width:52px;text-align:center;">
+      </div>
+      <div id="a_err_bday" style="display:none;font-size:11px;color:var(--red);margin-top:4px;"></div>
+    </div>
+    <div class="edit-row"><label class="edit-label">聯絡電話 <span style="color:var(--red);">*</span></label><input class="edit-inp" id="a_phone" placeholder="0912-345-678"><div id="a_err_phone" style="display:none;font-size:11px;color:var(--red);margin-top:4px;">請輸入聯絡電話</div></div>
+    <div class="edit-row">
+      <label class="edit-label">醫師 <span style="color:var(--red);">*</span></label>
+      <select class="edit-inp" id="a_doc" onchange="onAddDocChange()">${docOpts}</select>
+      <div id="a_err_doc" style="display:none;font-size:11px;color:var(--red);margin-top:4px;">請選擇醫師</div>
+    </div>
+    <div class="edit-row"><label class="edit-label">術式 <span style="color:var(--red);">*</span></label><select class="edit-inp" id="a_op"><option value="">— 先選醫師 —</option></select><div id="a_err_op" style="display:none;font-size:11px;color:var(--red);margin-top:4px;">請選擇術式</div></div>
+    <div class="edit-row">
+      <label class="edit-label">手術日期 <span style="color:var(--red);">*</span></label>
+      <input type="hidden" id="a_date">
+      <div class="add-cal-wrap">
+        <div class="add-cal-nav">
+          <button type="button" class="add-cal-nb" onclick="addCalNav(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+          <span class="add-cal-lbl" id="addCalLbl"></span>
+          <button type="button" class="add-cal-nb" onclick="addCalNav(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+        </div>
+        <div class="add-cal-hd"><div class="add-cal-dow">日</div><div class="add-cal-dow">一</div><div class="add-cal-dow">二</div><div class="add-cal-dow">三</div><div class="add-cal-dow">四</div><div class="add-cal-dow">五</div><div class="add-cal-dow">六</div></div>
+        <div class="add-cal-grid" id="addCalGrid"></div>
+      </div>
+    </div>
+    <div class="edit-row"><label class="edit-label">手術時段 <span style="color:var(--red);">*</span></label><select class="edit-inp" id="a_slot" onchange="checkAddConflict()"><option value="">— 先選日期 —</option></select></div>
+    <div class="conflict-warn" id="a_conflict">⚠ 此時段已有其他預約，請選擇其他時間</div>
+    <div class="edit-row"><label class="edit-label">備註</label><input class="edit-inp" id="a_note" placeholder="選填"></div>`;
+
+  document.getElementById('modalFoot').innerHTML=`<div class="modal-acts">
+    <button class="mbtn mbtn-approve" id="a_save_btn" onclick="saveAddPatient()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>新增</button>
+    <button class="mbtn mbtn-close" onclick="closeModal()">取消</button>
+  </div>`;
+  renderAddCal();
+  openOverlay();
+}
+
+/* on date change, update slot options using selected doctor's configured slots */
+function onAddDateChange(){
+  const date=document.getElementById('a_date').value;
+  const docId=parseInt(document.getElementById('a_doc').value)||null;
+  const slotSel=document.getElementById('a_slot');
+  const doc=doctors.find(d=>d.id===docId);
+
+  if(!docId){
+    slotSel.innerHTML=`<option value="">— 請先選擇醫師 —</option>`;
+    document.getElementById('a_conflict').classList.remove('show');
+    return;
+  }
+
+  let configured=getDocSlots(docId,date);
+  // 過濾過去時段：若為今天，只保留未來時段
+  const now=new Date();
+  const todayStr=now.toISOString().slice(0,10);
+  if(date===todayStr){
+    configured=configured.filter(s=>{
+      const[hh,mm]=s.split(':').map(Number);
+      const t=new Date();t.setHours(hh,mm,0,0);
+      return t>now;
+    });
+  }
+  // 若日期小於今天，完全不允許
+  if(date<todayStr){
+    slotSel.innerHTML=`<option value="">— 不可選擇過去日期 —</option>`;
+    document.getElementById('a_conflict').classList.remove('show');
+    return;
+  }
+  if(!configured.length){
+    slotSel.innerHTML=`<option value="">— 該日無可用時段 —</option>`;
+    document.getElementById('a_conflict').classList.remove('show');
+    return;
+  }
+
+  slotSel.innerHTML=`<option value="">— 請選時段 —</option>`+configured.map(s=>{
+    const conflict=getConflict(date,s);
+    const limitFull=doc?isSlotLimitReached(doc,date,s):false;
+    const unavailable=conflict||limitFull;
+    const disabled=unavailable?' disabled style="color:#ccc"':'';
+    let label=s;
+    if(conflict) label=`${s}（已預約）`;
+    else if(limitFull) label=`${s}（額滿）`;
+    return`<option value="${s}"${disabled}>${label}</option>`;
+  }).join('');
+  document.getElementById('a_conflict').classList.remove('show');
+}
+
+function checkAddConflict(){
+  const date  = document.getElementById('a_date').value;
+  const slot  = document.getElementById('a_slot').value;
+  const warn  = document.getElementById('a_conflict');
+  const btn   = document.getElementById('a_save_btn');
+  if(!date||!slot){warn.classList.remove('show');return;}
+  const conflict = getConflict(date, slot);
+  if(conflict){ warn.classList.add('show'); btn.disabled=true; btn.style.opacity='.5'; }
+  else         { warn.classList.remove('show'); btn.disabled=false; btn.style.opacity='1'; }
+}
+
+/* on doctor change, update op options AND refresh slot options */
+function onAddDocChange(){
+  const docId = parseInt(document.getElementById('a_doc').value);
+  const doc   = doctors.find(d=>d.id===docId);
+  const opSel = document.getElementById('a_op');
+  if(!doc){ opSel.innerHTML='<option value="">— 先選醫師 —</option>'; return; }
+  opSel.innerHTML = doc.ops.map(o=>`<option value="${o}">${o}</option>`).join('');
+  // also refresh mini cal and slot options when doctor changes
+  renderAddCal();
+  const date=document.getElementById('a_date').value;
+  if(date) onAddDateChange();
+}
+
+
+/* ── ADD PATIENT MINI CALENDAR ── */
+let addCalDate = new Date();
+
+window.addCalNav = function(d){
+  addCalDate.setMonth(addCalDate.getMonth()+d);
+  renderAddCal();
+}
+
+function renderAddCal(){
+  const y=addCalDate.getFullYear(), m=addCalDate.getMonth();
+  const MN2=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  const lbl=document.getElementById('addCalLbl');
+  if(lbl) lbl.textContent=`${y} 年 ${MN2[m]}`;
+  const grid=document.getElementById('addCalGrid');
+  if(!grid) return;
+  const docId=parseInt(document.getElementById('a_doc')?.value)||null;
+  const first=new Date(y,m,1).getDay(), days=new Date(y,m+1,0).getDate();
+  const now=new Date();
+  const todayStr=now.toISOString().slice(0,10);
+  const selDate=document.getElementById('a_date')?.value||'';
+  let h='';
+  for(let i=0;i<first;i++) h+=`<div class="acd other"></div>`;
+  for(let dd=1;dd<=days;dd++){
+    const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+    const dt=new Date(y,m,dd);
+    const dow=dt.getDay();
+    // 取得該醫師該日時段
+    let ss=docId?getDocSlots(docId,ds):[];
+    // 今天：過濾已過時段
+    if(ds===todayStr){
+      ss=ss.filter(s=>{const[hh,mi]=s.split(':').map(Number);const t=new Date();t.setHours(hh,mi,0,0);return t>now;});
+    }
+    const isPast=ds<todayStr;
+    const has=ss.length>0&&!isPast;
+    // 額滿判斷：同前端 isSessionFull 邏輯
+    let full=false;
+    if(has&&docId){
+      const doc2=doctors.find(d=>d.id===docId);
+      if(doc2){
+        full=ss.every(slot=>{
+          const amSlot=parseInt(slot)<12;
+          const lim=amSlot?(doc2.limitAM??99):(doc2.limitPM??99);
+          if(!lim||lim<=0)return false;
+          const booked=bookings.filter(b=>
+            b.docId===docId&&b.date===ds&&
+            (b.status==='pending'||b.status==='approved')&&
+            (parseInt(b.slot)<12)===amSlot
+          ).length;
+          return booked>=lim;
+        });
+      }
+    }
+    const picked=ds===selDate;
+    let cls='acd';
+    if(dow===0)cls+=' sun'; if(dow===6)cls+=' sat';
+    if(ds===todayStr) cls+=' today-marker';
+    if(isPast) cls+=' past';
+    else if(full) cls+=' full';
+    else if(!has) cls+=' noslot';
+    else cls+=' has';
+    if(picked) cls+=' picked';
+    const dot=(has&&!full)?`<div class="acd-dot"></div>`:'';
+    const fullLbl=full?`<div class="acd-full-lbl">額滿</div>`:'';
+    const click=(has&&!full)?`onclick="pickAddDate('${ds}')"`:'';
+    h+=`<div class="${cls}" ${click}>${dd}${dot}${fullLbl}</div>`;
+  }
+  grid.innerHTML=h;
+}
+
+window.pickAddDate = function(ds){
+  const inp=document.getElementById('a_date');
+  if(inp){ inp.value=ds; }
+  renderAddCal();
+  onAddDateChange();
+}
+
+window.saveAddPatient = async function(){
+  const name  = document.getElementById('a_name').value.trim();
+  const phone = document.getElementById('a_phone').value.trim();
+  const date  = document.getElementById('a_date').value;
+  const slot  = document.getElementById('a_slot').value;
+  const docId = parseInt(document.getElementById('a_doc').value)||null;
+  const by=document.getElementById('a_bday_y').value.trim();
+  const bm=document.getElementById('a_bday_m').value.trim();
+  const bd=document.getElementById('a_bday_d').value.trim();
+  const op=document.getElementById('a_op').value;
+
+  // 顯示/隱藏錯誤訊息的輔助函數
+  const showErr=(id,msg)=>{const el=document.getElementById(id);if(el){el.textContent=msg;el.style.display=msg?'block':'none';}};
+
+  let ok=true;
+
+  // 姓名
+  if(!name){showErr('a_err_name','請輸入姓名');ok=false;}
+  else showErr('a_err_name','');
+
+  // 生日驗證
+  const todayRoc=new Date().getFullYear()-1911;
+  const yi=parseInt(by),mi2=parseInt(bm),di=parseInt(bd);
+  let bdayErr='';
+  if(!by||!bm||!bd||isNaN(yi)||isNaN(mi2)||isNaN(di)){
+    bdayErr='請輸入完整生日';
+  } else if(yi<1||yi>todayRoc){
+    bdayErr=`民國年請填 1～${todayRoc}`;
+  } else if(mi2<1||mi2>12){
+    bdayErr='月份請填 1～12';
+  } else {
+    const maxD=new Date(yi+1911,mi2,0).getDate();
+    if(di<1||di>maxD) bdayErr=`${mi2}月份日期請填 1～${maxD}`;
+    else if(new Date(yi+1911,mi2-1,di)>new Date()) bdayErr='生日不能是未來日期';
+  }
+  showErr('a_err_bday',bdayErr);
+  if(bdayErr) ok=false;
+
+  // 電話
+  if(!phone){showErr('a_err_phone','請輸入聯絡電話');ok=false;}
+  else showErr('a_err_phone','');
+
+  // 醫師
+  if(!docId){showErr('a_err_doc','請選擇醫師');ok=false;}
+  else showErr('a_err_doc','');
+
+  // 術式
+  if(!op){showErr('a_err_op','請選擇術式');ok=false;}
+  else showErr('a_err_op','');
+
+  // 日期 & 時段
+  if(!date){toast('err','請選擇手術日期');ok=false;}
+  if(date&&!slot){toast('err','請選擇手術時段');ok=false;}
+
+  if(!ok)return;
+  if(getConflict(date, slot)){toast('err','時段衝突，請更換時間');return;}
+  const bday=composeBday(by,bm,bd);
+  const docObj=doctors.find(d=>d.id===docId);
+  const data={
+    name, bday, phone, date, slot,
+    op:document.getElementById('a_op').value,
+    note:document.getElementById('a_note').value.trim(),
+    docId, docName:docObj?docObj.name:'',
+    status:'pending', lineNotified:false,
+    createdAt:firebase.firestore.FieldValue.serverTimestamp()
+  };
+  const btn=document.getElementById('a_save_btn');
+  if(btn){btn.disabled=true;btn.textContent='儲存中…';}
+  try{
+    if(window._fbAddBooking){
+      await window._fbAddBooking(data);
+    } else {
+      // fallback: local only
+      bookings.push({id:String(nextId++), ...data, ts:Date.now()});
+      renderBookings();
+    }
+    closeModal();
+    toast('success','新病人預約已建立並同步至雲端');
+  } catch(e){
+    toast('err','儲存失敗：'+e.message);
+    if(btn){btn.disabled=false;btn.textContent='新增';}
   }
 }
-function fmtDs(ds){if(!ds)return'';const[y,m,d]=ds.split('-');return`${y}年${parseInt(m)}月${parseInt(d)}日`;}
 
-// 把所有 onclick 函數掛到 window，防止 Netlify 壓縮後名稱被改
-window.enterBooking  = enterBooking;
-window.closeModal    = closeModal;
-window.goHome        = goHome;
-window.pickDoc       = pickDoc;
-window.pickOp        = pickOp;
-window.toStep1       = toStep1;
-window.toStep2       = toStep2;
-window.toStep3       = toStep3;
-window.toStep4       = toStep4;
-window.submitBooking = submitBooking;
-window.calNav        = calNav;
-window.pickDate      = pickDate;
-window.pickSlot      = pickSlot;
-window.renderSlots   = renderSlots;
+/* ═══════════════════════════════════════
+   CALENDAR  (FIX10: clean week view)
+═══════════════════════════════════════ */
+window.setCalView = function(v,btn){calView=v;document.querySelectorAll('.cvt').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderCal();}
+window.calNav = function(d){if(calView==='month')calDate.setMonth(calDate.getMonth()+d);else if(calView==='week')calDate.setDate(calDate.getDate()+d*7);else calDate.setDate(calDate.getDate()+d);renderCal();}
+window.calGoToday = function(){calDate=new Date();renderCal();}
+
+window.setCalDocFilter = function(val){
+  calDocFilter=val==='all'?'all':parseInt(val);
+  renderCal();
+}
+
+function evForDate(ds){
+  // only approved bookings appear in the surgical calendar
+  let evs=bookings.filter(b=>b.date===ds&&b.status==='approved');
+  if(calDocFilter!=='all') evs=evs.filter(b=>b.docId===calDocFilter);
+  return evs;
+}
+
+// Get inline style for calendar event based on doctor color
+function evStyle(b){
+  const dc=docColor(b.docId);
+  return `style="background:${dc.bg};color:${dc.text};border-left-color:${dc.dot};"`;
+}
+
+function renderCal(){
+  // update doctor filter select in calendar toolbar
+  const cdf=document.getElementById('calDocSel');
+  if(cdf){
+    const prev=cdf.value;
+    cdf.innerHTML=`<option value="all">全部醫師</option>`+doctors.map(d=>`<option value="${d.id}">${d.name} 醫師</option>`).join('');
+    if(prev) cdf.value=prev;
+  }
+  if(calView==='month') renderMonthCal();
+  else if(calView==='week') renderWeekCal();
+  else renderDayCal();
+}
+
+function renderMonthCal(){
+  const y=calDate.getFullYear(),m=calDate.getMonth();
+  const mn=['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+  document.getElementById('calTtl').textContent=`${y} 年 ${mn[m]}`;
+  const first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate(),prevDays=new Date(y,m,0).getDate();
+  const today=new Date().toDateString();
+  let cells='';
+  for(let i=first-1;i>=0;i--) cells+=`<div class="cal-cell other"><div class="cal-cell-d">${prevDays-i}</div></div>`;
+  for(let d=1;d<=days;d++){
+    const dt=new Date(y,m,d),dow=dt.getDay();
+    const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const evs=evForDate(ds);
+    let cls='cal-cell';
+    if(dow===0)cls+=' sun';if(dow===6)cls+=' sat';
+    if(dt.toDateString()===today)cls+=' today';
+    const evHtml=evs.slice(0,3).map(e=>`<div class="ev" ${evStyle(e)} onclick="openDetail('${e.id}')">${e.slot} ${e.name}</div>`).join('');
+    const more=evs.length>3?`<div class="ev more">+${evs.length-3} 筆</div>`:'';
+    cells+=`<div class="${cls}"><div class="cal-cell-d">${d}</div>${evHtml}${more}</div>`;
+  }
+  const rem=(7-(first+days)%7)%7;
+  for(let d=1;d<=rem;d++) cells+=`<div class="cal-cell other"><div class="cal-cell-d">${d}</div></div>`;
+  document.getElementById('calBody').innerHTML=`<div class="cal-month-grid">
+    <div class="cal-month-head"><div class="cal-mhd">日</div><div class="cal-mhd">一</div><div class="cal-mhd">二</div><div class="cal-mhd">三</div><div class="cal-mhd">四</div><div class="cal-mhd">五</div><div class="cal-mhd">六</div></div>
+    <div class="cal-month-body">${cells}</div></div>`;
+}
+
+/* FIX10: week view — single grid definition, cleaner layout */
+function renderWeekCal(){
+  const d=new Date(calDate);d.setDate(d.getDate()-d.getDay());
+  const wds=Array.from({length:7},(_,i)=>{const x=new Date(d);x.setDate(d.getDate()+i);return x;});
+  document.getElementById('calTtl').textContent=`${wds[0].getMonth()+1}/${wds[0].getDate()} — ${wds[6].getMonth()+1}/${wds[6].getDate()}`;
+  const today=new Date().toDateString();
+  const dow=['日','一','二','三','四','五','六'];
+  const hours=['08','09','10','11','12','13','14','15','16','17'];
+
+  let headCells=`<div style="border-right:1px solid var(--border);padding:9px 0;"></div>`;
+  wds.forEach(w=>{
+    const isT=w.toDateString()===today;
+    headCells+=`<div class="cal-whc">
+      <div class="cal-whc-dow">${dow[w.getDay()]}</div>
+      <div class="cal-whc-date${isT?' today':''}">${w.getDate()}</div>
+    </div>`;
+  });
+
+  let bodyRows='';
+  hours.forEach(hr=>{
+    bodyRows+=`<div class="cal-hl">${hr}:00</div>`;
+    wds.forEach(w=>{
+      const ds=`${w.getFullYear()}-${String(w.getMonth()+1).padStart(2,'0')}-${String(w.getDate()).padStart(2,'0')}`;
+      let evs=bookings.filter(b=>b.date===ds&&b.slot.startsWith(hr)&&b.status==='approved');
+      if(calDocFilter!=='all') evs=evs.filter(b=>b.docId===calDocFilter);
+      bodyRows+=`<div class="cal-wslot">${evs.map(e=>`<div class="wev" ${evStyle(e)} onclick="openDetail('${e.id}')">${e.slot} ${e.name}</div>`).join('')}</div>`;
+    });
+  });
+
+  document.getElementById('calBody').innerHTML=`<div class="cal-week-wrap">
+    <div class="cal-week-head">${headCells}</div>
+    <div class="cal-week-body">${bodyRows}</div>
+  </div>`;
+}
+
+function renderDayCal(){
+  const d=calDate,dow=['週日','週一','週二','週三','週四','週五','週六'];
+  document.getElementById('calTtl').textContent=`${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${dow[d.getDay()]}`;
+  const ds=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const evs=evForDate(ds);
+  const hours=['08','09','10','11','12','13','14','15','16','17'];
+  let rows='';
+  hours.forEach(hr=>{
+    const slotEvs=evs.filter(e=>e.slot.startsWith(hr));
+    rows+=`<div class="cal-dhl">${hr}:00</div><div class="cal-dslot">${slotEvs.map(e=>`<div class="dev" ${evStyle(e)} onclick="openDetail('${e.id}')"><span>${e.slot} ${e.name}</span><span style="font-size:11px;opacity:.7;">${e.op}</span></div>`).join('')}</div>`;
+  });
+  document.getElementById('calBody').innerHTML=`<div class="cal-day-wrap">
+    <div class="cal-day-head"><span style="font-size:14px;font-weight:700;">${evs.length?evs.length+' 個手術排程':'今日無手術排程'}</span></div>
+    <div class="cal-day-body">${rows}</div>
+  </div>`;
+}
+
+/* ═══════════════════════════════════════
+   SLOT SETTINGS  (per-doctor tabs)
+═══════════════════════════════════════ */
+// slotSettings keys: "docId:YYYY-MM-DD" -> [slots]
+let slotActiveDocId = null;
+
+function getDocSlots(docId, ds){ return slotSettings[docId+':'+ds] || []; }
+function setDocSlots(docId, ds, arr){
+  const k=docId+':'+ds;
+  if(arr&&arr.length) slotSettings[k]=[...arr].sort(); else delete slotSettings[k];
+}
+function getBookedSlots(ds){
+  // only pending + approved count as "booked" — rejected frees the slot
+  return bookings.filter(b=>b.date===ds&&(b.status==='pending'||b.status==='approved')).map(b=>b.slot);
+}
+
+// is slot AM (before 12:00)?
+function isAM(slot){ return parseInt(slot.split(':')[0])<12; }
+
+// count pending+approved bookings for a doctor on a date, split by AM/PM
+function getDocBookedCount(docId, ds){
+  const bks=bookings.filter(b=>b.date===ds&&b.docId===docId&&(b.status==='pending'||b.status==='approved'));
+  return { am: bks.filter(b=>isAM(b.slot)).length, pm: bks.filter(b=>!isAM(b.slot)).length };
+}
+
+// get limit for a slot (AM or PM) from doctor settings
+function getSlotLimit(doc, slot){
+  if(!doc) return 99;
+  const lim=isAM(slot)?doc.limitAM:doc.limitPM;
+  return (lim===0||lim>0)?lim:99;
+}
+
+// is a given slot locked due to limit reached?
+function isSlotLimitReached(doc, ds, slot){
+  if(!doc) return false;
+  const lim=isAM(slot)?doc.limitAM:doc.limitPM;
+  const limit=(lim===0||lim>0)?lim:99;
+  const counts=getDocBookedCount(doc.id, ds);
+  return isAM(slot)?(counts.am>=limit):(counts.pm>=limit);
+}
+
+window.slotCalNav = function(d){slotCalDate.setMonth(slotCalDate.getMonth()+d);slotSelectedDay=null;renderSlotCal();}
+
+function renderSlotDocTabs(){
+  const tabs=document.getElementById('slotDocTabs');
+  if(!tabs) return;
+  if(!doctors.length){tabs.innerHTML='<div style="font-size:12px;color:var(--text3);padding:6px 0;">尚未設定任何醫師</div>';return;}
+  const tabsHtml=doctors.map(d=>{
+    const dc=docColor(d.id);
+    const isActive=slotActiveDocId===d.id;
+    return `<button class="doc-tab${isActive?' active':''}" onclick="selectSlotDoc(${d.id})"
+      style="${isActive?`color:${dc.dot};border-bottom-color:${dc.dot};`:''}">
+      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${dc.dot};margin-right:5px;"></span>${d.name} 醫師</button>`;
+  }).join('');
+  const gearBtn=`<button class="doc-tab" onclick="openGlobalTimeSettings()" title="總預約時段設定" style="margin-left:auto;color:var(--text3);padding:8px 10px;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+  </button>`;
+  tabs.style.display='flex';tabs.style.alignItems='center';
+  tabs.innerHTML=tabsHtml+gearBtn;
+}
+
+window.selectSlotDoc = function(docId){
+  slotActiveDocId=docId; slotSelectedDay=null;
+  renderSlotDocTabs(); renderSlotCal();
+}
+
+function renderSlotCal(){
+  if(!slotActiveDocId && doctors.length) slotActiveDocId=doctors[0].id;
+  renderSlotDocTabs();
+  const y=slotCalDate.getFullYear(),m=slotCalDate.getMonth();
+  const mn=['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+  document.getElementById('slotMonthLabel').textContent=`${y} 年 ${mn[m]}`;
+  const grid=document.getElementById('slotCalGrid');
+  while(grid.children.length>7) grid.removeChild(grid.lastChild);
+  const first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate();
+  const today=new Date();
+  const dc=slotActiveDocId?docColor(slotActiveDocId):DOC_COLORS[0];
+
+  // set CSS vars for hover colors based on active doctor's colour
+  const wrap=document.querySelector('.slot-picker-wrap');
+  if(wrap){
+    wrap.style.setProperty('--slot-hover-bg', dc.bg);
+    wrap.style.setProperty('--slot-hover-border', dc.border);
+  }
+
+  for(let d=1;d<=days;d++){
+    const dt=new Date(y,m,d);
+    const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dow=dt.getDay();
+    const slots=slotActiveDocId?getDocSlots(slotActiveDocId,ds):[];
+    const hasSlots=slots.length>0;
+    const isPast=dt<new Date(today.getFullYear(),today.getMonth(),today.getDate());
+    const el=document.createElement('div');
+    let cls='slot-day';
+    if(dow===0)cls+=' sunday';if(dow===6)cls+=' saturday';
+    if(isPast)cls+=' past';
+    if(ds===slotSelectedDay)cls+=' selected';
+    el.className=cls;
+    if(d===1) el.style.gridColumnStart=first+1;
+    if(hasSlots && ds!==slotSelectedDay){
+      el.style.background=dc.bg;
+      el.style.borderColor=dc.border;
+      el.style.color=dc.text;
+      el.style.fontWeight='700';
+    }
+    // selected day uses doctor dot colour as background
+    if(ds===slotSelectedDay){
+      el.style.background=dc.dot;
+      el.style.borderColor=dc.dot;
+      el.style.color='white';
+      el.style.fontWeight='700';
+      el.style.boxShadow=`0 2px 8px ${dc.dot}55`;
+    }
+    const numSpan=document.createElement('span');numSpan.textContent=d;el.appendChild(numSpan);
+    if(hasSlots){
+      const dot=document.createElement('div');
+      dot.className='slot-day-dot';
+      dot.style.background=ds===slotSelectedDay?'rgba(255,255,255,.7)':dc.dot;
+      el.appendChild(dot);
+    }
+    if(!isPast) el.onclick=()=>selectSlotDay(ds);
+    grid.appendChild(el);
+  }
+  renderSlotSummary();
+  if(slotSelectedDay) renderTimeSlotPanel(slotSelectedDay);
+  else document.getElementById('timeSlotPanel').innerHTML='<div class="no-date-hint">↑ 請點選上方日期來設定時段</div>';
+}
+
+window.selectSlotDay = function(ds){slotSelectedDay=ds;renderSlotCal();}
+
+function renderTimeSlotPanel(ds){
+  if(!slotActiveDocId){document.getElementById('timeSlotPanel').innerHTML='<div class="no-date-hint">請先選擇醫師分頁</div>';return;}
+  const sel=getDocSlots(slotActiveDocId,ds);
+  const booked=getBookedSlots(ds);
+  const dc=docColor(slotActiveDocId);
+  const doc=doctors.find(d=>d.id===slotActiveDocId);
+  const counts=getDocBookedCount(slotActiveDocId,ds);
+  const limitAM=doc?doc.limitAM||99:99;
+  const limitPM=doc?doc.limitPM||99:99;
+  const remAM=Math.max(0,limitAM-counts.am);
+  const remPM=Math.max(0,limitPM-counts.pm);
+
+  const slotItems=sel.map(s=>{
+    const isBooked=booked.includes(s);
+    const am=isAM(s);
+    const lim=am?(doc?doc.limitAM??99:99):(doc?doc.limitPM??99:99);
+    const limit=(lim===0||lim>0)?lim:99;
+    const limitReached=am?(counts.am>=limit):(counts.pm>=limit);
+    const isGrey=!isBooked&&limitReached;
+    return `<div class="dds-item">
+      <span class="dds-time" style="color:${isGrey?'var(--text3)':dc.dot};${isGrey?'text-decoration:line-through;':''}">${s}</span>
+      ${isBooked
+        ?`<span class="dds-booked">已預約</span>`
+        :`<button class="dds-del" onclick="removeDaySlotInline('${ds}','${s}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`}
+    </div>`;
+  }).join('');
+
+  const hourOpts=Array.from({length:24},(_,i)=>`<option value="${String(i).padStart(2,'0')}">${String(i).padStart(2,'0')}</option>`).join('');
+  const minOpts=['00','15','30','45'].map(v=>`<option value="${v}">${v}</option>`).join('');
+
+  // plain text AM/PM remaining — 0 = red, >0 = black
+  const limAM=doc?doc.limitAM??99:99; const effLimAM=(limAM===0||limAM>0)?limAM:99;
+  const limPM=doc?doc.limitPM??99:99; const effLimPM=(limPM===0||limPM>0)?limPM:99;
+  const rem2AM=Math.max(0,effLimAM-counts.am);
+  const rem2PM=Math.max(0,effLimPM-counts.pm);
+  const amTxt=effLimAM<99?`上午剩 <strong style="color:${rem2AM===0?'var(--red)':'var(--text)'};">${rem2AM}</strong> 人`:'';
+  const pmTxt=effLimPM<99?`下午剩 <strong style="color:${rem2PM===0?'var(--red)':'var(--text)'};">${rem2PM}</strong> 人`:'';
+  const remText=(amTxt||pmTxt)?`<span style="font-size:12px;color:var(--text2);">${[amTxt,pmTxt].filter(Boolean).join('　')}</span>`:'';
+
+  document.getElementById('timeSlotPanel').innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:${dc.text};">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px;color:${dc.dot};"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        ${fmtDate(ds)} 可預約時段
+      </span>
+      ${remText}
+    </div>
+    <div class="day-detail-slots" style="margin-bottom:12px;">${slotItems||'<div style="font-size:12px;color:var(--text3);padding:6px 0;">尚未設定時段</div>'}</div>
+    <div class="dds-add-row">
+      <select class="dds-select" id="dds_h"><option value="">時</option>${hourOpts}</select>
+      <span style="font-size:13px;color:var(--text2);font-weight:600;">:</span>
+      <select class="dds-select" id="dds_m"><option value="">分</option>${minOpts}</select>
+      <button class="dds-add-btn" style="background:${dc.dot};" onclick="addDaySlotInline('${ds}')">新增</button>
+    </div>
+    ${booked.length?`<div style="margin-top:8px;font-size:11px;color:var(--text3);"><span style="display:inline-block;width:10px;height:10px;background:#F1F5F9;border:1px solid var(--border);border-radius:3px;margin-right:4px;"></span>灰色標記時段已有預約，不可刪除</div>`:''}`;
+}
+
+window.addDaySlotInline = function(ds){
+  const h=document.getElementById('dds_h').value;
+  const min=document.getElementById('dds_m').value;
+  if(!h||min===''){toast('warn','請選擇時與分');return;}
+  const slot=h+':'+min;
+  const doc=doctors.find(d=>d.id===slotActiveDocId);
+  // only block if limit is explicitly set to 0 (not open)
+  if(doc){
+    const lim=isAM(slot)?doc.limitAM:doc.limitPM;
+    if(lim===0){
+      toast('warn',(isAM(slot)?'上午':'下午')+'人數上限設為 0，無法新增時段');
+      return;
+    }
+  }
+  const cur=getDocSlots(slotActiveDocId,ds);
+  if(cur.includes(slot)){toast('warn','此時段已存在');return;}
+  setDocSlots(slotActiveDocId,ds,[...cur,slot]);
+  renderSlotCal();
+  toast('success','已新增 '+slot);
+}
+
+window.removeDaySlotInline = function(ds,slot){
+  if(getBookedSlots(ds).includes(slot)){toast('warn','此時段已有預約，無法刪除');return;}
+  setDocSlots(slotActiveDocId,ds,getDocSlots(slotActiveDocId,ds).filter(s=>s!==slot));
+  renderSlotCal();
+}
+
+function renderSlotSummary(){
+  const prefix=`${slotCalDate.getFullYear()}-${String(slotCalDate.getMonth()+1).padStart(2,'0')}`;
+  const div=document.getElementById('slotSummary');
+  if(!div)return;
+  if(!slotActiveDocId){div.innerHTML='';return;}
+  const dc=docColor(slotActiveDocId);
+  const entries=Object.entries(slotSettings)
+    .filter(([k])=>k.startsWith(slotActiveDocId+':'+prefix))
+    .map(([k,slots])=>[k.split(':')[1],slots])
+    .sort(([a],[b])=>a.localeCompare(b));
+  if(!entries.length){div.innerHTML=`<div style="font-size:12px;color:var(--text3);padding:14px 0;">本月尚未設定任何時段</div>`;return;}
+  div.innerHTML=`<div class="slot-summary-title">本月已設定時段</div>`+entries.map(([ds,slots])=>{
+    const booked=getBookedSlots(ds);
+    const isSelected=ds===slotSelectedDay;
+    const doc=doctors.find(d=>d.id===slotActiveDocId);
+
+    const chipsHtml=slots.map(s=>{
+      const isBooked=booked.includes(s);
+      const limitFull=isSlotLimitReached(doc,ds,s);
+
+      if(isBooked){
+        // always show booked slots in grey
+        return `<span class="slot-summary-chip booked">${s}</span>`;
+      } else if(!limitFull){
+        // available slots: show in doctor color
+        return `<span class="slot-summary-chip" style="background:${dc.bg};color:${dc.text};border-color:${dc.border};">${s}</span>`;
+      } else {
+        // limit reached: completely hide this slot
+        return '';
+      }
+    }).join('');
+
+    return `<div class="slot-summary-item${isSelected?' summary-active':''}" onclick="selectSlotDay('${ds}')" style="cursor:pointer;${isSelected?`border-color:${dc.dot};background:${dc.bg};`:''}">
+      <div class="slot-summary-date" style="${isSelected?`color:${dc.text};`:''}">${fmtDate(ds)}</div>
+      <div class="slot-summary-chips">${chipsHtml}</div>
+      <button class="slot-summary-del" onclick="event.stopPropagation();clearDocSlots('${ds}')" title="清除所有可刪時段"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>`;
+  }).join('');
+}
+
+function removeSummarySlot(ds, slot){
+  const booked=getBookedSlots(ds);
+  if(booked.includes(slot)){toast('warn','此時段已有預約，無法刪除');return;}
+  setDocSlots(slotActiveDocId,ds,getDocSlots(slotActiveDocId,ds).filter(s=>s!==slot));
+  renderSlotCal();
+}
+
+function clearDocSlots(ds){
+  // only protect slots with pending or approved bookings; rejected slots can be cleared
+  const protected_slots=bookings
+    .filter(b=>b.date===ds&&(b.status==='pending'||b.status==='approved'))
+    .map(b=>b.slot);
+  setDocSlots(slotActiveDocId,ds,getDocSlots(slotActiveDocId,ds).filter(s=>protected_slots.includes(s)));
+  renderSlotCal();
+}
+
+/* Global time settings */
+let doctorDefaultSlots={};
+let globalSettingDocId=null;
+
+window.openGlobalTimeSettings = function(){
+  globalSettingDocId=slotActiveDocId||( doctors.length?doctors[0].id:null );
+  document.getElementById('modal2Title').textContent='總預約時段設定';
+  renderGlobalTimeBody();
+  document.getElementById('modal2Foot').innerHTML=`<div class="modal-acts">
+    <button class="mbtn mbtn-approve" onclick="applyGlobalSettings()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>套用到本月</button>
+    <button class="mbtn mbtn-close" onclick="closeModal2()">取消</button>
+  </div>`;
+  openOverlay2();
+}
+
+function renderGlobalTimeBody(){
+  if(!globalSettingDocId && doctors.length) globalSettingDocId=doctors[0].id;
+  const docOpts=doctors.map(d=>`<option value="${d.id}"${globalSettingDocId===d.id?' selected':''}>${d.name} 醫師</option>`).join('');
+  const DOW=['日','一','二','三','四','五','六'];
+  const cfg=doctorDefaultSlots[globalSettingDocId]||{days:[],slots:[]};
+  const dc=docColor(globalSettingDocId);
+
+  // day chips — click to toggle, highlight with doctor color
+  const dowChips=DOW.map((l,i)=>{
+    const active=cfg.days.includes(i);
+    return `<button type="button" class="dow-chip${active?' active':''}"
+      style="${active?`background:${dc.bg};color:${dc.text};border-color:${dc.dot};`:'background:var(--white);color:var(--text2);border-color:var(--border);'}"
+      onclick="toggleGlobalDay(${i})"
+      data-dow="${i}">週${l}</button>`;
+  }).join('');
+
+  const slotChips=cfg.slots.map((s,i)=>`<div class="global-slot-row"><span class="global-slot-time">${s}</span><button class="global-slot-del" onclick="delGlobalSlot(${i})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>`).join('');
+
+  const hourOpts=Array.from({length:24},(_,i)=>`<option value="${String(i).padStart(2,'0')}">${String(i).padStart(2,'0')}</option>`).join('');
+  const minOpts=['00','15','30','45'].map(v=>`<option value="${v}">${v}</option>`).join('');
+
+  document.getElementById('modal2Body').innerHTML=`
+    <div class="edit-row"><label class="edit-label">醫師</label>
+      <select class="edit-inp" onchange="globalSettingDocId=parseInt(this.value);renderGlobalTimeBody()">${docOpts}</select>
+    </div>
+    <div style="font-size:11px;font-weight:700;color:var(--text2);margin:12px 0 8px;">套用星期</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">${dowChips}</div>
+    <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px;">預設開放時段</div>
+    <div class="global-slots-wrap" style="margin-bottom:10px;">${slotChips||'<div style="font-size:12px;color:var(--text3);">尚未設定</div>'}</div>
+    <div class="dds-add-row">
+      <select class="dds-select" id="gs_h"><option value="">時</option>${hourOpts}</select>
+      <span style="font-size:13px;color:var(--text2);font-weight:600;">:</span>
+      <select class="dds-select" id="gs_m"><option value="">分</option>${minOpts}</select>
+      <button class="dds-add-btn" onclick="addGlobalSlot()">新增</button>
+    </div>`;
+}
+
+window.toggleGlobalDay = function(d){
+  if(!doctorDefaultSlots[globalSettingDocId]) doctorDefaultSlots[globalSettingDocId]={days:[],slots:[]};
+  const days=doctorDefaultSlots[globalSettingDocId].days;
+  const idx=days.indexOf(d); if(idx>=0) days.splice(idx,1); else days.push(d);
+  renderGlobalTimeBody();
+}
+
+window.addGlobalSlot = function(){
+  const h=document.getElementById('gs_h').value,min=document.getElementById('gs_m').value;
+  if(!h||min===''){toast('warn','請選擇時與分');return;}
+  const slot=h+':'+min;
+  const doc=doctors.find(d=>d.id===globalSettingDocId);
+  if(doc){
+    const am=parseInt(h)<12;
+    if(am && doc.limitAM===0){toast('warn','該醫師上午人數上限為 0，無法新增上午時段');return;}
+    if(!am && doc.limitPM===0){toast('warn','該醫師下午人數上限為 0，無法新增下午時段');return;}
+  }
+  if(!doctorDefaultSlots[globalSettingDocId]) doctorDefaultSlots[globalSettingDocId]={days:[],slots:[]};
+  const arr=doctorDefaultSlots[globalSettingDocId].slots;
+  if(arr.includes(slot)){toast('warn','已存在');return;}
+  arr.push(slot);arr.sort();renderGlobalTimeBody();
+}
+
+window.delGlobalSlot = function(i){
+  doctorDefaultSlots[globalSettingDocId].slots.splice(i,1);renderGlobalTimeBody();
+}
+
+window.applyGlobalSettings = function(){
+  if(!globalSettingDocId){toast('warn','請選擇醫師');return;}
+  const cfg=doctorDefaultSlots[globalSettingDocId];
+  if(!cfg||!cfg.days.length||!cfg.slots.length){toast('warn','請設定星期和時段');return;}
+  const doc=doctors.find(d=>d.id===globalSettingDocId);
+  // filter out slots blocked by limit=0
+  const allowedSlots=cfg.slots.filter(s=>{
+    const am=isAM(s);
+    if(am && doc && doc.limitAM===0) return false;
+    if(!am && doc && doc.limitPM===0) return false;
+    return true;
+  });
+  if(!allowedSlots.length){toast('warn','所有時段皆因人數上限為 0 而無法套用');return;}
+  const y=slotCalDate.getFullYear(),m=slotCalDate.getMonth();
+  const days=new Date(y,m+1,0).getDate(); let count=0;
+  for(let d=1;d<=days;d++){
+    const dt=new Date(y,m,d);
+    if(!cfg.days.includes(dt.getDay())) continue;
+    const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const booked=getBookedSlots(ds);
+    const cur=getDocSlots(globalSettingDocId,ds);
+    const merged=[...new Set([...cur,...allowedSlots])].filter(s=>!booked.includes(s)||cur.includes(s));
+    setDocSlots(globalSettingDocId,ds,merged); count++;
+  }
+  if(globalSettingDocId===slotActiveDocId) renderSlotCal();
+  closeModal2(); toast('success',`已套用到本月 ${count} 天`);
+}
+
+function openOverlay2(){document.getElementById('overlay2').classList.add('open');}
+window.closeModal2 = function(){document.getElementById('overlay2').classList.remove('open');}
+window.closeOverlay2 = function(e){if(e.target===document.getElementById('overlay2'))closeModal2();}
+
+
+
+/* ═══════════════════════════════════════
+   DOCTORS
+═══════════════════════════════════════ */
+function renderDoctors(){
+  const g=document.getElementById('doctorsGrid');
+  g.innerHTML=doctors.map(d=>{
+    const dc=docColor(d.id);
+    return `<div class="doctor-card">
+    <div class="dc-head">
+      <div class="dc-avatar" style="background:${dc.dot};">${d.name[0]}</div>
+      <div><div class="dc-name">${d.name} 醫師</div><div class="dc-title">${d.title}</div></div>
+      <div class="dc-acts">
+        <button class="icon-btn ib-edit" title="編輯" onclick="openEditDoctor(${d.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+        <button class="icon-btn ib-del" title="刪除" onclick="deleteDoctor(${d.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg></button>
+      </div>
+    </div>
+    <div class="dc-ops-label" style="margin-top:8px;display:flex;align-items:center;gap:6px;">
+      每週上限：${d.weekLimit?`<span style="background:var(--op);color:var(--orange);border:1px solid var(--ob);border-radius:10px;padding:1px 8px;font-size:11px;font-weight:700;">${d.weekLimit} 天</span>`:'<span style="font-size:11px;color:var(--text3);">不限制</span>'}
+    </div>
+    <div class="dc-ops-label" style="margin-top:8px;">可執行術式</div>
+    <div class="dc-op-chips">${d.ops.length?d.ops.map(o=>`<span class="dc-op-chip" style="background:${dc.bg};color:${dc.text};border-color:${dc.border};">${o}</span>`).join(''):'<span class="dc-op-chip">尚未設定</span>'}</div>
+  </div>`}).join('')+`<button class="add-doctor-btn" onclick="openAddDoctor()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>新增醫師</button>`;
+}
+
+const DOC_COLOR_NAMES=['天空藍','翠綠','珊瑚橘','葡萄紫','玫瑰紅','青碧綠','暖金黃','石板灰'];
+
+function doctorModal(doc){
+  const existingOps=doc?doc.ops:[];
+  const selColorId=doc?(doc.colorId||'c1'):'c1';
+  const selColor=DOC_COLORS.find(c=>c.id===selColorId)||DOC_COLORS[0];
+  const selIdx=DOC_COLORS.findIndex(c=>c.id===selColorId);
+
+  document.getElementById('modalBody').innerHTML=`
+    <div class="edit-row">
+      <div style="display:grid;grid-template-columns:1fr 120px;gap:12px;align-items:end;">
+        <div><label class="edit-label">醫師姓名</label><input class="edit-inp" id="dc_name" value="${doc?doc.name:''}" placeholder="例：林俊宏"></div>
+        <div>
+          <label class="edit-label">標記顏色</label>
+          <div class="color-dropdown-wrap" id="colorDropdownWrap" style="width:120px;">
+            <button type="button" class="color-dropdown-btn" id="colorDropdownBtn" onclick="toggleColorDropdown()" style="padding:9px 12px;justify-content:flex-start;gap:8px;">
+              <span class="color-dropdown-dot" id="colorBtnDot" style="background:${selColor.dot};width:24px;height:24px;flex-shrink:0;"></span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:11px;height:11px;opacity:.5;margin-left:auto;flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="color-dropdown-list" id="colorDropdownList" style="width:120px;max-height:none;overflow:visible;">
+              ${DOC_COLORS.map((c,i)=>`<div class="color-dropdown-opt${selColorId===c.id?' active':''}" data-cid="${c.id}" onclick="selectDocColor('${c.id}')" style="justify-content:center;">
+                <span class="color-dropdown-opt-dot" style="background:${c.dot};width:24px;height:24px;flex-shrink:0;"></span>
+              </div>`).join('')}
+            </div>
+            <input type="hidden" id="dc_colorId" value="${selColorId}">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="edit-row"><label class="edit-label">科別</label><input class="edit-inp" id="dc_title" value="${doc?doc.title:'耳鼻喉科'}" placeholder="例：耳鼻喉科"></div>
+    <div class="edit-row">
+      <label class="edit-label">每日預約上限人數</label>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:2px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:12px;color:var(--text2);font-weight:600;">上午</span>
+          <input class="edit-inp" id="dc_limit_am" type="number" min="0" max="50" value="${doc?(doc.limitAM??3):3}" style="width:70px;text-align:center;">
+          <span style="font-size:12px;color:var(--text2);">人</span>
+        </div>
+        <span style="font-size:14px;color:var(--text3);font-weight:400;">，</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:12px;color:var(--text2);font-weight:600;">下午</span>
+          <input class="edit-inp" id="dc_limit_pm" type="number" min="0" max="50" value="${doc?(doc.limitPM??3):3}" style="width:70px;text-align:center;">
+          <span style="font-size:12px;color:var(--text2);">人</span>
+        </div>
+      </div>
+    </div>
+    <div class="edit-row">
+      <label class="edit-label">每週開放天數上限</label>
+      <div class="wl-toggle-row">
+        <span class="wl-toggle-lbl">啟用每週天數限制</span>
+        <label class="wl-toggle">
+          <input type="checkbox" id="dc_week_limit_on" onchange="toggleWeekLimitInp(this.checked)" ${doc&&doc.weekLimit?'checked':''}>
+          <span class="wl-slider"></span>
+        </label>
+      </div>
+      <div class="wl-days-inp${doc&&doc.weekLimit?' on':''}" id="dc_week_limit_wrap">
+        <span>每週最多開放</span>
+        <input type="number" id="dc_week_limit" min="1" max="7" value="${doc&&doc.weekLimit?doc.weekLimit:2}">
+        <span>天</span>
+      </div>
+    </div>
+    <div class="modal-divider"></div>
+    <div class="edit-label" style="margin-bottom:8px;">可執行術式</div>
+    <div class="ops-tags" id="opsTags" onclick="document.getElementById('opsTagInp').focus()">
+      ${existingOps.map(o=>`<span class="ops-tag" data-op="${o}">${o}<button class="ops-tag-del" onclick="removeOpsTag(this)">×</button></span>`).join('')}
+      <input class="ops-tag-inp" id="opsTagInp" onkeydown="handleOpsTagKey(event)">
+    </div>
+    <div style="font-size:11px;color:var(--text3);margin-top:5px;">按 Enter 新增，點擊 × 刪除</div>`;
+  // no ops preview needed
+}
+
+window.toggleWeekLimitInp = function(on){
+  const wrap=document.getElementById('dc_week_limit_wrap');
+  if(wrap) wrap.classList.toggle('on',on);
+}
+window.toggleColorDropdown = function(){
+  document.getElementById('colorDropdownList').classList.toggle('open');
+}
+
+window.selectDocColor = function(cid){
+  document.getElementById('dc_colorId').value=cid;
+  const c=DOC_COLORS.find(x=>x.id===cid)||DOC_COLORS[0];
+  document.getElementById('colorBtnDot').style.background=c.dot;
+  document.querySelectorAll('.color-dropdown-opt').forEach(el=>{
+    el.classList.toggle('active',el.dataset.cid===cid);
+  });
+  document.getElementById('colorDropdownList').classList.remove('open');
+}
+
+function updateOpsPreview(){
+  const preview=document.getElementById('dc_ops_preview');
+  if(!preview)return;
+  const cid=(document.getElementById('dc_colorId')||{}).value||'c1';
+  const c=DOC_COLORS.find(x=>x.id===cid)||DOC_COLORS[0];
+  const ops=[...document.querySelectorAll('#opsTags .ops-tag')].map(t=>t.dataset.op);
+  preview.innerHTML=ops.length
+    ?ops.map(o=>`<span style="font-size:11px;font-weight:600;padding:2px 9px;border-radius:10px;background:${c.bg};color:${c.text};border:1px solid ${c.border};">${o}</span>`).join('')
+    :`<span style="font-size:11px;color:var(--text3);">新增術式後顯示顏色預覽</span>`;
+}
+
+
+
+function handleOpsTagKey(e){
+  if(e.key==='Enter'||e.key===','){
+    e.preventDefault();
+    const v=e.target.value.trim();
+    if(!v)return;
+    const tags=document.getElementById('opsTags');
+    const existing=[...tags.querySelectorAll('.ops-tag')].map(t=>t.dataset.op);
+    if(existing.includes(v)){toast('warn','術式已存在');return;}
+    const tag=document.createElement('span');
+    tag.className='ops-tag';tag.dataset.op=v;
+    tag.innerHTML=`${v}<button class="ops-tag-del" onclick="removeOpsTag(this)">×</button>`;
+    tags.insertBefore(tag,e.target);
+    e.target.value='';
+  }
+}
+
+window.removeOpsTag = function(btn){
+  btn.parentElement.remove();
+}
+
+function getSelectedOps(){
+  return [...document.querySelectorAll('#opsTags .ops-tag')].map(t=>t.dataset.op);
+}
+
+window.openAddDoctor = function(){
+  document.getElementById('modalTitle').textContent='新增醫師';
+  document.getElementById('modal').className='modal wide';
+  doctorModal(null);
+  document.getElementById('modalFoot').innerHTML=`<div class="modal-acts">
+    <button class="mbtn mbtn-approve" onclick="saveAddDoctor()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>新增</button>
+    <button class="mbtn mbtn-close" onclick="closeModal()">取消</button>
+  </div>`;
+  openOverlay();
+}
+
+window.saveAddDoctor = function(){
+  const name=document.getElementById('dc_name').value.trim();
+  if(!name){toast('err','請填寫醫師姓名');return;}
+  const ops=getSelectedOps();
+  const colorId=document.getElementById('dc_colorId').value||'c1';
+  const limitAM=parseInt(document.getElementById('dc_limit_am').value)??3;
+  const limitPM=parseInt(document.getElementById('dc_limit_pm').value)??3;
+  const weekLimitOn=document.getElementById('dc_week_limit_on')?.checked;
+  const weekLimit=weekLimitOn?parseInt(document.getElementById('dc_week_limit').value)||0:0;
+  const newId=doctors.length?Math.max(...doctors.map(d=>d.id))+1:1;
+  const newDoc={id:newId,name,title:document.getElementById('dc_title').value.trim()||'耳鼻喉科',colorId,limitAM,limitPM,weekLimit,ops};
+  doctors.push(newDoc);
+  closeModal();renderDoctors();toast('success',`${name} 醫師已新增，請記得按「儲存醫師」同步到雲端`);
+}
+
+window.saveDoctorsToDB = function(){
+  if(window._fbSaveAllDoctors) window._fbSaveAllDoctors(doctors);
+  else toast('warn','Firebase 尚未連線，請稍後再試');
+}
+
+window.openEditDoctor = function(id){
+  const doc=doctors.find(d=>d.id===id);if(!doc)return;
+  document.getElementById('modalTitle').textContent='編輯醫師';
+  document.getElementById('modal').className='modal wide';
+  doctorModal(doc);
+  document.getElementById('modalFoot').innerHTML=`<div class="modal-acts">
+    <button class="mbtn mbtn-approve" onclick="saveEditDoctor(${id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>儲存</button>
+    <button class="mbtn mbtn-close" onclick="closeModal()">取消</button>
+  </div>`;
+  openOverlay();
+}
+
+window.saveEditDoctor = function(id){
+  const doc=doctors.find(d=>d.id===id);if(!doc)return;
+  doc.name=document.getElementById('dc_name').value.trim()||doc.name;
+  doc.title=document.getElementById('dc_title').value.trim()||doc.title;
+  doc.colorId=document.getElementById('dc_colorId').value||doc.colorId||'c1';
+  doc.limitAM=parseInt(document.getElementById('dc_limit_am').value)??doc.limitAM??3;
+  doc.limitPM=parseInt(document.getElementById('dc_limit_pm').value)??doc.limitPM??3;
+  const weekLimitOn2=document.getElementById('dc_week_limit_on')?.checked;
+  doc.weekLimit=weekLimitOn2?parseInt(document.getElementById('dc_week_limit').value)||0:0;
+  doc.ops=getSelectedOps();
+  if(window._fbSaveDoctor) window._fbSaveDoctor(doc);
+  closeModal();renderDoctors();toast('success','醫師資料已更新');
+}
+
+window.deleteDoctor = function(id){
+  const doc=doctors.find(d=>d.id===id);if(!doc)return;
+  if(!confirm(`確定要刪除 ${doc.name} 醫師？`))return;
+  if(window._fbDeleteDoctor) window._fbDeleteDoctor(id);
+  doctors=doctors.filter(d=>d.id!==id);
+  renderDoctors();toast('warn','醫師已刪除');
+}
+
+/* ═══════════════════════════════════════
+   REVIEW
+═══════════════════════════════════════ */
+let reviewActiveDocId = null;
+let reviewUnlockedDocId = null; // which doctor tab is currently unlocked
+
+function updateReviewBadge(){
+  const n=bookings.filter(b=>b.status==='pending').length;
+  const badge=document.getElementById('reviewBadge');
+  if(!badge)return;
+  if(n>0){badge.textContent=n;badge.style.display='inline-flex';}
+  else{badge.style.display='none';}
+}
+
+function renderReviewDocTabs(){
+  const tabs=document.getElementById('reviewDocTabs');
+  if(!tabs)return;
+  // Only per-doctor tabs, no "all"
+  let html='';
+  doctors.forEach(d=>{
+    const dc=docColor(d.id);
+    const cnt=bookings.filter(b=>b.status==='pending'&&b.docId===d.id).length;
+    const isActive=reviewActiveDocId===d.id;
+    html+=`<button class="doc-tab${isActive?' active':''}" onclick="selectReviewDoc(${d.id})"
+      style="${isActive?`color:${dc.dot};border-bottom-color:${dc.dot};`:''}"
+    ><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${dc.dot};margin-right:5px;"></span>${d.name}
+      <span style="font-size:10px;background:${dc.bg};color:${dc.text};border:1px solid ${dc.border};border-radius:10px;padding:1px 6px;margin-left:4px;">${cnt}</span>
+    </button>`;
+  });
+  tabs.innerHTML=html;
+}
+
+window.selectReviewDoc = function(docId){
+  if(reviewActiveDocId===docId) return; // already on this tab
+  reviewActiveDocId=docId;
+  reviewUnlockedDocId=null; // auto-lock on tab switch
+  renderReview();
+}
+
+window.reviewToggleDocLock = function(){
+  reviewUnlockedDocId=(reviewUnlockedDocId===reviewActiveDocId)?null:reviewActiveDocId;
+  renderReview();
+}
+
+function renderReview(){
+  // default to first doctor if none selected
+  if(reviewActiveDocId===null && doctors.length) reviewActiveDocId=doctors[0].id;
+  renderReviewDocTabs();
+
+  const t=document.getElementById('reviewTable');
+  if(!doctors.length){ t.innerHTML=''; return; }
+
+  let data=bookings.filter(b=>b.status==='pending'&&b.docId===reviewActiveDocId);
+  data.sort((a,b)=>a.date.localeCompare(b.date)||a.slot.localeCompare(b.slot));
+
+  const dc=docColor(reviewActiveDocId);
+  const unlocked=reviewUnlockedDocId===reviewActiveDocId;
+
+  // inject hover color CSS var into the table wrapper
+  const wrap=document.getElementById('panel-review');
+  if(wrap){
+    wrap.style.setProperty('--rev-hover-bg', dc.bg);
+    wrap.style.setProperty('--rev-hover-border', dc.border);
+  }
+
+  if(!data.length){
+    t.innerHTML=`<tbody><tr><td colspan="7"><div class="review-empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      ${doctors.find(d=>d.id===reviewActiveDocId)?.name||''} 醫師目前沒有待審核的預約
+    </div></td></tr></tbody>`;
+    _renderReviewLockBar(dc, false, 0);
+    return;
+  }
+
+  t.innerHTML=`<thead><tr>
+    <th>姓名</th><th>生日</th><th>手術日期</th><th>時段</th><th>術式</th><th>備註</th><th>操作</th>
+  </tr></thead><tbody>${data.map(b=>{
+    return`<tr class="rev-row">
+      <td class="td-name">${b.name}</td>
+      <td style="font-size:12px;color:var(--text2);">${fmtBday(b.bday)||'—'}</td>
+      <td class="td-date">${fmtDate(b.date)}</td>
+      <td style="font-weight:700;font-size:13px;">${b.slot}</td>
+      <td style="font-size:12px;">${b.op||'—'}</td>
+      <td style="font-size:12px;color:var(--text2);max-width:100px;" title="${b.note||''}">${b.note?(b.note.length>10?b.note.slice(0,10)+'…':b.note):'—'}</td>
+      <td><div class="act-row">
+        ${unlocked
+          ?`<button class="icon-btn ib-approve" title="核准" onclick="reviewApprove('${b.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></button>
+            <button class="icon-btn ib-reject" title="拒絕" onclick="reviewReject('${b.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`
+          :`<span style="font-size:11px;color:var(--text3);">請先解鎖</span>`}
+      </div></td>
+    </tr>`;
+  }).join('')}</tbody>`;
+
+  _renderReviewLockBar(dc, unlocked, data.length);
+}
+
+function _renderReviewLockBar(dc, unlocked, count){
+  // insert lock bar above table inside tbl-wrap
+  const existing=document.getElementById('reviewLockBar');
+  const wrap=document.querySelector('#panel-review .tbl-wrap');
+  if(!wrap)return;
+
+  const bar=existing||document.createElement('div');
+  bar.id='reviewLockBar';
+  bar.style.cssText=`display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:${unlocked?dc.bg:'#F8FAFC'};border-bottom:1px solid ${unlocked?dc.border:'var(--border)'};transition:all .2s;`;
+  bar.innerHTML=`
+    <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:${unlocked?dc.text:'var(--text2)'};">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px;">
+        ${unlocked
+          ?`<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>`
+          :`<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0"/>`}
+      </svg>
+      ${unlocked?'已解鎖，可進行核准或拒絕操作':'已鎖定，點擊解鎖後才能操作'}
+      ${count?`<span style="font-size:11px;padding:1px 7px;border-radius:10px;background:${dc.bg};color:${dc.text};border:1px solid ${dc.border};">${count} 筆待審核</span>`:''}
+    </div>
+    <button onclick="reviewToggleDocLock()" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:var(--rx);border:1.5px solid ${unlocked?dc.dot:'var(--border)'};background:${unlocked?dc.dot:'var(--white)'};color:${unlocked?'white':'var(--text2)'};font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:13px;height:13px;">
+        ${unlocked
+          ?`<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>`
+          :`<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0"/>`}
+      </svg>
+      ${unlocked?'回鎖':'解鎖'}
+    </button>`;
+
+  if(!existing){
+    const tbl=document.getElementById('reviewTable');
+    wrap.insertBefore(bar, tbl);
+  }
+}
+
+window.reviewApprove = function(id){
+  const b=bookings.find(x=>x.id===id);if(!b)return;
+  b.status='approved';
+  if(b.fbId && window._fbApprove) window._fbApprove(b.fbId);
+  renderReview();renderBookings();updateReviewBadge();
+  if(document.getElementById('panel-calendar').classList.contains('active')) renderCal();
+  toast('success',`${b.name} 已核准`);
+}
+
+window.reviewReject = function(id){
+  const b=bookings.find(x=>x.id===id);if(!b)return;
+  b.status='rejected';
+  if(b.fbId && window._fbReject) window._fbReject(b.fbId);
+  renderReview();renderBookings();updateReviewBadge();
+  if(document.getElementById('panel-calendar').classList.contains('active')) renderCal();
+  toast('warn',`${b.name} 已拒絕`);
+}
+
+
+function openOverlay(){document.getElementById('overlay').classList.add('open');}
+window.closeModal = function(){document.getElementById('overlay').classList.remove('open');}
+window.closeOverlay = function(e){if(e.target===document.getElementById('overlay'))closeModal();}
+
+// close color dropdown when clicking outside
+document.addEventListener('click',function(e){
+  const wrap=document.getElementById('colorDropdownWrap');
+  if(wrap&&!wrap.contains(e.target)){
+    const list=document.getElementById('colorDropdownList');
+    if(list)list.classList.remove('open');
+  }
+});
+
+/* ═══════════════════════════════════════
+   INIT
+═══════════════════════════════════════ */
+renderBookings();
+updateReviewBadge();
 </script>
 
-<!-- Firebase SDK moved to <head> -->
+<!-- Firebase compat SDK 已移至 <head> 提前載入 -->
 <script>
 (function(){
   const firebaseConfig = {
@@ -764,111 +2332,110 @@ window.renderSlots   = renderSlots;
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
 
-  function colorFromId(id){
-    const map={'c1':'#F47B20','c2':'#9B6ED4','c3':'#2563EB','c4':'#16A34A','c5':'#DC2626','c6':'#0891B2'};
-    return map[id]||'#F47B20';
-  }
+  // ── 即時監聽 bookings ──
+  db.collection('bookings').onSnapshot(snap=>{
+    bookings = snap.docs.map(d=>{
+      const v=d.data();
+      return {
+        id:d.id, fbId:d.id,
+        name:v.name||'', bday:v.bday||'',
+        phone:v.phone||'', date:v.date||'',
+        slot:v.slot||'', op:v.op||'',
+        docId:v.docId||null,
+        docName:v.docName||'',
+        note:v.note||'',
+        status:v.status||'pending',
+        lineNotified:v.lineNotified||false,
+        ts:v.createdAt?.toMillis?.()||Date.now(),
+      };
+    });
+    renderBookings(); renderReview(); updateReviewBadge();
+    if(document.getElementById('panel-calendar').classList.contains('active')) renderCal();
+  });
 
   // ── 即時監聽 doctors ──
   db.collection('doctors').onSnapshot(snap=>{
     doctors = snap.docs.map(d=>{
       const v=d.data();
-      return {id:v.id, name:v.name||'', title:v.title||'',
-        color:colorFromId(v.colorId), ops:v.ops||[],
-        limitAM:v.limitAM??3, limitPM:v.limitPM??3, weekLimit:v.weekLimit||0};
+      return {id:v.id,name:v.name||'',title:v.title||'',
+        colorId:v.colorId||'c1',limitAM:v.limitAM??3,
+        limitPM:v.limitPM??3,weekLimit:v.weekLimit||0,ops:v.ops||[]};
     }).sort((a,b)=>a.id-b.id);
     renderDoctors();
-    // 若已選醫師被刪除則重置
-    if(sel.docId && !doctors.find(d=>d.id===sel.docId)){
-      sel={docId:null,op:null,date:null,slot:null};
-      document.getElementById('opWrap').innerHTML=
-        '<div class="op-placeholder">請先選擇醫師，術式將自動帶入</div>';
-    }
   });
 
   // ── 即時監聽 slots ──
   db.collection('slots').onSnapshot(snap=>{
-    Object.keys(slots).forEach(k=>delete slots[k]);
-    snap.docs.forEach(d=>{ const v=d.data(); if(v.slots) slots[d.id]=v.slots; });
-    if(document.getElementById('bookingApp').style.display!=='none') renderCal();
+    slotSettings={};
+    snap.docs.forEach(d=>{ const v=d.data(); if(v.slots) slotSettings[d.id]=v.slots; });
+    if(document.getElementById('panel-schedule').classList.contains('active')) renderSlotCal();
   });
 
-  // ── 即時監聽 bookings → 計算已預約數，即時更新畫面 ──
-  db.collection('bookings').onSnapshot(snap=>{
-    window._bookedSlots={};
-    snap.docs.map(d=>d.data())
-      .filter(b=>b.status==='approved'||b.status==='pending')
-      .forEach(b=>{
-        const key=`${b.docId}:${b.date}:${b.slot}`;
-        window._bookedSlots[key]=(window._bookedSlots[key]||0)+1;
-      });
-    // 即時更新日曆與時段顯示
-    if(document.getElementById('p2').classList.contains('on')){
-      renderCal();
-      if(sel.date){ document.getElementById('slotAll').innerHTML=renderSlots(sel.date); }
-    }
-  });
-
-  // ── 送出預約（含額滿檢查）──
-  window.submitBookingToFirebase = async function(){
-    const btnEl=document.querySelector('#p4 .btn-p');
-    if(btnEl){btnEl.disabled=true;btnEl.innerHTML='送出中…';}
-    const docObj=doctors.find(d=>d.id===sel.docId);
-    const name=document.getElementById('f_name').value.trim();
-    const yv=document.getElementById('f_y').value.trim();
-    const mv=document.getElementById('f_m').value.trim();
-    const dv=document.getElementById('f_d').value.trim();
-    const phone=document.getElementById('f_phone').value.trim();
-    const note=document.getElementById('f_note').value.trim();
-
-    // 額滿即時檢查
+  // ── 儲存所有醫師 ──
+  window.saveDoctorsToDB = async function(){
+    const btn=document.querySelector('[onclick="saveDoctorsToDB()"]');
+    if(btn){btn.disabled=true;btn.textContent='儲存中…';}
     try{
-      const snap=await db.collection('bookings')
-        .where('docId','==',sel.docId)
-        .where('date','==',sel.date)
-        .where('slot','==',sel.slot)
-        .where('status','in',['pending','approved'])
-        .get();
-      const isAM=parseInt(sel.slot)<12;
-      const limit=isAM?(docObj.limitAM??99):(docObj.limitPM??99);
-      if(limit>0 && snap.size>=limit){
-        if(btnEl){btnEl.disabled=false;btnEl.innerHTML='確認送出';}
-        showModal('此時段已額滿','很抱歉，您選擇的時段已額滿，請重新選擇其他時間。','重新選擇');
-        sel.date=null; sel.slot=null;
-        calDate=new Date();
-        document.getElementById('slotCard').style.display='none';
-        show('p2');setStep(2);renderCal();
-        show('p2');setStep(2);
-        return;
-      }
-    }catch(e){ /* 查詢失敗仍允許送出 */ }
-
-    try{
-      await db.collection('bookings').add({
-        docName:docObj.name, docId:sel.docId,
-        op:sel.op, date:sel.date, slot:sel.slot,
-        name, bday:`${yv}/${mv}/${dv}`,
-        phone, note, status:'pending',
-        lineNotified:false,
-        createdAt:firebase.firestore.FieldValue.serverTimestamp()
-      });
-      submitBooking();
-    }catch(e){
-      if(btnEl){btnEl.disabled=false;btnEl.innerHTML='確認送出';}
-      showModal('送出失敗','網路異常，請稍後再試。\n（'+e.message+'）','關閉');
+      await Promise.all(doctors.map(d=>
+        db.collection('doctors').doc(String(d.id)).set(
+          {id:d.id,name:d.name,title:d.title,colorId:d.colorId,
+           limitAM:d.limitAM,limitPM:d.limitPM,weekLimit:d.weekLimit||0,ops:d.ops}
+        )
+      ));
+      toast('success','所有醫師資料已儲存到雲端');
+    }catch(e){ toast('err','儲存失敗：'+e.message); }
+    finally{
+      if(btn){btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:14px;height:14px;"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> 儲存醫師';}
     }
   };
+
+  // ── 刪除醫師 ──
+  window._fbDeleteDoctor = function(id){
+    db.collection('doctors').doc(String(id)).delete()
+      .catch(e=>toast('err','刪除失敗：'+e.message));
+  };
+
+  // ── 儲存所有時段 ──
+  window.saveSlotsToDB = async function(){
+    const btn=document.querySelector('[onclick="saveSlotsToDB()"]');
+    if(btn){btn.disabled=true;btn.textContent='儲存中…';}
+    try{
+      await Promise.all(Object.entries(slotSettings).map(([k,v])=>
+        db.collection('slots').doc(k).set({slots:v})
+      ));
+      toast('success','時段已儲存到雲端');
+    }catch(e){ toast('err','儲存失敗：'+e.message); }
+    finally{
+      if(btn){btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:14px;height:14px;"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> 儲存時段';}
+    }
+  };
+
+  // ── bookings CRUD ──
+  window._fbApprove = function(fbId){
+    db.collection('bookings').doc(fbId).update({status:'approved'})
+      .catch(e=>toast('err','操作失敗'));
+  };
+  window._fbReject = function(fbId){
+    db.collection('bookings').doc(fbId).update({status:'rejected'})
+      .catch(e=>toast('err','操作失敗'));
+  };
+  window._fbDelete = function(fbId){
+    db.collection('bookings').doc(fbId).delete()
+      .catch(e=>toast('err','刪除失敗'));
+  };
+  window._fbToggleLine = function(fbId){
+    db.collection('bookings').doc(fbId).update({lineNotified:true})
+      .catch(e=>toast('err','操作失敗'));
+  };
+  window._fbSaveEdit = function(fbId,data){
+    db.collection('bookings').doc(fbId).update(data)
+      .catch(e=>toast('err','儲存失敗'));
+  };
+  window._fbAddBooking = async function(data){
+    await db.collection('bookings').add(data);
+  };
+
 })();
 </script>
-
-<!-- Custom Modal -->
-<div class="modal-overlay" id="customModal">
-  <div class="modal-box">
-    <div class="modal-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
-    <div class="modal-ttl" id="modalTtl">提示</div>
-    <div class="modal-msg" id="modalMsg"></div>
-    <button class="modal-btn" onclick="closeModal()">重新選擇</button>
-  </div>
-</div>
 </body>
 </html>
