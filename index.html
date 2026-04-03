@@ -482,24 +482,58 @@ tr:hover td{background:#FFF9F5;}
 .ib-print{border-color:var(--border);color:var(--text2);background:var(--white);}
 .ib-print:hover{border-color:var(--blue);color:var(--blue);}
 
-/* ── SLOT CHIP STRIKETHROUGH (week-limited / booked) ── */
+/* ── SLOT CHIP STRIKETHROUGH ── */
 .slot-summary-chip.wk-closed{background:#F1F5F9;color:var(--text3);border-color:var(--border);text-decoration:line-through;opacity:.65;}
+.slot-summary-chip.booked-chip{background:#334155;color:#fff;border-color:#334155;font-weight:700;}
 
-/* ── SELFPAY MODAL ITEMS ── */
+/* ── SELFPAY PICKER (round checkbox) ── */
 .sp-check-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--rx);margin-bottom:7px;cursor:pointer;transition:all .14s;background:white;}
 .sp-check-item:hover{border-color:var(--ob);}
 .sp-check-item.sel{border-color:var(--orange);background:var(--op);}
-.sp-check-item input[type=checkbox]{width:15px;height:15px;accent-color:var(--orange);flex-shrink:0;}
+.sp-round-cb{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);background:white;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;cursor:pointer;}
+.sp-round-cb.chk{background:var(--orange);border-color:var(--orange);}
+.sp-round-cb.chk::after{content:'';display:block;width:5px;height:9px;border:2px solid white;border-top:none;border-left:none;transform:rotate(45deg) translateY(-1px);}
 .sp-check-name{flex:1;font-size:13px;font-weight:600;}
 .sp-check-unit{font-size:12px;color:var(--text2);}
 .sp-qty{width:60px;padding:5px 8px;border:1.5px solid var(--border);border-radius:var(--rx);font-size:13px;text-align:center;outline:none;}
 .sp-qty:focus{border-color:var(--orange);}
 
+/* ── DOCTOR CARD BARS ── */
+.dc-limit-bar-wrap{display:flex;flex-direction:column;gap:5px;margin-top:4px;}
+.dc-limit-row{display:flex;align-items:center;gap:7px;}
+.dc-limit-lbl{font-size:10px;font-weight:700;color:var(--text2);width:22px;flex-shrink:0;}
+.dc-limit-bar{flex:1;height:6px;background:#EEF2F7;border-radius:3px;overflow:hidden;}
+.dc-limit-fill{height:100%;border-radius:3px;background:var(--orange);}
+.dc-limit-num{font-size:10px;font-weight:700;color:var(--text2);white-space:nowrap;}
+
+/* ── SELFPAY OP SETTINGS ── */
+.sp-op-section{margin-bottom:18px;}
+.sp-op-header{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:var(--rx);cursor:pointer;user-select:none;}
+.sp-op-header:hover{opacity:.85;}
+.sp-op-body{padding:10px 14px 14px;background:#F8FAFC;border:1px solid var(--border);border-top:none;border-radius:0 0 var(--rx) var(--rx);}
+.sp-op-item-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);}
+.sp-op-item-row:last-child{border-bottom:none;}
+.sp-op-item-name{flex:1;font-size:12px;font-weight:600;color:var(--text);}
+.sp-op-item-price{font-size:11px;color:var(--text2);width:80px;text-align:right;}
+.sp-tag-req{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:var(--rp);color:var(--red);border:1px solid var(--rb);}
+.sp-tag-opt{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:var(--gp);color:#15803D;border:1px solid var(--gb);}
+.sp-tag-none{font-size:10px;color:var(--text3);}
+.sp-role-btn{padding:3px 9px;border-radius:10px;font-size:10px;font-weight:700;cursor:pointer;border:1.5px solid;transition:all .12s;}
+.sp-role-btn.req{background:var(--rp);color:var(--red);border-color:var(--rb);}
+.sp-role-btn.req:hover{background:#fee2e2;}
+.sp-role-btn.opt{background:var(--gp);color:#15803D;border-color:var(--gb);}
+.sp-role-btn.opt:hover{background:#dcfce7;}
+.sp-role-btn.none-btn{background:#F1F5F9;color:var(--text2);border-color:var(--border);}
+.sp-role-btn.none-btn:hover{background:var(--border);}
+
+/* ── SLOT SUMMARY STICKY HEADER ── */
+.slot-summary-sticky-hd{position:sticky;top:0;background:white;z-index:10;padding-bottom:8px;margin-bottom:2px;}
+
 /* ── PRINT STYLES ── */
 @media print{
   body *{visibility:hidden;}
   #printArea,#printArea *{visibility:visible;}
-  #printArea{position:fixed;inset:0;background:white;z-index:99999;padding:32px 36px;font-family:'Noto Sans TC',sans-serif;font-size:13px;color:#1A1A2E;}
+  #printArea{position:fixed;inset:0;background:white;z-index:99999;padding:0;font-family:'Noto Sans TC',sans-serif;font-size:13px;color:#000;}
   .no-print{display:none!important;}
 }
 </style>
@@ -553,7 +587,7 @@ tr:hover td{background:#FFF9F5;}
       醫師與術式
     </button>
     <button class="ni" onclick="nav('selfpay')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
       自費項目
     </button>
   </div>
@@ -652,14 +686,23 @@ tr:hover td{background:#FFF9F5;}
 
     <!-- ══ SELFPAY ══ -->
     <div class="panel" id="panel-selfpay">
-      <div class="tbl-wrap">
+      <!-- 上方：項目庫 -->
+      <div class="tbl-wrap" style="margin-bottom:18px;">
         <div class="tbl-filters" style="justify-content:space-between;">
-          <span style="font-size:13px;font-weight:700;color:var(--text);">自費項目清單</span>
+          <span style="font-size:13px;font-weight:700;color:var(--text);">自費項目庫</span>
           <button class="tb-btn primary" onclick="openAddSelfPay()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:13px;height:13px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>新增項目
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:13px;height:13px;"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>新增項目
           </button>
         </div>
         <table id="selfPayTable"></table>
+      </div>
+      <!-- 下方：術式自費設定 -->
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);">
+          <span style="font-size:13px;font-weight:700;color:var(--text);">術式自費設定</span>
+          <span style="font-size:11px;color:var(--text3);">依醫師 → 術式 設定必要費用與加購選項</span>
+        </div>
+        <div style="padding:16px 18px;" id="opSelfPaySettings"></div>
       </div>
     </div>
 
@@ -677,8 +720,8 @@ tr:hover td{background:#FFF9F5;}
 <!-- MODAL -->
 <div class="overlay" id="overlay" onclick="closeOverlay(event)">
   <div class="modal" id="modal">
-    <div class="modal-hd">
-      <h2 id="modalTitle">詳情</h2>
+    <div class="modal-hd" id="modalHd">
+      <h2 id="modalTitle" style="display:flex;align-items:center;width:100%;">詳情</h2>
     </div>
     <div id="modalBody"></div>
     <div id="modalFoot"></div>
@@ -784,18 +827,18 @@ window.nav = function(id) {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:14px;height:14px;"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
       儲存自費項目</button>`;
   } else if(id==='calendar'){
-    tr.innerHTML=`<button class="tb-btn" onclick="printCalendar()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px;"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-      列印排程</button>`;
+    tr.innerHTML=''; // day-view print btn injected in renderCal
+
+
   } else {
     tr.innerHTML='';
   }
   if(id==='bookings') renderBookings();
   if(id==='review')   renderReview();
-  if(id==='calendar') renderCal();
+  if(id==='calendar'){renderCal();updateCalPrintBtn();}
   if(id==='schedule') renderSlotCal();
   if(id==='doctors')  renderDoctors();
-  if(id==='selfpay')  renderSelfPay();
+  if(id==='selfpay'){renderSelfPay();renderOpSelfPaySettings();}
   updateReviewBadge();
 }
 
@@ -1066,7 +1109,8 @@ window._renderDetailModal = function(b, editMode, isPast=false){
       ? `<span class="line-toggle sent locked" title="如需修改請進入編輯"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:12px;height:12px;"><polyline points="20 6 9 17 4 12"/></svg>已通知</span>`
       : `<span class="line-toggle disabled"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px;height:12px;"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>未通知</span>`;
 
-    document.getElementById('modalTitle').innerHTML=`預約詳情`;
+    document.getElementById('modalTitle').innerHTML=`<span style="flex:1;">預約詳情</span><button class="icon-btn ib-print no-print" title="列印預約詳情" onclick="printBookingDetail('${b.id}')" style="width:30px;height:30px;margin-left:8px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:14px;height:14px;"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>`;
+    document.getElementById('modalHd').style.cssText='display:flex;align-items:center;';
     document.getElementById('modalBody').innerHTML=`
       <div class="detail-card">
         <div class="detail-card-hd">
@@ -1093,11 +1137,11 @@ window._renderDetailModal = function(b, editMode, isPast=false){
           <span class="detail-card-title">自費項目</span>
         </div>
         ${b.selfPayItems.map(it=>`
-        <div class="mir" style="justify-content:space-between;">
-          <div style="flex:1;"><div class="miv">${it.name}</div><div style="font-size:11px;color:var(--text2);">${it.unit}</div></div>
-          <div style="text-align:right;"><div style="font-size:12px;color:var(--text2);">× ${it.qty}</div><div style="font-size:13px;font-weight:700;color:var(--text);">$${(parseInt(it.price)*parseInt(it.qty)).toLocaleString()}</div></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9;">
+          <span style="font-size:13px;font-weight:600;color:var(--text);">${it.name} <span style="color:var(--text2);font-weight:400;">× ${it.qty}</span></span>
+          <span style="font-size:13px;font-weight:700;color:var(--text);">$${(parseInt(it.price)*parseInt(it.qty)).toLocaleString()}</span>
         </div>`).join('')}
-        <div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px;display:flex;justify-content:space-between;align-items:center;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:6px;">
           <span style="font-size:12px;font-weight:700;color:var(--text2);">合計</span>
           <span style="font-size:15px;font-weight:700;color:var(--orange);">$${b.selfPayItems.reduce((s,it)=>s+parseInt(it.price)*parseInt(it.qty),0).toLocaleString()}</span>
         </div>
@@ -1109,9 +1153,6 @@ window._renderDetailModal = function(b, editMode, isPast=false){
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:15px;height:15px;"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>編輯資料
         </button>`}
       <button class="mbtn mbtn-close" onclick="closeModal()">關閉</button>
-      <button class="icon-btn ib-print" title="列印預約詳情" onclick="printBookingDetail('${b.id}')" style="width:36px;height:36px;flex-shrink:0;margin-left:4px;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:16px;height:16px;"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-      </button>
     </div>`;
   }
   openOverlay();
@@ -1264,12 +1305,13 @@ window.openAddPatient = function(){
     </div>
     <div class="edit-row"><label class="edit-label">手術時段 <span style="color:var(--red);">*</span></label><select class="edit-inp" id="a_slot" onchange="checkAddConflict()"><option value="">— 先選日期 —</option></select></div>
     <div class="conflict-warn" id="a_conflict">⚠ 此時段已有其他預約，請選擇其他時間</div>
-    <div class="edit-row"><label class="edit-label">備註</label><input class="edit-inp" id="a_note" placeholder="選填"></div>
+    <div class="edit-row"><label class="edit-label">備註 <span style="font-size:11px;color:var(--text3);font-weight:400;">（選填）</span></label><input class="edit-inp" id="a_note" placeholder="選填"></div>
     <div class="edit-row">
       <label class="edit-label">自費項目</label>
       <button type="button" class="tb-btn" style="width:100%;justify-content:center;" onclick="openSelfPayPicker()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-        選擇自費項目（選填）
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
+        選擇自費項目
+        <span style="font-size:11px;color:var(--text3);margin-left:3px;">（選填）</span>
       </button>
       <div id="a_selfpay_preview" style="margin-top:8px;"></div>
     </div>`;
@@ -1521,7 +1563,33 @@ window.saveAddPatient = async function(){
 /* ═══════════════════════════════════════
    CALENDAR  (FIX10: clean week view)
 ═══════════════════════════════════════ */
-window.setCalView = function(v,btn){calView=v;document.querySelectorAll('.cvt').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderCal();}
+window.setCalView = function(v,btn){
+  calView=v;
+  document.querySelectorAll('.cvt').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  updateCalPrintBtn();
+  renderCal();
+}
+
+function updateCalPrintBtn(){
+  const tr=document.getElementById('topbarRight');
+  if(!tr) return;
+  // Only show print button in day view
+  if(calView==='day'){
+    if(!document.getElementById('calDayPrintBtn')){
+      const btn=document.createElement('button');
+      btn.id='calDayPrintBtn';
+      btn.className='tb-btn';
+      btn.title='列印當日手術單';
+      btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px;"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>列印';
+      btn.onclick=function(){printCalendar();};
+      tr.insertBefore(btn, tr.firstChild);
+    }
+  } else {
+    const existing=document.getElementById('calDayPrintBtn');
+    if(existing) existing.remove();
+  }
+}
 window.calNav = function(d){if(calView==='month')calDate.setMonth(calDate.getMonth()+d);else if(calView==='week')calDate.setDate(calDate.getDate()+d*7);else calDate.setDate(calDate.getDate()+d);renderCal();}
 window.calGoToday = function(){calDate=new Date();renderCal();}
 
@@ -1859,7 +1927,9 @@ function renderSlotSummary(){
     .map(([k,slots])=>[k.split(':')[1],slots])
     .sort(([a],[b])=>a.localeCompare(b));
   if(!entries.length){div.innerHTML=`<div style="font-size:12px;color:var(--text3);padding:14px 0;">本月尚未設定任何時段</div>`;return;}
-  div.innerHTML=`<div class="slot-summary-title">本月已設定時段</div>`+entries.map(([ds,slots])=>{
+  const doc2=doctors.find(d=>d.id===slotActiveDocId);
+  const wkBadge=doc2&&doc2.weekLimit?`<span style="font-size:10px;font-weight:700;padding:1px 8px;border-radius:10px;background:var(--op);color:var(--orange);border:1px solid var(--ob);">每週上限 ${doc2.weekLimit} 天</span>`:'';
+  div.innerHTML=`<div class="slot-summary-sticky-hd"><div style="display:flex;align-items:center;justify-content:space-between;"><span class="slot-summary-title" style="margin-bottom:0;">本月已設定時段</span>${wkBadge}</div></div>`+entries.map(([ds,slots])=>{
     const booked=getBookedSlots(ds);
     const isSelected=ds===slotSelectedDay;
     const doc=doctors.find(d=>d.id===slotActiveDocId);
@@ -1893,26 +1963,21 @@ function renderSlotSummary(){
     const chipsHtml=slots.map(s=>{
       const isBooked=booked.includes(s);
       const limitFull=isSlotLimitReached(doc,ds,s);
-
       if(isBooked){
-        // booked slots: grey strikethrough
-        return `<span class="slot-summary-chip booked" style="text-decoration:line-through;opacity:.6;">${s}</span>`;
-      } else if(isWkClosed){
-        // week-limit closed: grey strikethrough
+        // booked: dark background, white text, NO strikethrough
+        return `<span class="slot-summary-chip booked-chip">${s}</span>`;
+      } else if(isWkClosed || limitFull){
+        // week-limit closed or capacity full: grey strikethrough
         return `<span class="slot-summary-chip wk-closed">${s}</span>`;
-      } else if(!limitFull){
-        // available slots: show in doctor color
-        return `<span class="slot-summary-chip" style="background:${dc.bg};color:${dc.text};border-color:${dc.border};">${s}</span>`;
       } else {
-        // limit reached: grey strikethrough
-        return `<span class="slot-summary-chip wk-closed">${s}</span>`;
+        // available: doctor color
+        return `<span class="slot-summary-chip" style="background:${dc.bg};color:${dc.text};border-color:${dc.border};">${s}</span>`;
       }
     }).join('');
 
     return `<div class="slot-summary-item${isSelected?' summary-active':''}" onclick="selectSlotDay('${ds}')" style="cursor:pointer;${isSelected?`border-color:${dc.dot};background:${dc.bg};`:''}">
-      <div style="display:flex;align-items:center;gap:6px;min-width:90px;">
+      <div style="min-width:80px;">
         <div class="slot-summary-date" style="${isSelected?`color:${dc.text};`:''}">${fmtDate(ds)}</div>
-        ${doc&&doc.weekLimit?`<span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:8px;background:${isWkClosed?'var(--rp)':'var(--op)'};color:${isWkClosed?'var(--red)':'var(--orange)'};border:1px solid ${isWkClosed?'var(--rb)':'var(--ob)'};white-space:nowrap;">每週上限${doc.weekLimit}天</span>`:''}
       </div>
       <div class="slot-summary-chips">${chipsHtml}</div>
       <button class="slot-summary-del" onclick="event.stopPropagation();clearDocSlots('${ds}')" title="清除所有可刪時段"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
@@ -2054,8 +2119,12 @@ window.closeOverlay2 = function(e){if(e.target===document.getElementById('overla
 ═══════════════════════════════════════ */
 function renderDoctors(){
   const g=document.getElementById('doctorsGrid');
+  const maxPpl=10; // bar scale reference
   g.innerHTML=doctors.map(d=>{
     const dc=docColor(d.id);
+    const am=d.limitAM??3; const pm=d.limitPM??3;
+    const amPct=Math.min(100,Math.round(am/maxPpl*100));
+    const pmPct=Math.min(100,Math.round(pm/maxPpl*100));
     return `<div class="doctor-card">
     <div class="dc-head">
       <div class="dc-avatar" style="background:${dc.dot};">${d.name[0]}</div>
@@ -2065,13 +2134,32 @@ function renderDoctors(){
         <button class="icon-btn ib-del" title="刪除" onclick="deleteDoctor(${d.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg></button>
       </div>
     </div>
-    <div class="dc-ops-label" style="margin-top:8px;display:flex;align-items:center;gap:6px;">
-      每週上限：${d.weekLimit?`<span style="background:var(--op);color:var(--orange);border:1px solid var(--ob);border-radius:10px;padding:1px 8px;font-size:11px;font-weight:700;">${d.weekLimit} 天</span>`:'<span style="font-size:11px;color:var(--text3);">不限制</span>'}
+    <div style="display:flex;gap:10px;margin-bottom:10px;">
+      <div style="flex:1;background:#F8FAFC;border:1px solid var(--border);border-radius:var(--rx);padding:10px 12px;">
+        <div style="font-size:10px;font-weight:700;color:var(--text2);margin-bottom:8px;">每日預約上限</div>
+        <div class="dc-limit-bar-wrap">
+          <div class="dc-limit-row">
+            <span class="dc-limit-lbl">上午</span>
+            <div class="dc-limit-bar"><div class="dc-limit-fill" style="width:${amPct}%;background:${dc.dot};"></div></div>
+            <span class="dc-limit-num" style="color:${dc.text};">${am} 人</span>
+          </div>
+          <div class="dc-limit-row">
+            <span class="dc-limit-lbl">下午</span>
+            <div class="dc-limit-bar"><div class="dc-limit-fill" style="width:${pmPct}%;background:${dc.dot};opacity:.65;"></div></div>
+            <span class="dc-limit-num" style="color:${dc.text};">${pm} 人</span>
+          </div>
+        </div>
+      </div>
+      <div style="flex:1;background:#F8FAFC;border:1px solid var(--border);border-radius:var(--rx);padding:10px 12px;display:flex;flex-direction:column;justify-content:space-between;">
+        <div style="font-size:10px;font-weight:700;color:var(--text2);margin-bottom:6px;">每週開放上限</div>
+        ${d.weekLimit
+          ? `<span style="background:${dc.bg};color:${dc.text};border:1px solid ${dc.border};border-radius:10px;padding:2px 10px;font-size:13px;font-weight:700;display:inline-block;">${d.weekLimit} 天</span>`
+          : `<span style="background:${dc.bg};color:${dc.text};border:1px solid ${dc.border};border-radius:10px;padding:2px 10px;font-size:13px;font-weight:700;display:inline-block;">不限制</span>`}
+      </div>
     </div>
-    <div class="dc-ops-label" style="margin-top:8px;">每日預約人數上限：上午 ${d.limitAM??3} 人，下午 ${d.limitPM??3} 人</div>
-    <div class="dc-ops-label" style="margin-top:8px;">可執行術式：</div>
+    <div class="dc-ops-label" style="margin-top:2px;">可執行術式：</div>
     <div class="dc-op-chips">${d.ops.length?d.ops.map(o=>`<span class="dc-op-chip" style="background:${dc.bg};color:${dc.text};border-color:${dc.border};">${o}</span>`).join(''):'<span class="dc-op-chip">尚未設定</span>'}</div>
-  </div>`}).join('')+`<button class="add-doctor-btn" onclick="openAddDoctor()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>新增醫師</button>`;
+  </div>`;}).join('')+`<button class="add-doctor-btn" onclick="openAddDoctor()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>新增醫師</button>`;
 }
 
 const DOC_COLOR_NAMES=['天空藍','翠綠','珊瑚橘','葡萄紫','玫瑰紅','青碧綠','暖金黃','石板灰'];
@@ -2105,41 +2193,38 @@ function doctorModal(doc){
     </div>
     <div class="edit-row"><label class="edit-label">科別</label><input class="edit-inp" id="dc_title" value="${doc?doc.title:'耳鼻喉科'}" placeholder="例：耳鼻喉科"></div>
     <div class="edit-row">
-      <label class="edit-label">每日預約上限人數</label>
-      <div style="display:flex;align-items:center;gap:10px;margin-top:2px;">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:12px;color:var(--text2);font-weight:600;">上午</span>
-          <input class="edit-inp" id="dc_limit_am" type="number" min="0" max="50" value="${doc?(doc.limitAM??3):3}" style="width:70px;text-align:center;">
-          <span style="font-size:12px;color:var(--text2);">人</span>
-        </div>
-        <span style="font-size:14px;color:var(--text3);font-weight:400;">，</span>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:12px;color:var(--text2);font-weight:600;">下午</span>
-          <input class="edit-inp" id="dc_limit_pm" type="number" min="0" max="50" value="${doc?(doc.limitPM??3):3}" style="width:70px;text-align:center;">
-          <span style="font-size:12px;color:var(--text2);">人</span>
-        </div>
-      </div>
-    </div>
-    <div class="edit-row">
-      <div style="background:#F8FAFC;border:1px solid var(--border);border-radius:var(--rs);padding:14px 16px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0;" id="wl_card_hd">
-          <div>
-            <div style="font-size:12.5px;font-weight:700;color:var(--text);">每週開放天數上限</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:2px;">限制該醫師每週最多可被預約的天數</div>
+      <label class="edit-label">每日 / 每週預約上限</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px;">
+        <div style="background:#F8FAFC;border:1px solid var(--border);border-radius:var(--rs);padding:12px 14px;">
+          <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:10px;">每日預約人數上限</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+            <span style="font-size:11px;color:var(--text2);font-weight:600;width:24px;">上午</span>
+            <input class="edit-inp" id="dc_limit_am" type="number" min="0" max="50" value="${doc?(doc.limitAM??3):3}" style="width:56px;text-align:center;padding:6px 8px;">
+            <span style="font-size:11px;color:var(--text2);">人</span>
           </div>
-          <label class="wl-toggle" style="margin-left:12px;">
-            <input type="checkbox" id="dc_week_limit_on" onchange="toggleWeekLimitInp(this.checked)" ${doc&&doc.weekLimit?'checked':''}>
-            <span class="wl-slider"></span>
-          </label>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:11px;color:var(--text2);font-weight:600;width:24px;">下午</span>
+            <input class="edit-inp" id="dc_limit_pm" type="number" min="0" max="50" value="${doc?(doc.limitPM??3):3}" style="width:56px;text-align:center;padding:6px 8px;">
+            <span style="font-size:11px;color:var(--text2);">人</span>
+          </div>
         </div>
-        <div class="wl-days-inp${doc&&doc.weekLimit?' on':''}" id="dc_week_limit_wrap" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
-          <span>每週最多開放</span>
-          <input type="number" id="dc_week_limit" min="1" max="7" value="${doc&&doc.weekLimit?doc.weekLimit:2}">
-          <span>天</span>
+        <div style="background:#F8FAFC;border:1px solid var(--border);border-radius:var(--rs);padding:12px 14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;color:var(--text2);">每週開放天數上限</span>
+            <label class="wl-toggle">
+              <input type="checkbox" id="dc_week_limit_on" onchange="toggleWeekLimitInp(this.checked)" ${doc&&doc.weekLimit?'checked':''}>
+              <span class="wl-slider"></span>
+            </label>
+          </div>
+          <div class="wl-days-inp${doc&&doc.weekLimit?' on':''}" id="dc_week_limit_wrap">
+            <span style="font-size:11px;color:var(--text2);">每週最多</span>
+            <input type="number" id="dc_week_limit" min="1" max="7" value="${doc&&doc.weekLimit?doc.weekLimit:2}">
+            <span style="font-size:11px;color:var(--text2);">天</span>
+          </div>
+          <div style="font-size:11px;color:var(--text3);margin-top:6px;">${doc&&doc.weekLimit?'':'未啟用限制'}</div>
         </div>
       </div>
     </div>
-    <div class="modal-divider"></div>
     <div class="edit-label" style="margin-bottom:8px;">可執行術式</div>
     <div class="ops-tags" id="opsTags" onclick="document.getElementById('opsTagInp').focus()">
       ${existingOps.map(o=>`<span class="ops-tag" data-op="${o}">${o}<button class="ops-tag-del" onclick="removeOpsTag(this)">×</button></span>`).join('')}
@@ -2258,7 +2343,9 @@ window.saveEditDoctor = function(id){
   doc.weekLimit=weekLimitOn2?parseInt(document.getElementById('dc_week_limit').value)||0:0;
   doc.ops=getSelectedOps();
   if(window._fbSaveDoctor) window._fbSaveDoctor(doc);
-  closeModal();renderDoctors();toast('success','醫師資料已更新');
+  closeModal();renderDoctors();
+  if(document.getElementById('panel-selfpay').classList.contains('active')) renderOpSelfPaySettings();
+  toast('success','醫師資料已更新');
 }
 
 window.deleteDoctor = function(id){
@@ -2435,6 +2522,122 @@ document.addEventListener('click',function(e){
    SELF-PAY ITEMS
 ═══════════════════════════════════════ */
 let selfPayItems = [];
+// opSelfPay: keyed as "docId:opName" -> {required:[itemId,...], optional:[itemId,...]}
+let opSelfPay = {};
+
+/* ── OP SELFPAY SETTINGS ── */
+function renderOpSelfPaySettings(){
+  const div=document.getElementById('opSelfPaySettings');
+  if(!div)return;
+  if(!doctors.length||!selfPayItems.length){
+    div.innerHTML='<div style="font-size:12px;color:var(--text3);padding:8px 0;">請先建立自費項目庫，並設定醫師與術式，再配置術式自費選項。</div>';
+    return;
+  }
+  let html='';
+  doctors.forEach(d=>{
+    const dc=docColor(d.id);
+    if(!d.ops||!d.ops.length) return;
+    html+=`<div class="sp-op-section">
+      <div class="sp-op-header" style="background:${dc.bg};border:1px solid ${dc.border};border-radius:var(--rx);">
+        <div style="width:10px;height:10px;border-radius:50%;background:${dc.dot};flex-shrink:0;"></div>
+        <span style="font-size:13px;font-weight:700;color:${dc.text};">${d.name} 醫師</span>
+        <span style="font-size:11px;color:${dc.text};opacity:.6;margin-left:4px;">${d.title}</span>
+      </div>`;
+    d.ops.forEach(op=>{
+      const key=d.id+':'+op;
+      const cfg=opSelfPay[key]||{required:[],optional:[]};
+      html+=`<div style="border:1px solid ${dc.border};border-top:none;border-radius:0 0 var(--rx) var(--rx);margin-bottom:10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:#FAFBFC;border-bottom:1px solid var(--border);">
+          <span style="font-size:12px;font-weight:700;color:var(--text);">${op}</span>
+          <button class="tb-btn" style="padding:4px 10px;font-size:11px;" onclick="openOpSelfPayEditor(${d.id},'${op.replace(/'/g,"\'")}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:11px;height:11px;"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>設定
+          </button>
+        </div>
+        <div style="padding:8px 14px;">`;
+      if(!cfg.required.length&&!cfg.optional.length){
+        html+='<span style="font-size:11px;color:var(--text3);">尚未設定自費項目</span>';
+      } else {
+        cfg.required.forEach(id=>{
+          const it=selfPayItems.find(x=>x.id===id);
+          if(!it)return;
+          const priceStr=it.unit?`$${it.price}/${it.unit}`:`$${it.price}`;
+          html+=`<div class="sp-op-item-row"><span class="sp-op-item-name">${it.name}</span><span class="sp-op-item-price">${priceStr}</span><span class="sp-tag-req">必要</span></div>`;
+        });
+        cfg.optional.forEach(id=>{
+          const it=selfPayItems.find(x=>x.id===id);
+          if(!it)return;
+          const priceStr=it.unit?`$${it.price}/${it.unit}`:`$${it.price}`;
+          html+=`<div class="sp-op-item-row"><span class="sp-op-item-name">${it.name}</span><span class="sp-op-item-price">${priceStr}</span><span class="sp-tag-opt">選填</span></div>`;
+        });
+      }
+      html+='</div></div>';
+    });
+    html+='</div>';
+  });
+  div.innerHTML=html||'<div style="font-size:12px;color:var(--text3);padding:8px 0;">尚未設定任何術式自費選項。</div>';
+}
+
+window.openOpSelfPayEditor = function(docId, opName){
+  const key=docId+':'+opName;
+  const cfg=opSelfPay[key]||{required:[],optional:[]};
+  const dc=docColor(docId);
+  const doc=doctors.find(d=>d.id===docId);
+
+  let listHtml='';
+  selfPayItems.forEach(it=>{
+    const isReq=cfg.required.includes(it.id);
+    const isOpt=cfg.optional.includes(it.id);
+    const priceStr=it.unit?`$${it.price}/${it.unit}`:`$${it.price}`;
+    listHtml+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F1F5F9;">
+      <span style="flex:1;font-size:13px;font-weight:600;">${it.name}</span>
+      <span style="font-size:11px;color:var(--text2);">${priceStr}</span>
+      <button class="sp-role-btn ${isReq?'req':'none-btn'}" id="spbtnreq_${it.id}" onclick="setOpSpRole('${key}','${it.id}','required')">${isReq?'✓ 必要':'必要'}</button>
+      <button class="sp-role-btn ${isOpt?'opt':'none-btn'}" id="spbtnopt_${it.id}" onclick="setOpSpRole('${key}','${it.id}','optional')">${isOpt?'✓ 選填':'選填'}</button>
+      <button class="sp-role-btn none-btn" style="${!isReq&&!isOpt?'opacity:1':'opacity:.5'}" onclick="setOpSpRole('${key}','${it.id}','none')">不使用</button>
+    </div>`;
+  });
+
+  document.getElementById('modal2Title').textContent=`設定自費項目 — ${doc?doc.name+' 醫師・':' '}${opName}`;
+  document.getElementById('modal2Body').innerHTML=`
+    <div style="font-size:12px;color:var(--text2);margin-bottom:12px;">為此術式指定自費項目的角色：<span style="color:var(--red);font-weight:700;">必要</span>（強制列入）或 <span style="color:#15803D;font-weight:700;">選填</span>（病人可加購）</div>
+    ${listHtml||'<div style="font-size:12px;color:var(--text3);">項目庫為空，請先新增自費項目。</div>'}`;
+  document.getElementById('modal2Foot').innerHTML=`<div class="modal-acts">
+    <button class="mbtn mbtn-approve" onclick="saveOpSelfPay('${key}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>儲存設定</button>
+    <button class="mbtn mbtn-close" onclick="closeModal2()">取消</button>
+  </div>`;
+  openOverlay2();
+};
+
+// Track pending role changes in editor
+window._opSpEditorState = {};
+window.setOpSpRole = function(key, itemId, role){
+  if(!window._opSpEditorState[key]) window._opSpEditorState[key]={required:[],optional:[]};
+  // Read current displayed state
+  const reqBtn=document.getElementById('spbtnreq_'+itemId);
+  const optBtn=document.getElementById('spbtnopt_'+itemId);
+  const cfg=opSelfPay[key]||{required:[],optional:[]};
+  // Toggle logic
+  const newReq=role==='required'? !cfg.required.includes(itemId) : false;
+  const newOpt=role==='optional'? !cfg.optional.includes(itemId) : false;
+  // Update opSelfPay immediately for live preview
+  opSelfPay[key]={
+    required: role==='required'?(newReq?[...cfg.required,itemId]:cfg.required.filter(x=>x!==itemId)):cfg.required.filter(x=>x!==itemId),
+    optional: role==='optional'?(newOpt?[...cfg.optional,itemId]:cfg.optional.filter(x=>x!==itemId)):cfg.optional.filter(x=>x!==itemId),
+  };
+  // Re-render button states
+  const newCfg=opSelfPay[key];
+  const isNowReq=newCfg.required.includes(itemId);
+  const isNowOpt=newCfg.optional.includes(itemId);
+  if(reqBtn){reqBtn.className='sp-role-btn '+(isNowReq?'req':'none-btn');reqBtn.textContent=isNowReq?'✓ 必要':'必要';}
+  if(optBtn){optBtn.className='sp-role-btn '+(isNowOpt?'opt':'none-btn');optBtn.textContent=isNowOpt?'✓ 選填':'選填';}
+};
+
+window.saveOpSelfPay = function(key){
+  if(window._fbSaveOpSelfPay) window._fbSaveOpSelfPay(key, opSelfPay[key]||{required:[],optional:[]});
+  closeModal2();
+  renderOpSelfPaySettings();
+  toast('success','術式自費設定已儲存');
+};
 
 function renderSelfPay(){
   const t=document.getElementById('selfPayTable');
@@ -2446,8 +2649,8 @@ function renderSelfPay(){
   t.innerHTML=`<thead><tr><th>項目名稱</th><th>單價</th><th>單位</th><th>操作</th></tr></thead>
   <tbody>${selfPayItems.map(it=>`<tr>
     <td class="td-name">${it.name}</td>
-    <td style="font-weight:700;color:var(--orange);">$${parseInt(it.price).toLocaleString()}</td>
-    <td style="font-size:12px;color:var(--text2);">${it.unit}</td>
+    <td style="font-weight:700;color:var(--orange);">$${parseInt(it.price).toLocaleString()}${it.unit?' / '+it.unit:''}</td>
+    <td style="font-size:12px;color:var(--text2);">${it.unit||'—'}</td>
     <td><div class="act-row">
       <button class="icon-btn ib-edit" title="編輯" onclick="openEditSelfPay('${it.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
       <button class="icon-btn ib-del" title="刪除" onclick="deleteSelfPay('${it.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg></button>
@@ -2460,7 +2663,7 @@ function selfPayModal(item){
     <div class="edit-row"><label class="edit-label">項目名稱 <span style="color:var(--red);">*</span></label><input class="edit-inp" id="sp_name" value="${item?item.name:''}" placeholder="例：診斷證明書"></div>
     <div class="edit-row edit-row-split">
       <div style="flex:1;"><label class="edit-label">單價（元）<span style="color:var(--red);">*</span></label><input class="edit-inp" id="sp_price" type="number" min="0" value="${item?item.price:''}" placeholder="100"></div>
-      <div style="flex:1;"><label class="edit-label">單位 <span style="color:var(--red);">*</span></label><input class="edit-inp" id="sp_unit" value="${item?item.unit:''}" placeholder="例：份、次、顆"></div>
+      <div style="flex:1;"><label class="edit-label">單位 <span style="font-size:11px;color:var(--text3);font-weight:400;">（選填）</span></label><input class="edit-inp" id="sp_unit" value="${item?item.unit:''}" placeholder="例：份、次、顆"></div>
     </div>
     <div style="font-size:11px;color:var(--text3);margin-top:-4px;margin-bottom:8px;">預覽：<span id="sp_preview" style="font-weight:600;color:var(--text2);">${item?`${item.name} $${item.price}/${item.unit}`:''}</span></div>`;
   setTimeout(()=>{
@@ -2494,10 +2697,10 @@ window.saveAddSelfPay = function(){
   const unit=document.getElementById('sp_unit').value.trim();
   if(!name){toast('err','請輸入項目名稱');return;}
   if(!price||isNaN(parseInt(price))){toast('err','請輸入有效單價');return;}
-  if(!unit){toast('err','請輸入單位');return;}
+  // unit is optional
   const newId='sp'+Date.now();
   selfPayItems.push({id:newId,name,price:parseInt(price),unit});
-  closeModal();renderSelfPay();toast('success','自費項目已新增，請按「儲存自費項目」同步');
+  closeModal();renderSelfPay();renderOpSelfPaySettings();toast('success','自費項目已新增，請按「儲存自費項目」同步');
 }
 
 window.openEditSelfPay = function(id){
@@ -2517,7 +2720,7 @@ window.saveEditSelfPay = function(id){
   item.name=document.getElementById('sp_name').value.trim()||item.name;
   item.price=parseInt(document.getElementById('sp_price').value)||item.price;
   item.unit=document.getElementById('sp_unit').value.trim()||item.unit;
-  closeModal();renderSelfPay();toast('success','已更新');
+  closeModal();renderSelfPay();renderOpSelfPaySettings();toast('success','已更新');
 }
 
 window.deleteSelfPay = function(id){
@@ -2543,13 +2746,16 @@ window.openSelfPayPicker = function(){
   selfPayItems.forEach(it=>{
     const ex=existing.find(e=>e.id===it.id);
     const checked=!!ex; const qty=ex?ex.qty:1;
-    listHTML+=`<div class="sp-check-item${checked?' sel':''}" id="sppi_${it.id}">
-      <input type="checkbox" id="sppc_${it.id}" ${checked?'checked':''} onchange="document.getElementById('sppi_${it.id}').classList.toggle('sel',this.checked)">
+    const priceStr=it.unit?`$${it.price}/${it.unit}`:`$${it.price}`;
+    listHTML+=`<div class="sp-check-item${checked?' sel':''}" id="sppi_${it.id}" onclick="toggleSpPickItem('${it.id}')">
+      <div class="sp-round-cb${checked?' chk':''}" id="spcb_${it.id}"></div>
       <div class="sp-check-name">${it.name}</div>
-      <div class="sp-check-unit">$${it.price}/${it.unit}</div>
+      <div class="sp-check-unit">${priceStr}</div>
       <input type="number" class="sp-qty" id="sppq_${it.id}" value="${qty}" min="1" max="999" onclick="event.stopPropagation()">
     </div>`;
   });
+  // Force modal2 to be same width as main modal
+  document.getElementById('modal2').style.width='540px';
   document.getElementById('modal2Body').innerHTML=listHTML;
   document.getElementById('modal2Foot').innerHTML=`<div class="modal-acts">
     <button class="mbtn mbtn-approve" onclick="confirmSpPicker()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>確認</button>
@@ -2558,11 +2764,20 @@ window.openSelfPayPicker = function(){
   openOverlay2();
 }
 
+window.toggleSpPickItem = function(id){
+  const row=document.getElementById('sppi_'+id);
+  const cb=document.getElementById('spcb_'+id);
+  if(!row||!cb)return;
+  const isNowChecked=!cb.classList.contains('chk');
+  cb.classList.toggle('chk',isNowChecked);
+  row.classList.toggle('sel',isNowChecked);
+};
+
 window.confirmSpPicker = function(){
   const items=[];
   selfPayItems.forEach(it=>{
-    const cb=document.getElementById('sppc_'+it.id);
-    if(cb&&cb.checked){
+    const cb=document.getElementById('spcb_'+it.id);
+    if(cb&&cb.classList.contains('chk')){
       const qtyEl=document.getElementById('sppq_'+it.id);
       const qty=Math.max(1,parseInt(qtyEl?qtyEl.value:1)||1);
       items.push({id:it.id,name:it.name,price:it.price,unit:it.unit,qty});
@@ -2631,41 +2846,118 @@ function buildBookingPrintHTML(b){
     +'</div>';
 }
 
+// ── Print template: Layout D v3 ──
+const PRINT_CSS = `
+  *{box-sizing:border-box;margin:0;padding:0;}
+  .doc{font-family:'Noto Sans TC',sans-serif;font-size:12px;color:#000;line-height:1.5;}
+  .hd{text-align:center;margin-bottom:0;}
+  .hd-clinic{font-size:17px;font-weight:900;letter-spacing:.05em;}
+  .hd-doc{font-size:12px;font-weight:600;letter-spacing:.18em;margin-top:5px;color:#222;}
+  .hd-rule{border:none;border-top:1.5px solid #000;margin:12px 0 16px;}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+  .card-sec{border:1px solid #000;border-radius:4px;overflow:hidden;margin-bottom:10px;}
+  .sec-ttl{padding:5px 13px;font-size:12px;font-weight:700;border-bottom:1px solid #000;background:#F2F2F2;letter-spacing:.04em;}
+  .sec-body{padding:8px 13px;}
+  .row{display:flex;padding:3px 0;border-bottom:1px solid #EFEFEF;font-size:12px;}
+  .row:last-child{border-bottom:none;}
+  .k{color:#555;width:68px;flex-shrink:0;}
+  .v{font-weight:600;flex:1;}
+  .sp-body{padding:8px 13px;}
+  .sp-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid #EFEFEF;font-size:12px;}
+  .sp-row:last-child{border-bottom:none;}
+  .sp-nm{font-weight:600;}
+  .sp-pr{font-weight:700;padding-left:12px;white-space:nowrap;}
+  .sp-total{display:flex;justify-content:space-between;font-size:12px;font-weight:900;padding:5px 0 1px;border-top:1.5px solid #000;margin-top:3px;}
+  .sig-box{border:1px solid #000;border-radius:4px;padding:12px 13px;margin-bottom:10px;}
+  .sig-note{font-size:12px;margin-bottom:14px;line-height:1.6;}
+  .sig-fields{display:flex;gap:20px;}
+  .sig-f{flex:2;}.sig-d{flex:1;}
+  .sig-line{border-bottom:1.5px solid #000;height:30px;}
+  .sig-lbl{font-size:12px;color:#666;margin-top:3px;}
+  .ft{margin-top:12px;padding-top:8px;border-top:1px solid #CCC;font-size:12px;color:#888;text-align:center;}
+  @page{size:A4;margin:28mm 22mm 20mm;}
+`;
+
+function buildBookingPrintHTML(b){
+  const sp = buildSpPrintBlock(b);
+  return `<div class="doc" style="padding:0;">
+    <div class="hd">
+      <div class="hd-clinic">${CLINIC_NAME}</div>
+      <div class="hd-doc">手術資料確認單</div>
+    </div>
+    <hr class="hd-rule">
+    <div class="two-col">
+      <div class="card-sec">
+        <div class="sec-ttl">病人資料</div>
+        <div class="sec-body">
+          <div class="row"><span class="k">姓名</span><span class="v">${b.name}</span></div>
+          <div class="row"><span class="k">生日</span><span class="v">${fmtBday(b.bday)||'—'}</span></div>
+          <div class="row"><span class="k">聯絡電話</span><span class="v">${b.phone}</span></div>
+        </div>
+      </div>
+      <div class="card-sec">
+        <div class="sec-ttl">手術資料</div>
+        <div class="sec-body">
+          <div class="row"><span class="k">負責醫師</span><span class="v">${docName(b.docId,b.docName)||'—'}</span></div>
+          <div class="row"><span class="k">術式</span><span class="v">${b.op||'—'}</span></div>
+          <div class="row"><span class="k">手術日期</span><span class="v">${fmtDate(b.date)}</span></div>
+          <div class="row"><span class="k">手術時段</span><span class="v">${b.slot}</span></div>
+          ${b.note?`<div class="row"><span class="k">備註</span><span class="v">${b.note}</span></div>`:''}
+        </div>
+      </div>
+    </div>
+    ${sp?`<div class="card-sec"><div class="sec-ttl">自費項目</div><div class="sp-body">${sp}</div></div>`:''}
+    <div class="sig-box">
+      <div class="sig-note">本人已閱讀並確認上述資料正確，同意診所進行手術。</div>
+      <div class="sig-fields">
+        <div class="sig-f"><div class="sig-line"></div><div class="sig-lbl">病人簽名 / Patient Signature</div></div>
+        <div class="sig-d"><div class="sig-line"></div><div class="sig-lbl">日期 / Date</div></div>
+      </div>
+    </div>
+    <div class="ft">${'高雄市三民區鼎力路199號 ・ （07）350-9200'}</div>
+  </div>`;
+}
+
+function buildSpPrintBlock(b){
+  if(!b.selfPayItems||!b.selfPayItems.length) return '';
+  const total=b.selfPayItems.reduce(function(s,it){return s+parseInt(it.price)*parseInt(it.qty);},0);
+  let h='';
+  b.selfPayItems.forEach(function(it){
+    h+=`<div class="sp-row"><span class="sp-nm">${it.name} × ${it.qty}</span><span class="sp-pr">$${(parseInt(it.price)*parseInt(it.qty)).toLocaleString()}</span></div>`;
+  });
+  h+=`<div class="sp-total"><span>合計</span><span>$${total.toLocaleString()}</span></div>`;
+  return h;
+}
+
 window.printBookingDetail = function(id){
   const b=bookings.find(function(x){return x.id===id;});
-  if(!b)return;
+  if(!b) return;
   doPrint(buildBookingPrintHTML(b));
 }
 
 window.printCalendar = function(){
-  let filtered=[];
-  if(calView==='month'){
-    const y=calDate.getFullYear(),m=calDate.getMonth();
-    const prefix=y+'-'+String(m+1).padStart(2,'0');
-    filtered=bookings.filter(function(b){return b.date.startsWith(prefix);});
-  } else if(calView==='week'){
-    const day=calDate.getDay();
-    const mon=new Date(calDate); mon.setDate(calDate.getDate()-(day===0?6:day-1));
-    const sun=new Date(mon); sun.setDate(mon.getDate()+6);
-    const monStr=mon.toISOString().slice(0,10), sunStr=sun.toISOString().slice(0,10);
-    filtered=bookings.filter(function(b){return b.date>=monStr&&b.date<=sunStr;});
-  } else {
-    const ds=calDate.toISOString().slice(0,10);
-    filtered=bookings.filter(function(b){return b.date===ds;});
+  // Only called in day view — filter approved, sorted by slot
+  const ds=calDate.toISOString().slice(0,10);
+  let filtered=bookings.filter(function(b){
+    return b.date===ds && b.status==='approved';
+  });
+  if(calDocFilter!=='all'){
+    const cdf=typeof calDocFilter==='string'?parseInt(calDocFilter):calDocFilter;
+    filtered=filtered.filter(function(b){return b.docId===cdf;});
   }
-  filtered=filtered.filter(function(b){return b.status!=='rejected';});
-  if(!filtered.length){toast('warn','目前視圖沒有可列印的預約');return;}
-  filtered.sort(function(a,b2){return a.date.localeCompare(b2.date)||a.slot.localeCompare(b2.slot);});
+  if(!filtered.length){toast('warn','當日沒有已核准的預約');return;}
+  filtered.sort(function(a,b2){return a.slot.localeCompare(b2.slot);});
   let pages='';
-  filtered.forEach(function(b){
-    pages+='<div style="page-break-after:always;padding:32px 36px;">'+buildBookingPrintHTML(b)+'</div>';
+  filtered.forEach(function(b,i){
+    const isLast=(i===filtered.length-1);
+    pages+=`<div style="${isLast?'':'page-break-after:always;'}padding:28px 22px;">${buildBookingPrintHTML(b)}</div>`;
   });
   doPrint(pages);
 }
 
 function doPrint(html){
   const pa=document.getElementById('printArea');
-  pa.innerHTML=html;
+  pa.innerHTML=`<style>${PRINT_CSS}</style>`+html;
   pa.style.display='block';
   window.print();
   setTimeout(function(){pa.style.display='none';pa.innerHTML='';},1200);
@@ -2797,9 +3089,24 @@ updateReviewBadge();
     if(snap.exists){
       const v=snap.data();
       selfPayItems=v.items||[];
-      if(document.getElementById('panel-selfpay').classList.contains('active')) renderSelfPay();
+      if(document.getElementById('panel-selfpay').classList.contains('active')){renderSelfPay();renderOpSelfPaySettings();}
     }
   });
+
+  // ── opSelfPay settings ──
+  db.collection('selfpay').doc('opSettings').onSnapshot(snap=>{
+    if(snap.exists){
+      const v=snap.data();
+      Object.assign(opSelfPay, v);
+      if(document.getElementById('panel-selfpay').classList.contains('active')) renderOpSelfPaySettings();
+    }
+  });
+
+  window._fbSaveOpSelfPay = async function(key, cfg){
+    try{
+      await db.collection('selfpay').doc('opSettings').set({[key]:cfg},{merge:true});
+    }catch(e){toast('err','儲存失敗：'+e.message);}
+  };
 
   window._fbSaveSelfPay = async function(items){
     const btn=document.querySelector('[onclick="saveSelfPayToDB()"]');
@@ -2807,6 +3114,7 @@ updateReviewBadge();
     try{
       await db.collection('selfpay').doc('items').set({items});
       toast('success','自費項目已儲存到雲端');
+      renderOpSelfPaySettings();
     }catch(e){ toast('err','儲存失敗：'+e.message); }
     finally{
       if(btn){btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:14px;height:14px;"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> 儲存自費項目';}
