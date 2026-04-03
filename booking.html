@@ -223,16 +223,15 @@ button{font-family:inherit;cursor:pointer;}
 .ferr-date{font-size:11px;color:#D03020;font-weight:600;margin-left:8px;display:none;}
 .ferr-date.on{display:inline;}
 /* ── SELFPAY STEP ── */
-.fe-sp-item{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1.5px solid var(--border);border-radius:var(--rs);margin-bottom:8px;background:white;transition:all .15s;}
+.fe-sp-item{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1.5px solid var(--border);border-radius:var(--rs);margin-bottom:8px;background:white;transition:all .15s;cursor:pointer;}
 .fe-sp-item.sel{border-color:var(--o1);background:var(--op);}
-.fe-sp-item input[type=checkbox]{width:16px;height:16px;accent-color:var(--o1);flex-shrink:0;cursor:pointer;}
+.fe-sp-round-cb{width:20px;height:20px;border-radius:50%;border:2px solid var(--border);background:white;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.fe-sp-round-cb.chk{background:var(--o1);border-color:var(--o1);}
+.fe-sp-round-cb.chk::after{content:'';display:block;width:5px;height:9px;border:2px solid white;border-top:none;border-left:none;transform:rotate(45deg) translateY(-1px);}
 .fe-sp-name{flex:1;font-size:13px;font-weight:600;color:var(--ink);}
 .fe-sp-price{font-size:12px;color:var(--ink3);white-space:nowrap;}
 .fe-sp-qty{width:58px;padding:6px 8px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;text-align:center;outline:none;font-family:inherit;}
 .fe-sp-qty:focus{border-color:var(--o1);}
-.sp-total-bar{margin-top:12px;padding:12px 14px;background:var(--op);border:1px solid var(--ob);border-radius:var(--rs);display:flex;justify-content:space-between;align-items:center;}
-.sp-total-lbl{font-size:13px;font-weight:700;color:var(--ink2);}
-.sp-total-amt{font-size:17px;font-weight:700;color:var(--o1);}
 /* ANIM */
 @keyframes fU{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
 @keyframes fD{from{opacity:0;transform:translateY(-10px);}to{opacity:1;transform:translateY(0);}}
@@ -371,14 +370,26 @@ button{font-family:inherit;cursor:pointer;}
     <div class="panel" id="p35">
       <div class="card">
         <div class="cttl">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-          自費項目<span style="font-size:11px;font-weight:400;color:var(--ink3);margin-left:6px;">（選填，可直接略過）</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
+          自費項目<span style="font-size:11px;font-weight:400;color:var(--ink3);margin-left:6px;">（選填）</span>
         </div>
-        <div style="font-size:12px;color:var(--ink3);margin-bottom:14px;">請勾選需要的自費項目並輸入數量。若不需要，請直接點擊下一步。</div>
         <div id="fe_sp_list"><div style="text-align:center;padding:20px;color:var(--ink3);font-size:12px;">載入中…</div></div>
-        <div class="sp-total-bar" id="fe_sp_total" style="display:none;">
-          <span class="sp-total-lbl">自費合計</span>
-          <span class="sp-total-amt" id="fe_sp_total_amt">$0</span>
+        <!-- opt subtotal -->
+        <div id="fe_sp_opt_row" style="display:flex;justify-content:space-between;font-size:13px;color:var(--ink2);padding:6px 0;display:none;">
+          <span>加購小計</span><span id="fe_sp_opt_sub">$0</span>
+        </div>
+        <!-- req subtotal (always shown if any req) -->
+        <div id="fe_sp_req_row" style="display:none;">
+          <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--ink2);padding:6px 0;">
+            <span>必要費用</span><span id="fe_sp_req_sub">$0</span>
+          </div>
+        </div>
+        <div style="border-top:1.5px solid var(--ink);margin:4px 0 10px;"></div>
+        <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;color:var(--ink);padding:2px 0;" id="fe_sp_total">
+          <span>合計</span><span id="fe_sp_total_amt">$0</span>
+        </div>
+        <div style="margin-top:14px;font-size:11px;color:var(--ink3);text-align:center;padding:8px;background:#F9F7F4;border-radius:8px;border:1px solid var(--border);">
+          ＊ 診所保留修改自費項目費用的權利
         </div>
       </div>
       <div class="brow">
@@ -440,11 +451,15 @@ button{font-family:inherit;cursor:pointer;}
     <div class="suc-sub">我們將盡快安排審核，請靜候<br><strong>1–2 個工作天</strong>，結果將透過 <strong>LINE</strong> 通知您。</div>
 
     <div class="suc-info-card">
-      <div class="suc-info-ttl" style="font-size:12px;letter-spacing:.06em;display:flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;flex-shrink:0;"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="13" y2="15"/></svg>手術預約詳情</div>
+      <div class="suc-info-ttl" style="font-size:12px;letter-spacing:.06em;display:flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>手術預約詳情</div>
       <div class="suc-info-row"><div class="suc-info-k">醫師</div><div class="suc-info-v" id="suc_doc"></div></div>
       <div class="suc-info-row"><div class="suc-info-k">術式</div><div class="suc-info-v" id="suc_op"></div></div>
       <div class="suc-info-row"><div class="suc-info-k">日期</div><div class="suc-info-v" id="suc_date"></div></div>
       <div class="suc-info-row"><div class="suc-info-k">時段</div><div class="suc-info-v" id="suc_slot"></div></div>
+      <div class="suc-info-row" id="suc_sp_row" style="display:none;">
+        <div class="suc-info-k" style="color:var(--o1);">預估自費</div>
+        <div class="suc-info-v" id="suc_sp_total"></div>
+      </div>
     </div>
 
     <div class="suc-contact-card">
@@ -528,66 +543,141 @@ function toStep3(){
   show('p3');setStep(3);
 }
 /* ── SELF-PAY (step 3.5) ── */
-let feSelfPayCatalog = [];
-window._feSelSelfPay = [];
+let feSelfPayCatalog = [];    // all items from selfpay/items
+let feOpSelfPay = {};         // opSettings from selfpay/opSettings
+window._feSelSelfPay = [];    // currently selected optional items
+window._feReqItems = [];      // required items for current op
+
+function getFeOpKey(){
+  // key = docId:opName
+  if(!sel.docId||!sel.op) return null;
+  return sel.docId+':'+sel.op;
+}
 
 function renderFeSelfPay(){
   const list=document.getElementById('fe_sp_list');
   if(!list) return;
-  if(!feSelfPayCatalog.length){
-    list.innerHTML='<div style="text-align:center;padding:24px 0;color:var(--ink3);font-size:13px;">目前診所尚未設定自費項目<br>請直接點擊預覽確認。</div>';
+
+  const key=getFeOpKey();
+  const cfg=(key&&feOpSelfPay[key])||null;
+
+  // Required items: from opSettings, or [] if none configured
+  const reqIds=(cfg&&cfg.required)||[];
+  const optIds=(cfg&&cfg.optional)||[];
+
+  // If no op config at all, show all catalog as optional (fallback)
+  const fallback=!cfg;
+  const optItems=fallback
+    ? feSelfPayCatalog
+    : feSelfPayCatalog.filter(function(it){return optIds.includes(it.id);});
+  const reqItems=fallback
+    ? []
+    : feSelfPayCatalog.filter(function(it){return reqIds.includes(it.id);});
+
+  window._feReqItems=reqItems;
+
+  const selected=window._feSelSelfPay||[];
+  let html='';
+
+  // Optional items (checkable)
+  if(optItems.length){
+    html+='<div id="fe_sp_opt_section">';
+    optItems.forEach(function(it){
+      const ex=selected.find(function(s){return s.id===it.id;});
+      const checked=!!ex;
+      const qty=ex?ex.qty:1;
+      const priceStr=it.unit?'$'+it.price+'/'+it.unit:'$'+it.price;
+      html+='<div class="fe-sp-item'+(checked?' sel':'')+'" id="fespi_'+it.id+'" onclick="onFeSpCheck(this.dataset.sid)" data-sid="'+it.id+'">';
+      html+='<div class="fe-sp-round-cb'+(checked?' chk':'')+'" id="fespcb_'+it.id+'"></div>';
+      html+='<div class="fe-sp-name">'+it.name+'</div>';
+      html+='<div class="fe-sp-price">'+priceStr+'</div>';
+      html+='<input type="number" class="fe-sp-qty" id="fespq_'+it.id+'" value="'+qty+'" min="1" max="999" oninput="calcFeSpTotal()" onclick="event.stopPropagation()">';
+      html+='</div>';
+    });
+    html+='</div>';
+  } else {
+    html+='<div style="font-size:12px;color:var(--ink3);padding:10px 0 4px;">此術式無加購項目</div>';
+  }
+
+  // Divider + opt subtotal + required section
+  html+='<div style="border-top:1px solid var(--border);margin:10px 0 8px;"></div>';
+
+  // Required items (non-selectable, text display)
+  if(reqItems.length){
+    html+='<div style="margin-bottom:8px;">';
+    reqItems.forEach(function(it){
+      const priceStr=it.unit?'$'+it.price+'/'+it.unit:'$'+it.price;
+      html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #F5F5F5;">';
+      html+='<span style="font-size:13px;font-weight:600;color:var(--ink);">'+it.name+'</span>';
+      html+='<span style="font-size:13px;font-weight:600;color:var(--ink);">'+priceStr+'</span>';
+      html+='</div>';
+    });
+    html+='</div>';
+    html+='<div style="border-top:1px solid var(--border);margin:8px 0;"></div>';
+  }
+
+  if(!optItems.length&&!reqItems.length){
+    list.innerHTML='<div style="text-align:center;padding:20px 0;color:var(--ink3);font-size:13px;">此術式目前無自費項目設定</div>';
     document.getElementById('fe_sp_total').style.display='none';
     return;
   }
-  const selected=window._feSelSelfPay||[];
-  let html='';
-  feSelfPayCatalog.forEach(function(it){
-    const ex=selected.find(function(s){return s.id===it.id;});
-    const checked=!!ex;
-    const qty=ex?ex.qty:1;
-    html+='<div class="fe-sp-item'+(checked?' sel':'')+'" id="fespi_'+it.id+'">';
-    html+='<input type="checkbox" id="fespc_'+it.id+'" '+(checked?'checked':'')+' onchange="onFeSpCheck(this.dataset.id)" data-id="'+it.id+'">';
-    html+='<div class="fe-sp-name">'+it.name+'</div>';
-    html+='<div class="fe-sp-price">$'+it.price+'/'+it.unit+'</div>';
-    html+='<input type="number" class="fe-sp-qty" id="fespq_'+it.id+'" value="'+qty+'" min="1" max="999" oninput="calcFeSpTotal()">';
-    html+='</div>';
-  });
+
   list.innerHTML=html;
   calcFeSpTotal();
 }
 
 window.onFeSpCheck=function(id){
-  const cb=document.getElementById('fespc_'+id);
+  const cb=document.getElementById('fespcb_'+id);
   const row=document.getElementById('fespi_'+id);
-  if(cb&&row) row.classList.toggle('sel',cb.checked);
+  if(!cb||!row) return;
+  const nowChk=!cb.classList.contains('chk');
+  cb.classList.toggle('chk',nowChk);
+  row.classList.toggle('sel',nowChk);
   calcFeSpTotal();
 };
 
 function calcFeSpTotal(){
-  let total=0;
+  // optional selected
+  let optTotal=0;
   feSelfPayCatalog.forEach(function(it){
-    const cb=document.getElementById('fespc_'+it.id);
-    if(cb&&cb.checked){
+    const cb=document.getElementById('fespcb_'+it.id);
+    if(cb&&cb.classList.contains('chk')){
       const q=Math.max(1,parseInt((document.getElementById('fespq_'+it.id)||{value:'1'}).value)||1);
-      total+=it.price*q;
+      optTotal+=it.price*q;
     }
   });
+  // required (fixed)
+  const reqItems=window._feReqItems||[];
+  const reqTotal=reqItems.reduce(function(s,it){return s+it.price;},0);
+
   const bar=document.getElementById('fe_sp_total');
   const amt=document.getElementById('fe_sp_total_amt');
+  const optSubEl=document.getElementById('fe_sp_opt_sub');
+  const reqSubEl=document.getElementById('fe_sp_req_sub');
+
+  if(optSubEl) optSubEl.textContent='$'+optTotal.toLocaleString();
+  if(reqSubEl) reqSubEl.textContent='$'+reqTotal.toLocaleString();
+
+  const grandTotal=optTotal+reqTotal;
   if(bar&&amt){
-    if(total>0){bar.style.display='flex';amt.textContent='$'+total.toLocaleString();}
+    if(grandTotal>0||reqTotal>0){bar.style.display='flex';amt.textContent='$'+grandTotal.toLocaleString();}
     else{bar.style.display='none';}
   }
 }
 
 function collectFeSp(){
   const items=[];
+  // optional selected
   feSelfPayCatalog.forEach(function(it){
-    const cb=document.getElementById('fespc_'+it.id);
-    if(cb&&cb.checked){
+    const cb=document.getElementById('fespcb_'+it.id);
+    if(cb&&cb.classList.contains('chk')){
       const q=Math.max(1,parseInt((document.getElementById('fespq_'+it.id)||{value:'1'}).value)||1);
-      items.push({id:it.id,name:it.name,price:it.price,unit:it.unit,qty:q});
+      items.push({id:it.id,name:it.name,price:it.price,unit:it.unit,qty:q,role:'optional'});
     }
+  });
+  // required
+  (window._feReqItems||[]).forEach(function(it){
+    items.push({id:it.id,name:it.name,price:it.price,unit:it.unit,qty:1,role:'required'});
   });
   return items;
 }
@@ -627,6 +717,9 @@ function validateStep3(){
 
 function toStep35(){
   if(!validateStep3()) return;
+  // Reset selections if op changed
+  window._feSelSelfPay=[];
+  window._feReqItems=[];
   renderFeSelfPay();
   show('p35'); setStep(3.5);
 }
@@ -665,7 +758,11 @@ function fillPreview(){
   if(spBlk){
     if(spItems.length){
       const rows=spItems.map(function(x){
-        return '<div class="pv-row"><div class="pv-k">'+x.name+'</div><div class="pv-v">$'+x.price+'/'+x.unit+' × '+x.qty+' = $'+(x.price*x.qty).toLocaleString()+'</div></div>';
+        const subtotal=x.price*x.qty;
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);">'
+          +'<span style="font-size:13px;color:var(--ink);">'+x.name+' × '+x.qty+'</span>'
+          +'<span style="font-size:13px;font-weight:700;color:var(--ink);">$'+subtotal.toLocaleString()+'</span>'
+          +'</div>';
       }).join('');
       document.getElementById('pv_sp_rows').innerHTML=rows;
       const total=spItems.reduce(function(s,x){return s+x.price*x.qty;},0);
@@ -717,10 +814,21 @@ function toStep4(){
 }
 function submitBooking(){
   const doc=doctors.find(d=>d.id===sel.docId);
-  document.getElementById('suc_doc').textContent=`${doc.name} 醫師`;
+  document.getElementById('suc_doc').textContent=doc.name+' 醫師';
   document.getElementById('suc_op').textContent=sel.op;
   document.getElementById('suc_date').textContent=fmtDs(sel.date);
   document.getElementById('suc_slot').textContent=sel.slot;
+  // selfpay total on success page
+  const spItems=window._feSelSelfPay||[];
+  const spTotal=spItems.reduce(function(s,x){return s+x.price*x.qty;},0);
+  const spRow=document.getElementById('suc_sp_row');
+  const spTotalEl=document.getElementById('suc_sp_total');
+  if(spRow&&spTotalEl&&spTotal>0){
+    spTotalEl.textContent='預估 $'+spTotal.toLocaleString();
+    spRow.style.display='flex';
+  } else if(spRow){
+    spRow.style.display='none';
+  }
   document.getElementById('bookingApp').style.display='none';
   const sp=document.getElementById('successPage');
   sp.style.display='flex';sp.classList.add('on');
@@ -735,6 +843,7 @@ function enterBooking(){
 function goHome(){
   sel={docId:null,op:null,date:null,slot:null};
   window._feSelSelfPay=[];
+  window._feReqItems=[];
   ['f_name','f_y','f_m','f_d','f_phone','f_note'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('opWrap').innerHTML='<div style="font-size:12px;color:var(--ink3);padding:4px 0;">請先選擇醫師，術式將自動帶入</div>';
   document.getElementById('slotCard').style.display='none';
@@ -999,6 +1108,10 @@ window.renderSlots   = renderSlots;
   // ── 即時監聽自費項目清單 ──
   db.collection('selfpay').doc('items').onSnapshot(snap=>{
     feSelfPayCatalog = snap.exists ? (snap.data().items||[]) : [];
+  });
+  // ── 即時監聽術式自費設定 ──
+  db.collection('selfpay').doc('opSettings').onSnapshot(snap=>{
+    feOpSelfPay = snap.exists ? snap.data() : {};
   });
 
   // ── 即時監聽 bookings → 計算已預約數，即時更新畫面 ──
