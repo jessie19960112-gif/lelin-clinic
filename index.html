@@ -245,7 +245,7 @@ tr:hover td{background:#C3D9EE;}
 .acd{aspect-ratio:1;border-radius:6px;border:1.5px solid transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;font-weight:500;cursor:pointer;transition:all .12s;position:relative;line-height:1;}
 .acd.other{opacity:0;pointer-events:none;}
 .acd.past{color:var(--text3);cursor:default;opacity:.35;}
-.acd.noslot{color:var(--text3);opacity:.45;cursor:default;}
+.acd.noslot{color:var(--text2);opacity:.6;cursor:default;background:#E8EDF3;}
 .acd.has{border-color:var(--ob);background:var(--op);color:var(--orange);font-weight:700;}
 .acd.has:hover{background:var(--orange);color:white;border-color:var(--orange);}
 .acd.picked{background:var(--orange)!important;color:white!important;border-color:var(--orange)!important;font-weight:700;}
@@ -698,9 +698,8 @@ tr:hover td{background:#FFF9F5;}
       </div>
       <!-- 下方：術式自費設定 -->
       <div class="card" style="padding:0;overflow:hidden;">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);">
-          <span style="font-size:13px;font-weight:700;color:var(--text);">術式自費設定</span>
-          <span style="font-size:11px;color:var(--text3);">依醫師 → 術式 設定必要費用與加購選項</span>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-bottom:1px solid var(--border);">
+          <div class="doc-tabs" id="spDocTabs" style="border-bottom:none;margin-bottom:0;flex:1;overflow-x:auto;"></div>
         </div>
         <div style="padding:16px 18px;" id="opSelfPaySettings"></div>
       </div>
@@ -838,7 +837,7 @@ window.nav = function(id) {
   if(id==='calendar'){renderCal();updateCalPrintBtn();}
   if(id==='schedule') renderSlotCal();
   if(id==='doctors')  renderDoctors();
-  if(id==='selfpay'){renderSelfPay();renderOpSelfPaySettings();}
+  if(id==='selfpay'){renderSelfPay();spActiveDocId=null;renderOpSelfPaySettings();}
   updateReviewBadge();
 }
 
@@ -1091,6 +1090,20 @@ window._renderDetailModal = function(b, editMode, isPast=false){
       </div>
       <div class="conflict-warn" id="e_conflict">⚠ 此時段已有其他預約，請選擇其他時間</div>
       <div class="edit-row"><label class="edit-label">備註</label><input class="edit-inp" id="e_note" value="${b.note}"></div>
+      <div class="edit-row">
+        <label class="edit-label">自費項目</label>
+        <div id="e_sp_preview_wrap">
+          ${(b.selfPayItems&&b.selfPayItems.length)?`
+          <div style="background:#F8FAFC;border:1px solid var(--border);border-radius:var(--rx);padding:10px 12px;margin-bottom:8px;font-size:12px;">
+            ${b.selfPayItems.map(it=>`<div style="display:flex;justify-content:space-between;padding:3px 0;"><span>${it.name} × ${it.qty}</span><span style="font-weight:700;">$${(parseInt(it.price)*parseInt(it.qty)).toLocaleString()}</span></div>`).join('')}
+            <div style="border-top:1px solid var(--border);margin-top:6px;padding-top:6px;display:flex;justify-content:space-between;font-weight:700;"><span>合計</span><span style="color:var(--orange);">$${b.selfPayItems.reduce((s,it)=>s+parseInt(it.price)*parseInt(it.qty),0).toLocaleString()}</span></div>
+          </div>`:'<div style="font-size:12px;color:var(--text3);margin-bottom:8px;">尚未選擇自費項目</div>'}
+        </div>
+        <button type="button" class="tb-btn" style="width:100%;justify-content:center;" onclick="openEditSelfPayPage('${b.id}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
+          修改自費項目
+        </button>
+      </div>
       <div class="edit-row edit-row-split">
         <div style="flex:1"><label class="edit-label">狀態</label><select class="edit-inp" id="e_status">
           <option value="pending"${b.status==='pending'?' selected':''}>待審核</option>
@@ -1433,22 +1446,44 @@ function renderAddCal(){
     }
     const isPast=ds<todayStr;
     const has=ss.length>0&&!isPast;
-    // 額滿判斷：同前端 isSessionFull 邏輯
+    // 額滿判斷
     let full=false;
-    if(has&&docId){
-      const doc2=doctors.find(d=>d.id===docId);
-      if(doc2){
-        full=ss.every(slot=>{
-          const amSlot=parseInt(slot)<12;
-          const lim=amSlot?(doc2.limitAM??99):(doc2.limitPM??99);
-          if(!lim||lim<=0)return false;
-          const booked=bookings.filter(b=>
-            b.docId===docId&&b.date===ds&&
-            (b.status==='pending'||b.status==='approved')&&
-            (parseInt(b.slot)<12)===amSlot
-          ).length;
-          return booked>=lim;
+    let wkClosed=false;
+    const doc2=docId?doctors.find(d=>d.id===docId):null;
+    if(has&&doc2){
+      // session full check
+      full=ss.every(slot=>{
+        const amSlot=parseInt(slot)<12;
+        const lim=amSlot?(doc2.limitAM??99):(doc2.limitPM??99);
+        if(!lim||lim<=0)return false;
+        const booked=bookings.filter(b=>
+          b.docId===docId&&b.date===ds&&
+          (b.status==='pending'||b.status==='approved')&&
+          (parseInt(b.slot)<12)===amSlot
+        ).length;
+        return booked>=lim;
+      });
+      // week limit check
+      if(!full && doc2.weekLimit>0){
+        const dt2=new Date(ds); const day2=dt2.getDay();
+        const mon2=new Date(dt2); mon2.setDate(dt2.getDate()-(day2===0?6:day2-1));
+        const weekKey2=mon2.toISOString().slice(0,10);
+        const bookedDates2=new Set();
+        Object.keys(slotSettings).forEach(k=>{
+          const [did,date]=k.split(':');
+          if(parseInt(did)===docId){
+            const hasBk=bookings.some(b=>b.date===date&&b.docId===docId&&(b.status==='pending'||b.status==='approved'));
+            if(hasBk){
+              const dt3=new Date(date); const d3=dt3.getDay();
+              const m3=new Date(dt3); m3.setDate(dt3.getDate()-(d3===0?6:d3-1));
+              if(m3.toISOString().slice(0,10)===weekKey2) bookedDates2.add(date);
+            }
+          }
         });
+        if(bookedDates2.size>=doc2.weekLimit){
+          const selfHas2=bookings.some(b=>b.date===ds&&b.docId===docId&&(b.status==='pending'||b.status==='approved'));
+          wkClosed=!selfHas2;
+        }
       }
     }
     const picked=ds===selDate;
@@ -1456,13 +1491,14 @@ function renderAddCal(){
     if(dow===0)cls+=' sun'; if(dow===6)cls+=' sat';
     if(ds===todayStr) cls+=' today-marker';
     if(isPast) cls+=' past';
+    else if(wkClosed) cls+=' noslot';
     else if(full) cls+=' full';
     else if(!has) cls+=' noslot';
     else cls+=' has';
     if(picked) cls+=' picked';
-    const dot=(has&&!full)?`<div class="acd-dot"></div>`:'';
+    const dot=(has&&!full&&!wkClosed)?`<div class="acd-dot"></div>`:'';
     const fullLbl=full?`<div class="acd-full-lbl">額滿</div>`:'';
-    const click=(has&&!full)?`onclick="pickAddDate('${ds}')"`:'';
+    const click=(has&&!full&&!wkClosed)?`onclick="pickAddDate('${ds}')"`:'';
     h+=`<div class="${cls}" ${click}>${dd}${dot}${fullLbl}</div>`;
   }
   grid.innerHTML=h;
@@ -1817,10 +1853,50 @@ function renderSlotCal(){
     }
     const numSpan=document.createElement('span');numSpan.textContent=d;el.appendChild(numSpan);
     if(hasSlots){
-      const dot=document.createElement('div');
-      dot.className='slot-day-dot';
-      dot.style.background=ds===slotSelectedDay?'rgba(255,255,255,.7)':dc.dot;
-      el.appendChild(dot);
+      // Check week limit closed for this day
+      const docObj=slotActiveDocId?doctors.find(dd=>dd.id===slotActiveDocId):null;
+      let isWkClosedCell=false;
+      if(docObj&&docObj.weekLimit>0){
+        const dtCell=new Date(ds); const dayCell=dtCell.getDay();
+        const monCell=new Date(dtCell); monCell.setDate(dtCell.getDate()-(dayCell===0?6:dayCell-1));
+        const weekKeyCell=monCell.toISOString().slice(0,10);
+        const bookedDatesCell=new Set();
+        Object.entries(slotSettings).forEach(([k])=>{
+          const [did,date]=k.split(':');
+          if(parseInt(did)===slotActiveDocId){
+            const hasBk=bookings.some(b=>b.date===date&&b.docId===slotActiveDocId&&(b.status==='pending'||b.status==='approved'));
+            if(hasBk){
+              const dt2=new Date(date); const d2=dt2.getDay();
+              const m2=new Date(dt2); m2.setDate(dt2.getDate()-(d2===0?6:d2-1));
+              if(m2.toISOString().slice(0,10)===weekKeyCell) bookedDatesCell.add(date);
+            }
+          }
+        });
+        if(bookedDatesCell.size>=docObj.weekLimit){
+          const selfHas=bookings.some(b=>b.date===ds&&b.docId===slotActiveDocId&&(b.status==='pending'||b.status==='approved'));
+          isWkClosedCell=!selfHas;
+        }
+      }
+      if(isWkClosedCell){
+        // grey strikethrough dot indicator
+        const dot=document.createElement('div');
+        dot.className='slot-day-dot';
+        dot.style.background='var(--text3)';
+        dot.style.opacity='.5';
+        el.appendChild(dot);
+        el.style.opacity='.55';
+        el.style.textDecoration='line-through';
+        el.style.background='';
+        el.style.borderColor='var(--border)';
+        el.style.color='var(--text3)';
+        el.style.fontWeight='';
+        el.onclick=()=>selectSlotDay(ds); // still selectable to inspect
+      } else {
+        const dot=document.createElement('div');
+        dot.className='slot-day-dot';
+        dot.style.background=ds===slotSelectedDay?'rgba(255,255,255,.7)':dc.dot;
+        el.appendChild(dot);
+      }
     }
     if(!isPast) el.onclick=()=>selectSlotDay(ds);
     grid.appendChild(el);
@@ -1844,13 +1920,37 @@ function renderTimeSlotPanel(ds){
   const remAM=Math.max(0,limitAM-counts.am);
   const remPM=Math.max(0,limitPM-counts.pm);
 
+  // Check week-limit closed for this day
+  let isPanelWkClosed=false;
+  if(doc&&doc.weekLimit>0){
+    const dtP=new Date(ds); const dayP=dtP.getDay();
+    const monP=new Date(dtP); monP.setDate(dtP.getDate()-(dayP===0?6:dayP-1));
+    const weekKeyP=monP.toISOString().slice(0,10);
+    const bookedDatesP=new Set();
+    Object.entries(slotSettings).forEach(([k])=>{
+      const [did,date]=k.split(':');
+      if(parseInt(did)===slotActiveDocId){
+        const hasBk=bookings.some(b=>b.date===date&&b.docId===slotActiveDocId&&(b.status==='pending'||b.status==='approved'));
+        if(hasBk){
+          const dt2=new Date(date); const d2=dt2.getDay();
+          const m2=new Date(dt2); m2.setDate(dt2.getDate()-(d2===0?6:d2-1));
+          if(m2.toISOString().slice(0,10)===weekKeyP) bookedDatesP.add(date);
+        }
+      }
+    });
+    if(bookedDatesP.size>=doc.weekLimit){
+      const selfHasP=bookings.some(b=>b.date===ds&&b.docId===slotActiveDocId&&(b.status==='pending'||b.status==='approved'));
+      isPanelWkClosed=!selfHasP;
+    }
+  }
+
   const slotItems=sel.map(s=>{
     const isBooked=booked.includes(s);
     const am=isAM(s);
     const lim=am?(doc?doc.limitAM??99:99):(doc?doc.limitPM??99:99);
     const limit=(lim===0||lim>0)?lim:99;
     const limitReached=am?(counts.am>=limit):(counts.pm>=limit);
-    const isGrey=!isBooked&&limitReached;
+    const isGrey=!isBooked&&(limitReached||isPanelWkClosed);
     return `<div class="dds-item">
       <span class="dds-time" style="color:${isGrey?'var(--text3)':dc.dot};${isGrey?'text-decoration:line-through;':''}">${s}</span>
       ${isBooked
@@ -1865,10 +1965,10 @@ function renderTimeSlotPanel(ds){
   // plain text AM/PM remaining — 0 = red, >0 = black
   const limAM=doc?doc.limitAM??99:99; const effLimAM=(limAM===0||limAM>0)?limAM:99;
   const limPM=doc?doc.limitPM??99:99; const effLimPM=(limPM===0||limPM>0)?limPM:99;
-  const rem2AM=Math.max(0,effLimAM-counts.am);
-  const rem2PM=Math.max(0,effLimPM-counts.pm);
-  const amTxt=effLimAM<99?`上午剩 <strong style="color:${rem2AM===0?'var(--red)':'var(--text)'};">${rem2AM}</strong> 人`:'';
-  const pmTxt=effLimPM<99?`下午剩 <strong style="color:${rem2PM===0?'var(--red)':'var(--text)'};">${rem2PM}</strong> 人`:'';
+  const rem2AM=isPanelWkClosed?0:Math.max(0,effLimAM-counts.am);
+  const rem2PM=isPanelWkClosed?0:Math.max(0,effLimPM-counts.pm);
+  const amTxt=effLimAM<99?`上午剩 <strong style="color:${(rem2AM===0||isPanelWkClosed)?'var(--red)':'var(--text)'};">${rem2AM}</strong> 人`:'';
+  const pmTxt=effLimPM<99?`下午剩 <strong style="color:${(rem2PM===0||isPanelWkClosed)?'var(--red)':'var(--text)'};">${rem2PM}</strong> 人`:'';
   const remText=(amTxt||pmTxt)?`<span style="font-size:12px;color:var(--text2);">${[amTxt,pmTxt].filter(Boolean).join('　')}</span>`:'';
 
   document.getElementById('timeSlotPanel').innerHTML=`
@@ -1928,7 +2028,7 @@ function renderSlotSummary(){
     .sort(([a],[b])=>a.localeCompare(b));
   if(!entries.length){div.innerHTML=`<div style="font-size:12px;color:var(--text3);padding:14px 0;">本月尚未設定任何時段</div>`;return;}
   const doc2=doctors.find(d=>d.id===slotActiveDocId);
-  const wkBadge=doc2&&doc2.weekLimit?`<span style="font-size:10px;font-weight:700;padding:1px 8px;border-radius:10px;background:var(--op);color:var(--orange);border:1px solid var(--ob);">每週上限 ${doc2.weekLimit} 天</span>`:'';
+  const wkBadge=doc2&&doc2.weekLimit?`<span style="font-size:12px;color:var(--red);font-weight:700;">每週上限 <strong>${doc2.weekLimit}</strong> 天</span>`:'';
   div.innerHTML=`<div class="slot-summary-sticky-hd"><div style="display:flex;align-items:center;justify-content:space-between;"><span class="slot-summary-title" style="margin-bottom:0;">本月已設定時段</span>${wkBadge}</div></div>`+entries.map(([ds,slots])=>{
     const booked=getBookedSlots(ds);
     const isSelected=ds===slotSelectedDay;
@@ -1964,8 +2064,8 @@ function renderSlotSummary(){
       const isBooked=booked.includes(s);
       const limitFull=isSlotLimitReached(doc,ds,s);
       if(isBooked){
-        // booked: dark background, white text, NO strikethrough
-        return `<span class="slot-summary-chip booked-chip">${s}</span>`;
+        // booked: use doctor color (same as available but slightly different opacity)
+        return `<span class="slot-summary-chip" style="background:${dc.bg};color:${dc.text};border-color:${dc.border};opacity:.85;">${s}</span>`;
       } else if(isWkClosed || limitFull){
         // week-limit closed or capacity full: grey strikethrough
         return `<span class="slot-summary-chip wk-closed">${s}</span>`;
@@ -2300,6 +2400,23 @@ window.openAddDoctor = function(){
   openOverlay();
 }
 
+
+/* Auto-populate opSelfPay for a doctor's ops from selfPayItems defaults */
+function autoPopulateOpSelfPay(docId, ops){
+  if(!ops||!ops.length||!selfPayItems.length) return;
+  ops.forEach(function(op){
+    const key=docId+':'+op;
+    if(!opSelfPay[key]){
+      // Brand new op: copy all default items in (required=[],optional=[all items])
+      opSelfPay[key]={
+        required:[],
+        optional:selfPayItems.map(function(it){return it.id;})
+      };
+      if(window._fbSaveOpSelfPay) window._fbSaveOpSelfPay(key, opSelfPay[key]);
+    }
+  });
+}
+
 window.saveAddDoctor = function(){
   const name=document.getElementById('dc_name').value.trim();
   if(!name){toast('err','請填寫醫師姓名');return;}
@@ -2312,6 +2429,8 @@ window.saveAddDoctor = function(){
   const newId=doctors.length?Math.max(...doctors.map(d=>d.id))+1:1;
   const newDoc={id:newId,name,title:document.getElementById('dc_title').value.trim()||'耳鼻喉科',colorId,limitAM,limitPM,weekLimit,ops};
   doctors.push(newDoc);
+  // auto-populate opSelfPay for new doctor's ops
+  autoPopulateOpSelfPay(newId, ops);
   closeModal();renderDoctors();toast('success',`${name} 醫師已新增，請記得按「儲存醫師」同步到雲端`);
 }
 
@@ -2341,7 +2460,11 @@ window.saveEditDoctor = function(id){
   doc.limitPM=parseInt(document.getElementById('dc_limit_pm').value)??doc.limitPM??3;
   const weekLimitOn2=document.getElementById('dc_week_limit_on')?.checked;
   doc.weekLimit=weekLimitOn2?parseInt(document.getElementById('dc_week_limit').value)||0:0;
-  doc.ops=getSelectedOps();
+  const newOps=getSelectedOps();
+  // find newly added ops (not in previous doc.ops)
+  const addedOps=newOps.filter(function(op){return !doc.ops.includes(op);});
+  doc.ops=newOps;
+  autoPopulateOpSelfPay(doc.id, addedOps);
   if(window._fbSaveDoctor) window._fbSaveDoctor(doc);
   closeModal();renderDoctors();
   if(document.getElementById('panel-selfpay').classList.contains('active')) renderOpSelfPaySettings();
@@ -2525,112 +2648,391 @@ let selfPayItems = [];
 // opSelfPay: keyed as "docId:opName" -> {required:[itemId,...], optional:[itemId,...]}
 let opSelfPay = {};
 
-/* ── OP SELFPAY SETTINGS ── */
-function renderOpSelfPaySettings(){
-  const div=document.getElementById('opSelfPaySettings');
-  if(!div)return;
-  if(!doctors.length||!selfPayItems.length){
-    div.innerHTML='<div style="font-size:12px;color:var(--text3);padding:8px 0;">請先建立自費項目庫，並設定醫師與術式，再配置術式自費選項。</div>';
-    return;
+
+/* ── EDIT BOOKING SELFPAY PAGE ── */
+window.openEditSelfPayPage = function(bookingId){
+  const b=bookings.find(x=>x.id===bookingId);
+  if(!b)return;
+  const key=(b.docId&&b.op)?(b.docId+':'+b.op):null;
+  const cfg=key&&opSelfPay[key]?opSelfPay[key]:{required:[],optional:[]};
+  const reqItems=selfPayItems.filter(it=>cfg.required.includes(it.id));
+  const optItems=selfPayItems.filter(it=>cfg.optional.includes(it.id));
+  // fallback: show all as optional
+  const optDisplay=optItems.length?optItems:(selfPayItems.length?selfPayItems:[]);
+  const curSel=b.selfPayItems||[];
+
+  document.getElementById('modalTitle').textContent='修改自費項目';
+  let html='<div id="esp_wrap">';
+
+  // Optional items - table style with checkbox
+  if(optDisplay.length){
+    html+='<div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px;">選填項目</div>';
+    html+='<table style="width:100%;border-collapse:collapse;margin-bottom:12px;">';
+    html+='<thead><tr style="background:#F8FAFC;"><th style="padding:7px 10px;text-align:left;border:1px solid var(--border);font-size:12px;">項目</th><th style="padding:7px 10px;text-align:center;border:1px solid var(--border);font-size:12px;width:70px;">數量</th><th style="padding:7px 10px;text-align:right;border:1px solid var(--border);font-size:12px;width:80px;">小計</th></tr></thead><tbody>';
+    optDisplay.forEach(it=>{
+      const ex=curSel.find(s=>s.id===it.id&&s.role!=='required');
+      const checked=!!ex; const qty=ex?ex.qty:1;
+      const priceStr=it.unit?`$${it.price}/${it.unit}`:`$${it.price}`;
+      const subtotal=checked?parseInt(it.price)*qty:0;
+      html+=`<tr id="espr_${it.id}" style="cursor:pointer;" onclick="toggleEspItem('${it.id}')">
+        <td style="padding:7px 10px;border:1px solid var(--border);">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="sp-round-cb${checked?' chk':''}" id="espcb_${it.id}" style="width:18px;height:18px;border-radius:50%;border:2px solid var(--border);background:${checked?'var(--orange)':'white'};flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+              ${checked?'<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" style="width:10px;height:10px;"><polyline points="20 6 9 17 4 12"/></svg>':''}
+            </div>
+            <span style="font-size:13px;font-weight:600;">${it.name}</span>
+            <span style="font-size:11px;color:var(--text2);">${priceStr}</span>
+          </div>
+        </td>
+        <td style="padding:7px 10px;border:1px solid var(--border);text-align:center;" onclick="event.stopPropagation()">
+          <input type="number" id="espq_${it.id}" value="${qty}" min="1" max="99" style="width:52px;text-align:center;padding:4px 6px;border:1.5px solid var(--border);border-radius:var(--rx);font-size:13px;outline:none;display:${checked?'block':'none'};margin:0 auto;" oninput="updateEspSubtotal('${it.id}')">
+        </td>
+        <td style="padding:7px 10px;border:1px solid var(--border);text-align:right;font-weight:700;font-size:13px;" id="espsub_${it.id}">${checked?'$'+subtotal.toLocaleString():'—'}</td>
+      </tr>`;
+    });
+    html+='</tbody></table>';
   }
-  let html='';
-  doctors.forEach(d=>{
-    const dc=docColor(d.id);
-    if(!d.ops||!d.ops.length) return;
-    html+=`<div class="sp-op-section">
-      <div class="sp-op-header" style="background:${dc.bg};border:1px solid ${dc.border};border-radius:var(--rx);">
-        <div style="width:10px;height:10px;border-radius:50%;background:${dc.dot};flex-shrink:0;"></div>
-        <span style="font-size:13px;font-weight:700;color:${dc.text};">${d.name} 醫師</span>
-        <span style="font-size:11px;color:${dc.text};opacity:.6;margin-left:4px;">${d.title}</span>
-      </div>`;
-    d.ops.forEach(op=>{
-      const key=d.id+':'+op;
-      const cfg=opSelfPay[key]||{required:[],optional:[]};
-      html+=`<div style="border:1px solid ${dc.border};border-top:none;border-radius:0 0 var(--rx) var(--rx);margin-bottom:10px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:#FAFBFC;border-bottom:1px solid var(--border);">
-          <span style="font-size:12px;font-weight:700;color:var(--text);">${op}</span>
-          <button class="tb-btn" style="padding:4px 10px;font-size:11px;" onclick="openOpSelfPayEditor(${d.id},'${op.replace(/'/g,"\'")}')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:11px;height:11px;"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>設定
-          </button>
-        </div>
-        <div style="padding:8px 14px;">`;
-      if(!cfg.required.length&&!cfg.optional.length){
-        html+='<span style="font-size:11px;color:var(--text3);">尚未設定自費項目</span>';
-      } else {
-        cfg.required.forEach(id=>{
-          const it=selfPayItems.find(x=>x.id===id);
-          if(!it)return;
-          const priceStr=it.unit?`$${it.price}/${it.unit}`:`$${it.price}`;
-          html+=`<div class="sp-op-item-row"><span class="sp-op-item-name">${it.name}</span><span class="sp-op-item-price">${priceStr}</span><span class="sp-tag-req">必要</span></div>`;
-        });
-        cfg.optional.forEach(id=>{
-          const it=selfPayItems.find(x=>x.id===id);
-          if(!it)return;
-          const priceStr=it.unit?`$${it.price}/${it.unit}`:`$${it.price}`;
-          html+=`<div class="sp-op-item-row"><span class="sp-op-item-name">${it.name}</span><span class="sp-op-item-price">${priceStr}</span><span class="sp-tag-opt">選填</span></div>`;
-        });
-      }
-      html+='</div></div>';
+
+  // Required items - fixed text
+  if(reqItems.length){
+    html+='<div style="border-top:1px solid var(--border);padding-top:10px;margin-bottom:10px;">';
+    html+='<div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px;">必要費用（固定）</div>';
+    reqItems.forEach(it=>{
+      html+=`<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:13px;border-bottom:1px solid #F1F5F9;"><span style="font-weight:600;">${it.name}</span><span style="font-weight:700;">$${it.price.toLocaleString()}</span></div>`;
     });
     html+='</div>';
+  }
+
+  // Total
+  html+=`<div style="border-top:1.5px solid var(--border);padding-top:8px;display:flex;justify-content:space-between;font-size:14px;font-weight:700;">
+    <span>合計</span><span style="color:var(--orange);" id="esp_total">$0</span>
+  </div>`;
+  html+='</div>';
+  document.getElementById('modalBody').innerHTML=html;
+  document.getElementById('modalFoot').innerHTML=`<div class="modal-acts">
+    <button class="mbtn mbtn-approve" onclick="confirmEditSelfPay('${bookingId}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>確認</button>
+    <button class="mbtn mbtn-close" onclick="_renderDetailModal(bookings.find(x=>x.id==='${bookingId}'),true,false)">取消</button>
+  </div>`;
+  // init total
+  recalcEspTotal('${bookingId}');
+};
+
+window.toggleEspItem = function(id){
+  const cb=document.getElementById('espcb_'+id);
+  const qInp=document.getElementById('espq_'+id);
+  const subEl=document.getElementById('espsub_'+id);
+  const row=document.getElementById('espr_'+id);
+  if(!cb)return;
+  const nowChk=cb.innerHTML.includes('polyline')?false:true; // toggle
+  if(nowChk){
+    cb.style.background='var(--orange)';cb.style.borderColor='var(--orange)';
+    cb.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" style="width:10px;height:10px;"><polyline points="20 6 9 17 4 12"/></svg>';
+    if(qInp){qInp.style.display='block';}
+  } else {
+    cb.style.background='white';cb.style.borderColor='var(--border)';cb.innerHTML='';
+    if(qInp){qInp.style.display='none';}
+    if(subEl) subEl.textContent='—';
+  }
+  // update subtotal
+  const it=selfPayItems.find(x=>x.id===id);
+  if(nowChk&&it&&subEl){
+    const q=parseInt(qInp?.value||1)||1;
+    subEl.textContent='$'+(it.price*q).toLocaleString();
+  }
+  recalcEspTotal(null);
+};
+
+window.updateEspSubtotal = function(id){
+  const it=selfPayItems.find(x=>x.id===id);
+  const cb=document.getElementById('espcb_'+id);
+  const subEl=document.getElementById('espsub_'+id);
+  if(!it||!cb||!subEl)return;
+  const checked=cb.innerHTML.includes('polyline');
+  if(checked){
+    const q=Math.max(1,parseInt(document.getElementById('espq_'+id)?.value||1)||1);
+    subEl.textContent='$'+(it.price*q).toLocaleString();
+    recalcEspTotal(null);
+  }
+};
+
+function recalcEspTotal(_bookingId){
+  let total=0;
+  selfPayItems.forEach(it=>{
+    const cb=document.getElementById('espcb_'+it.id);
+    if(cb&&cb.innerHTML.includes('polyline')){
+      const q=Math.max(1,parseInt(document.getElementById('espq_'+it.id)?.value||1)||1);
+      total+=it.price*q;
+    }
   });
-  div.innerHTML=html||'<div style="font-size:12px;color:var(--text3);padding:8px 0;">尚未設定任何術式自費選項。</div>';
+  // add required
+  const curId=document.getElementById('esp_total')?.dataset?.bookingId;
+  const b=bookings.find(x=>x.id===_bookingId||x.id===curId);
+  if(b){
+    const key=(b.docId&&b.op)?(b.docId+':'+b.op):null;
+    const cfg=key&&opSelfPay[key]?opSelfPay[key]:{required:[],optional:[]};
+    cfg.required.forEach(rid=>{const it=selfPayItems.find(x=>x.id===rid);if(it)total+=it.price;});
+  }
+  const el=document.getElementById('esp_total');
+  if(el) el.textContent='$'+total.toLocaleString();
+}
+
+window.confirmEditSelfPay = function(bookingId){
+  const b=bookings.find(x=>x.id===bookingId);if(!b)return;
+  const items=[];
+  // optional selected
+  selfPayItems.forEach(it=>{
+    const cb=document.getElementById('espcb_'+it.id);
+    if(cb&&cb.innerHTML.includes('polyline')){
+      const q=Math.max(1,parseInt(document.getElementById('espq_'+it.id)?.value||1)||1);
+      items.push({id:it.id,name:it.name,price:it.price,unit:it.unit||'',qty:q,role:'optional'});
+    }
+  });
+  // required
+  const key=(b.docId&&b.op)?(b.docId+':'+b.op):null;
+  const cfg=key&&opSelfPay[key]?opSelfPay[key]:{required:[],optional:[]};
+  cfg.required.forEach(rid=>{
+    const it=selfPayItems.find(x=>x.id===rid);
+    if(it) items.push({id:it.id,name:it.name,price:it.price,unit:it.unit||'',qty:1,role:'required'});
+  });
+  b.selfPayItems=items;
+  // go back to edit page
+  _renderDetailModal(b,true,false);
+  toast('success','自費項目已更新，儲存後生效');
+};
+
+/* ── OP SELFPAY SETTINGS ── */
+let spActiveDocId = null;
+
+function renderSpDocTabs(){
+  const tabs=document.getElementById('spDocTabs');
+  if(!tabs)return;
+  if(!doctors.length){tabs.innerHTML='<div style="font-size:12px;color:var(--text3);">尚未設定任何醫師</div>';return;}
+  if(!spActiveDocId) spActiveDocId=doctors[0].id;
+  tabs.innerHTML=doctors.map(d=>{
+    const dc=docColor(d.id);
+    const isActive=spActiveDocId===d.id;
+    return `<button class="doc-tab${isActive?' active':''}" onclick="selectSpDoc(${d.id})" style="${isActive?`color:${dc.dot};border-bottom-color:${dc.dot};`:''}">
+      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${dc.dot};margin-right:5px;"></span>${d.name} 醫師
+    </button>`;
+  }).join('');
+}
+
+window.selectSpDoc = function(docId){
+  spActiveDocId=docId;
+  renderSpDocTabs();
+  renderOpSelfPaySettings();
+};
+
+function renderOpSelfPaySettings(){
+  renderSpDocTabs();
+  const div=document.getElementById('opSelfPaySettings');
+  if(!div)return;
+  if(!spActiveDocId) spActiveDocId=doctors[0]?.id;
+  const d=doctors.find(x=>x.id===spActiveDocId);
+  if(!d||!d.ops||!d.ops.length){
+    div.innerHTML='<div style="font-size:12px;color:var(--text3);padding:8px 0;">此醫師尚未設定術式。</div>';
+    return;
+  }
+  const dc=docColor(d.id);
+  let html='';
+  d.ops.forEach(op=>{
+    const key=d.id+':'+op;
+    const cfg=opSelfPay[key]||{required:[],optional:[]};
+    // build item list for this op (custom items stored inline)
+    const customItems=(cfg.customItems||[]);
+    const allOpItems=[
+      ...cfg.required.map(id=>{const it=selfPayItems.find(x=>x.id===id)||customItems.find(x=>x.id===id);return it?{...it,role:'required'}:null;}).filter(Boolean),
+      ...cfg.optional.map(id=>{const it=selfPayItems.find(x=>x.id===id)||customItems.find(x=>x.id===id);return it?{...it,role:'optional'}:null;}).filter(Boolean),
+      ...customItems.filter(it=>!cfg.required.includes(it.id)&&!cfg.optional.includes(it.id)).map(it=>({...it,role:'optional'})),
+    ];
+    html+=`<div style="border:1px solid ${dc.border};border-radius:var(--r);margin-bottom:14px;overflow:hidden;">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:${dc.bg};border-bottom:1px solid ${dc.border};">
+        <span style="font-size:13px;font-weight:700;color:${dc.text};">${op}</span>
+        <button class="tb-btn" style="padding:5px 12px;font-size:12px;" onclick="openOpSelfPayEditor(${d.id},'${op.replace(/'/g,"\'")}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px;height:12px;"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>修改
+        </button>
+      </div>
+      <div style="padding:10px 16px;">`;
+    if(!allOpItems.length){
+      html+='<span style="font-size:12px;color:var(--text3);">尚未設定自費項目</span>';
+    } else {
+      allOpItems.forEach(it=>{
+        const priceStr=it.unit?`$${it.price}/${it.unit}`:`$${it.price}`;
+        const isReq=it.role==='required';
+        html+=`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #F1F5F9;font-size:13px;">
+          <span style="flex:1;font-weight:600;">${it.name}${isReq?' <span style="color:var(--red);font-size:10px;">*必要</span>':''}</span>
+          <span style="color:var(--text2);">${priceStr}</span>
+          <span style="font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;background:${isReq?'var(--rp)':'var(--gp)'};color:${isReq?'var(--red)':'#15803D'};border:1px solid ${isReq?'var(--rb)':'var(--gb);'};">${isReq?'必要':'選填'}</span>
+        </div>`;
+      });
+    }
+    html+='</div></div>';
+  });
+  div.innerHTML=html;
 }
 
 window.openOpSelfPayEditor = function(docId, opName){
   const key=docId+':'+opName;
-  const cfg=opSelfPay[key]||{required:[],optional:[]};
+  if(!opSelfPay[key]) opSelfPay[key]={required:[],optional:[],customItems:[]};
+  const cfg=opSelfPay[key];
   const dc=docColor(docId);
   const doc=doctors.find(d=>d.id===docId);
+  // Collect all items for this op: default items + custom items
+  const customItems=cfg.customItems||[];
+  // All items that apply to this op
+  const allIds=[...new Set([...cfg.required,...cfg.optional,...customItems.map(x=>x.id)])];
 
-  let listHtml='';
-  selfPayItems.forEach(it=>{
-    const isReq=cfg.required.includes(it.id);
-    const isOpt=cfg.optional.includes(it.id);
-    const priceStr=it.unit?`$${it.price}/${it.unit}`:`$${it.price}`;
-    listHtml+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F1F5F9;">
-      <span style="flex:1;font-size:13px;font-weight:600;">${it.name}</span>
-      <span style="font-size:11px;color:var(--text2);">${priceStr}</span>
-      <button class="sp-role-btn ${isReq?'req':'none-btn'}" id="spbtnreq_${it.id}" onclick="setOpSpRole('${key}','${it.id}','required')">${isReq?'✓ 必要':'必要'}</button>
-      <button class="sp-role-btn ${isOpt?'opt':'none-btn'}" id="spbtnopt_${it.id}" onclick="setOpSpRole('${key}','${it.id}','optional')">${isOpt?'✓ 選填':'選填'}</button>
-      <button class="sp-role-btn none-btn" style="${!isReq&&!isOpt?'opacity:1':'opacity:.5'}" onclick="setOpSpRole('${key}','${it.id}','none')">不使用</button>
-    </div>`;
-  });
+  function renderEditorBody(){
+    const cfg2=opSelfPay[key];
+    const custom2=cfg2.customItems||[];
+    const allIds2=[...new Set([...cfg2.required,...cfg2.optional,...custom2.map(x=>x.id)])];
+    let rows='';
+    // Default library items assigned to this op
+    selfPayItems.forEach(it=>{
+      if(!allIds2.includes(it.id)) return; // only show assigned
+      const isReq=cfg2.required.includes(it.id);
+      const priceStr=it.unit?`$${it.price}/${it.unit}`:`$${it.price}`;
+      rows+=`<tr>
+        <td style="padding:8px 10px;border-bottom:1px solid #F1F5F9;font-size:13px;font-weight:600;">${it.name}${isReq?' <span style="color:var(--red);font-size:10px;">*</span>':''}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #F1F5F9;font-size:12px;color:var(--text2);">${priceStr}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #F1F5F9;">
+          <select onchange="setOpSpRoleInline('${key}','${it.id}',this.value)" style="padding:4px 8px;border:1.5px solid var(--border);border-radius:var(--rx);font-size:12px;outline:none;">
+            <option value="required"${isReq?' selected':''}>必要</option>
+            <option value="optional"${!isReq?' selected':''}>選填</option>
+          </select>
+        </td>
+        <td style="padding:8px 10px;border-bottom:1px solid #F1F5F9;">
+          <button class="icon-btn ib-del" onclick="removeOpItem('${key}','${it.id}',false)" style="width:26px;height:26px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:11px;height:11px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </td>
+      </tr>`;
+    });
+    // Custom items for this op
+    custom2.forEach(it=>{
+      const isReq=cfg2.required.includes(it.id);
+      const priceStr=it.unit?`$${it.price}/${it.unit}`:`$${it.price}`;
+      rows+=`<tr>
+        <td style="padding:8px 10px;border-bottom:1px solid #F1F5F9;font-size:13px;font-weight:600;">${it.name}${isReq?' <span style="color:var(--red);font-size:10px;">*</span>':''} <span style="font-size:10px;color:var(--text3);">(自訂)</span></td>
+        <td style="padding:8px 10px;border-bottom:1px solid #F1F5F9;font-size:12px;color:var(--text2);">${priceStr}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #F1F5F9;">
+          <select onchange="setOpSpRoleInline('${key}','${it.id}',this.value)" style="padding:4px 8px;border:1.5px solid var(--border);border-radius:var(--rx);font-size:12px;outline:none;">
+            <option value="required"${isReq?' selected':''}>必要</option>
+            <option value="optional"${!isReq?' selected':''}>選填</option>
+          </select>
+        </td>
+        <td style="padding:8px 10px;border-bottom:1px solid #F1F5F9;">
+          <button class="icon-btn ib-del" onclick="removeOpItem('${key}','${it.id}',true)" style="width:26px;height:26px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:11px;height:11px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </td>
+      </tr>`;
+    });
+    // Unassigned default items
+    const unassigned=selfPayItems.filter(it=>!allIds2.includes(it.id));
+    const unassignedOpts=unassigned.map(it=>`<option value="${it.id}">${it.name}${it.unit?' ($'+it.price+'/'+it.unit+')':' ($'+it.price+')'}</option>`).join('');
 
-  document.getElementById('modal2Title').textContent=`設定自費項目 — ${doc?doc.name+' 醫師・':' '}${opName}`;
-  document.getElementById('modal2Body').innerHTML=`
-    <div style="font-size:12px;color:var(--text2);margin-bottom:12px;">為此術式指定自費項目的角色：<span style="color:var(--red);font-weight:700;">必要</span>（強制列入）或 <span style="color:#15803D;font-weight:700;">選填</span>（病人可加購）</div>
-    ${listHtml||'<div style="font-size:12px;color:var(--text3);">項目庫為空，請先新增自費項目。</div>'}`;
+    document.getElementById('op_editor_body').innerHTML=`
+      <table style="width:100%;border-collapse:collapse;margin-bottom:12px;">
+        <thead><tr style="background:#F8FAFC;">
+          <th style="padding:7px 10px;text-align:left;border-bottom:2px solid var(--border);font-size:12px;">項目名稱</th>
+          <th style="padding:7px 10px;text-align:left;border-bottom:2px solid var(--border);font-size:12px;">單價</th>
+          <th style="padding:7px 10px;text-align:left;border-bottom:2px solid var(--border);font-size:12px;">角色</th>
+          <th style="padding:7px 10px;border-bottom:2px solid var(--border);width:36px;"></th>
+        </tr></thead>
+        <tbody>${rows||'<tr><td colspan="4" style="padding:12px;text-align:center;color:var(--text3);font-size:12px;">尚未加入任何項目</td></tr>'}</tbody>
+      </table>
+      <div style="background:#F8FAFC;border:1px solid var(--border);border-radius:var(--rx);padding:12px 14px;">
+        <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:10px;">從預設項目庫加入</div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <select id="op_add_default_sel" style="flex:1;padding:7px 10px;border:1.5px solid var(--border);border-radius:var(--rx);font-size:13px;outline:none;">
+            <option value="">— 選擇預設項目 —</option>${unassignedOpts}
+          </select>
+          <select id="op_add_default_role" style="padding:7px 10px;border:1.5px solid var(--border);border-radius:var(--rx);font-size:13px;outline:none;">
+            <option value="optional">選填</option><option value="required">必要</option>
+          </select>
+          <button class="tb-btn primary" onclick="addDefaultOpItem('${key}')" style="padding:7px 14px;">加入</button>
+        </div>
+        <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px;margin-top:6px;padding-top:6px;border-top:1px solid var(--border);">新增自訂項目</div>
+        <div style="display:grid;grid-template-columns:1fr 80px 70px auto auto;gap:6px;align-items:center;">
+          <input class="edit-inp" id="op_ci_name" placeholder="項目名稱" style="padding:6px 10px;font-size:13px;">
+          <input class="edit-inp" id="op_ci_price" type="number" placeholder="單價" style="padding:6px 10px;font-size:13px;text-align:center;">
+          <input class="edit-inp" id="op_ci_unit" placeholder="單位" style="padding:6px 10px;font-size:13px;text-align:center;">
+          <select id="op_ci_role" style="padding:6px 8px;border:1.5px solid var(--border);border-radius:var(--rx);font-size:12px;outline:none;">
+            <option value="optional">選填</option><option value="required">必要</option>
+          </select>
+          <button class="tb-btn primary" onclick="addCustomOpItem('${key}')" style="padding:6px 12px;white-space:nowrap;">新增</button>
+        </div>
+      </div>`;
+  }
+
+  document.getElementById('modal2Title').textContent=`${doc?doc.name+' 醫師 ・ ':' '}${opName} 自費設定`;
+  document.getElementById('modal2Body').innerHTML=`<div id="op_editor_body"></div>`;
   document.getElementById('modal2Foot').innerHTML=`<div class="modal-acts">
-    <button class="mbtn mbtn-approve" onclick="saveOpSelfPay('${key}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>儲存設定</button>
+    <button class="mbtn mbtn-approve" onclick="saveOpSelfPay('${key}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>儲存</button>
     <button class="mbtn mbtn-close" onclick="closeModal2()">取消</button>
   </div>`;
+  renderEditorBody();
   openOverlay2();
 };
 
-// Track pending role changes in editor
-window._opSpEditorState = {};
-window.setOpSpRole = function(key, itemId, role){
-  if(!window._opSpEditorState[key]) window._opSpEditorState[key]={required:[],optional:[]};
-  // Read current displayed state
-  const reqBtn=document.getElementById('spbtnreq_'+itemId);
-  const optBtn=document.getElementById('spbtnopt_'+itemId);
-  const cfg=opSelfPay[key]||{required:[],optional:[]};
-  // Toggle logic
-  const newReq=role==='required'? !cfg.required.includes(itemId) : false;
-  const newOpt=role==='optional'? !cfg.optional.includes(itemId) : false;
-  // Update opSelfPay immediately for live preview
-  opSelfPay[key]={
-    required: role==='required'?(newReq?[...cfg.required,itemId]:cfg.required.filter(x=>x!==itemId)):cfg.required.filter(x=>x!==itemId),
-    optional: role==='optional'?(newOpt?[...cfg.optional,itemId]:cfg.optional.filter(x=>x!==itemId)):cfg.optional.filter(x=>x!==itemId),
-  };
-  // Re-render button states
-  const newCfg=opSelfPay[key];
-  const isNowReq=newCfg.required.includes(itemId);
-  const isNowOpt=newCfg.optional.includes(itemId);
-  if(reqBtn){reqBtn.className='sp-role-btn '+(isNowReq?'req':'none-btn');reqBtn.textContent=isNowReq?'✓ 必要':'必要';}
-  if(optBtn){optBtn.className='sp-role-btn '+(isNowOpt?'opt':'none-btn');optBtn.textContent=isNowOpt?'✓ 選填':'選填';}
+window.setOpSpRoleInline = function(key, itemId, role){
+  if(!opSelfPay[key]) opSelfPay[key]={required:[],optional:[],customItems:[]};
+  const cfg=opSelfPay[key];
+  cfg.required=cfg.required.filter(x=>x!==itemId);
+  cfg.optional=cfg.optional.filter(x=>x!==itemId);
+  if(role==='required') cfg.required.push(itemId);
+  else cfg.optional.push(itemId);
 };
+
+window.removeOpItem = function(key, itemId, isCustom){
+  if(!opSelfPay[key]) return;
+  const cfg=opSelfPay[key];
+  cfg.required=cfg.required.filter(x=>x!==itemId);
+  cfg.optional=cfg.optional.filter(x=>x!==itemId);
+  if(isCustom) cfg.customItems=(cfg.customItems||[]).filter(x=>x.id!==itemId);
+  // re-render editor body
+  const edBody=document.getElementById('op_editor_body');
+  if(edBody) window.openOpSelfPayEditor._lastRender&&window.openOpSelfPayEditor._lastRender();
+  renderOpSelfPaySettings();
+};
+
+window.addDefaultOpItem = function(key){
+  const sel=document.getElementById('op_add_default_sel');
+  const role=document.getElementById('op_add_default_role').value;
+  if(!sel||!sel.value){toast('warn','請選擇項目');return;}
+  if(!opSelfPay[key]) opSelfPay[key]={required:[],optional:[],customItems:[]};
+  const cfg=opSelfPay[key];
+  cfg.required=cfg.required.filter(x=>x!==sel.value);
+  cfg.optional=cfg.optional.filter(x=>x!==sel.value);
+  if(role==='required') cfg.required.push(sel.value);
+  else cfg.optional.push(sel.value);
+  renderOpSelfPaySettings();
+  // re-open editor to refresh
+  const parts=key.split(':'); const docId=parseInt(parts[0]); const opN=parts.slice(1).join(':');
+  window.openOpSelfPayEditor(docId,opN);
+};
+
+window.addCustomOpItem = function(key){
+  const name=document.getElementById('op_ci_name')?.value.trim();
+  const price=parseInt(document.getElementById('op_ci_price')?.value)||0;
+  const unit=document.getElementById('op_ci_unit')?.value.trim()||'';
+  const role=document.getElementById('op_ci_role')?.value||'optional';
+  if(!name){toast('warn','請輸入項目名稱');return;}
+  if(!price){toast('warn','請輸入單價');return;}
+  if(!opSelfPay[key]) opSelfPay[key]={required:[],optional:[],customItems:[]};
+  const cfg=opSelfPay[key];
+  const newId='ci_'+Date.now();
+  if(!cfg.customItems) cfg.customItems=[];
+  cfg.customItems.push({id:newId,name,price,unit});
+  if(role==='required') cfg.required.push(newId);
+  else cfg.optional.push(newId);
+  renderOpSelfPaySettings();
+  const parts=key.split(':'); const docId=parseInt(parts[0]); const opN=parts.slice(1).join(':');
+  window.openOpSelfPayEditor(docId,opN);
+};
+
+// setOpSpRole replaced by setOpSpRoleInline
 
 window.saveOpSelfPay = function(key){
   if(window._fbSaveOpSelfPay) window._fbSaveOpSelfPay(key, opSelfPay[key]||{required:[],optional:[]});
@@ -2848,39 +3250,44 @@ function buildBookingPrintHTML(b){
 
 // ── Print template: Layout D v3 ──
 const PRINT_CSS = `
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;600;700;900&display=swap');
   *{box-sizing:border-box;margin:0;padding:0;}
-  .doc{font-family:'Noto Sans TC',sans-serif;font-size:12px;color:#000;line-height:1.5;}
+  body{font-family:'Noto Sans TC',sans-serif;}
+  .doc{font-family:'Noto Sans TC',sans-serif;font-size:14px;color:#000;line-height:1.7;max-width:680px;margin:0 auto;}
   .hd{text-align:center;margin-bottom:0;}
-  .hd-clinic{font-size:17px;font-weight:900;letter-spacing:.05em;}
-  .hd-doc{font-size:12px;font-weight:600;letter-spacing:.18em;margin-top:5px;color:#222;}
-  .hd-rule{border:none;border-top:1.5px solid #000;margin:12px 0 16px;}
-  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
-  .card-sec{border:1px solid #000;border-radius:4px;overflow:hidden;margin-bottom:10px;}
-  .sec-ttl{padding:5px 13px;font-size:12px;font-weight:700;border-bottom:1px solid #000;background:#F2F2F2;letter-spacing:.04em;}
-  .sec-body{padding:8px 13px;}
-  .row{display:flex;padding:3px 0;border-bottom:1px solid #EFEFEF;font-size:12px;}
+  .hd-clinic{font-size:20px;font-weight:900;letter-spacing:.05em;}
+  .hd-doc{font-size:14px;font-weight:600;letter-spacing:.18em;margin-top:6px;color:#222;}
+  .hd-rule{border:none;border-top:1.5px solid #000;margin:14px 0 18px;}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+  .card-sec{border:1px solid #000;border-radius:4px;overflow:hidden;margin-bottom:12px;}
+  .sec-ttl{padding:6px 14px;font-size:14px;font-weight:700;border-bottom:1px solid #000;background:#F2F2F2;letter-spacing:.04em;}
+  .sec-body{padding:10px 14px;}
+  .row{display:flex;padding:5px 0;border-bottom:1px solid #EFEFEF;font-size:14px;}
   .row:last-child{border-bottom:none;}
-  .k{color:#555;width:68px;flex-shrink:0;}
+  .k{color:#555;width:72px;flex-shrink:0;}
   .v{font-weight:600;flex:1;}
-  .sp-body{padding:8px 13px;}
-  .sp-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid #EFEFEF;font-size:12px;}
-  .sp-row:last-child{border-bottom:none;}
-  .sp-nm{font-weight:600;}
-  .sp-pr{font-weight:700;padding-left:12px;white-space:nowrap;}
-  .sp-total{display:flex;justify-content:space-between;font-size:12px;font-weight:900;padding:5px 0 1px;border-top:1.5px solid #000;margin-top:3px;}
-  .sig-box{border:1px solid #000;border-radius:4px;padding:12px 13px;margin-bottom:10px;}
-  .sig-note{font-size:12px;margin-bottom:14px;line-height:1.6;}
-  .sig-fields{display:flex;gap:20px;}
-  .sig-f{flex:2;}.sig-d{flex:1;}
-  .sig-line{border-bottom:1.5px solid #000;height:30px;}
-  .sig-lbl{font-size:12px;color:#666;margin-top:3px;}
-  .ft{margin-top:12px;padding-top:8px;border-top:1px solid #CCC;font-size:12px;color:#888;text-align:center;}
-  @page{size:A4;margin:28mm 22mm 20mm;}
+  .sp-table{width:100%;border-collapse:collapse;font-size:14px;}
+  .sp-table th{padding:7px 12px;text-align:left;background:#F2F2F2;border:1px solid #000;font-weight:700;}
+  .sp-table th.r{text-align:right;}
+  .sp-table td{padding:7px 12px;border:1px solid #CCC;}
+  .sp-table td.r{text-align:right;}
+  .sp-table td.n{font-weight:600;}
+  .sp-table tfoot td{border:1px solid #000;font-weight:900;font-size:15px;}
+  .sig-note{font-size:14px;margin:20px 0 18px;line-height:1.75;}
+  .sig-fields{display:flex;gap:28px;margin-top:4px;}
+  .sig-f{flex:2;}
+  .sig-d{flex:1;}
+  .sig-line{border-bottom:1.5px solid #000;height:38px;}
+  .sig-lbl{font-size:14px;color:#666;margin-top:4px;}
+  .ft{margin-top:16px;font-size:14px;color:#888;text-align:center;}
+  @page{size:A4;margin:24mm 22mm 20mm;}
+  @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
 `;
+
 
 function buildBookingPrintHTML(b){
   const sp = buildSpPrintBlock(b);
-  return `<div class="doc" style="padding:0;">
+  return `<div class="doc">
     <div class="hd">
       <div class="hd-clinic">${CLINIC_NAME}</div>
       <div class="hd-doc">手術資料確認單</div>
@@ -2906,27 +3313,36 @@ function buildBookingPrintHTML(b){
         </div>
       </div>
     </div>
-    ${sp?`<div class="card-sec"><div class="sec-ttl">自費項目</div><div class="sp-body">${sp}</div></div>`:''}
-    <div class="sig-box">
-      <div class="sig-note">本人已閱讀並確認上述資料正確，同意診所進行手術。</div>
-      <div class="sig-fields">
-        <div class="sig-f"><div class="sig-line"></div><div class="sig-lbl">病人簽名 / Patient Signature</div></div>
-        <div class="sig-d"><div class="sig-line"></div><div class="sig-lbl">日期 / Date</div></div>
-      </div>
+    ${sp?`<div class="card-sec"><div class="sec-ttl">自費項目</div><div style="padding:10px 14px;">${sp}</div></div>`:''}
+    <div class="sig-note">本人已閱讀並確認上述資料正確，同意診所進行手術。</div>
+    <div class="sig-fields">
+      <div class="sig-f"><div class="sig-line"></div><div class="sig-lbl">病人簽名 / Patient Signature</div></div>
+      <div class="sig-d"><div class="sig-line"></div><div class="sig-lbl">日期 / Date</div></div>
     </div>
-    <div class="ft">${'高雄市三民區鼎力路199號 ・ （07）350-9200'}</div>
+    <div class="ft">高雄市三民區鼎力路199號 ・ （07）350-9200</div>
   </div>`;
 }
 
 function buildSpPrintBlock(b){
   if(!b.selfPayItems||!b.selfPayItems.length) return '';
   const total=b.selfPayItems.reduce(function(s,it){return s+parseInt(it.price)*parseInt(it.qty);},0);
-  let h='';
+  let rows='';
   b.selfPayItems.forEach(function(it){
-    h+=`<div class="sp-row"><span class="sp-nm">${it.name} × ${it.qty}</span><span class="sp-pr">$${(parseInt(it.price)*parseInt(it.qty)).toLocaleString()}</span></div>`;
+    const sub=(parseInt(it.price)*parseInt(it.qty)).toLocaleString();
+    rows+=`<tr><td class="n">${it.name}</td><td style="text-align:center;border:1px solid #CCC;padding:7px 12px;">${it.qty}</td><td class="r">$${sub}</td></tr>`;
   });
-  h+=`<div class="sp-total"><span>合計</span><span>$${total.toLocaleString()}</span></div>`;
-  return h;
+  return `<table class="sp-table">
+    <thead><tr>
+      <th>項目名稱</th>
+      <th style="text-align:center;border:1px solid #000;padding:7px 12px;">數量</th>
+      <th class="r">小計</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+    <tfoot><tr>
+      <td colspan="2" style="text-align:right;padding:7px 12px;border:1px solid #000;">合計</td>
+      <td class="r" style="padding:7px 12px;border:1px solid #000;">$${total.toLocaleString()}</td>
+    </tr></tfoot>
+  </table>`;
 }
 
 window.printBookingDetail = function(id){
@@ -2937,7 +3353,8 @@ window.printBookingDetail = function(id){
 
 window.printCalendar = function(){
   // Only called in day view — filter approved, sorted by slot
-  const ds=calDate.toISOString().slice(0,10);
+  // Fix timezone bug: use local date not UTC
+  const ds=`${calDate.getFullYear()}-${String(calDate.getMonth()+1).padStart(2,'0')}-${String(calDate.getDate()).padStart(2,'0')}`;
   let filtered=bookings.filter(function(b){
     return b.date===ds && b.status==='approved';
   });
