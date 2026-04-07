@@ -225,7 +225,7 @@ button{font-family:inherit;cursor:pointer;}
 .ferr-date.on{display:inline;}
 /* ── SELFPAY TABLE STYLE ── */
 .fe-sp-table{width:100%;border-collapse:collapse;margin-bottom:4px;}
-.fe-sp-table thead tr{border-bottom:1.5px solid var(--ink);}
+.fe-sp-table thead tr{border-bottom:1.5px solid #999;}
 .fe-sp-table th{font-size:12px;font-weight:700;color:var(--ink2);padding:5px 6px;text-align:left;}
 .fe-sp-table th.tc{text-align:center;}
 .fe-sp-table th.tr{text-align:right;}
@@ -383,20 +383,19 @@ button{font-family:inherit;cursor:pointer;}
       <div class="card">
         <div class="cttl">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-          自費項目 <span style="font-size:11px;font-weight:400;color:var(--ink3);">（選填）</span>
+          自費項目
           <span style="margin-left:auto;font-size:11px;font-weight:600;color:#D03020;display:inline-flex;align-items:center;gap:3px;">
             <svg viewBox="0 0 24 24" fill="none" stroke="#D03020" stroke-width="2" stroke-linecap="round" style="width:12px;height:12px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             僅收現金
           </span>
         </div>
-        <div id="fe_sp_list"><div style="text-align:center;padding:20px;color:var(--ink3);font-size:12px;">載入中…</div></div>
         <div id="fe_sp_totals_wrap">
-          <div id="fe_sp_opt_row" style="display:none;"></div>
           <div id="fe_sp_req_row" style="display:none;">
-            <div style="border-top:2px solid var(--ink);margin:8px 0;"></div>
             <div id="fe_sp_req_items"></div>
           </div>
-          <div style="border-top:2px solid var(--ink);margin:8px 0;"></div>
+          <div id="fe_sp_list"><div style="text-align:center;padding:20px;color:var(--ink3);font-size:12px;">載入中…</div></div>
+          <div id="fe_sp_opt_row" style="display:none;"></div>
+          <div style="border-top:2px solid #999;margin:8px 0;"></div>
           <div id="fe_sp_total" style="display:flex;justify-content:space-between;align-items:baseline;padding:2px 0;">
             <span style="font-size:13px;color:var(--ink2);">合計</span>
             <span id="fe_sp_total_amt" style="font-size:17px;font-weight:900;color:var(--o1);">$0</span>
@@ -441,7 +440,7 @@ button{font-family:inherit;cursor:pointer;}
             </span>
           </div>
           <div id="pv_sp_rows"></div>
-          <div style="border-top:2px solid var(--ink);margin-top:6px;padding-top:8px;display:flex;justify-content:space-between;align-items:baseline;">
+          <div style="border-top:2px solid #999;margin-top:6px;padding-top:8px;display:flex;justify-content:space-between;align-items:baseline;">
             <span style="font-size:13px;color:var(--ink2);">合計</span>
             <span style="font-size:17px;font-weight:900;color:var(--o1);" id="pv_sp_total"></span>
           </div>
@@ -472,7 +471,7 @@ button{font-family:inherit;cursor:pointer;}
       <div class="suc-info-row"><div class="suc-info-k">術式</div><div class="suc-info-v" id="suc_op"></div></div>
       <div class="suc-info-row"><div class="suc-info-k">日期</div><div class="suc-info-v" id="suc_date"></div></div>
       <div class="suc-info-row"><div class="suc-info-k">時段</div><div class="suc-info-v" id="suc_slot"></div></div>
-      <div class="suc-info-row" id="suc_sp_row" style="display:none;"><div class="suc-info-k">自費</div><div class="suc-info-v"><span id="suc_sp_total"></span><span style="font-size:11px;font-weight:600;color:#D03020;margin-left:6px;">（僅收現金）</span></div></div>
+      <div class="suc-info-row" id="suc_sp_row" style="display:none;"><div class="suc-info-k">自費</div><div class="suc-info-v" style="display:flex;flex-direction:column;gap:4px;"><span id="suc_sp_total" style="font-size:17px;font-weight:900;color:var(--o1);"></span><span style="font-size:11px;font-weight:600;color:#D03020;display:inline-flex;align-items:center;gap:3px;"><svg viewBox="0 0 24 24" fill="none" stroke="#D03020" stroke-width="2" stroke-linecap="round" style="width:12px;height:12px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>僅收現金</span></div></div>
     </div>
 
     <div class="suc-contact-card">
@@ -822,9 +821,8 @@ function fillPreview(){
           +'<span style="font-size:13px;font-weight:700;color:var(--ink);padding-left:12px;white-space:nowrap;">$'+subtotal.toLocaleString()+'</span>'
           +'</div>';
       };
-      let rows=optRows.map(function(x){return buildRow(x,true);}).join('');
+      let rows='';
       if(reqRows.length){
-        rows+='<div style="border-top:2px solid var(--ink);margin:6px 0;"></div>';
         rows+=reqRows.map(function(x){
           const subtotal=x.price*x.qty;
           return '<div style="display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;">'
@@ -833,6 +831,7 @@ function fillPreview(){
             +'</div>';
         }).join('');
       }
+      rows+=optRows.map(function(x){return buildRow(x,true);}).join('');
       document.getElementById('pv_sp_rows').innerHTML=rows;
       const total=spItems.reduce(function(s,x){return s+x.price*x.qty;},0);
       document.getElementById('pv_sp_total').textContent='$'+total.toLocaleString();
