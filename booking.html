@@ -104,11 +104,12 @@ button{font-family:inherit;cursor:pointer;}
 
 /* OPS — large card style (same as doctor) */
 .op-wrap{display:flex;flex-direction:column;gap:8px;}
-.op-chip{border:2px solid var(--border);border-radius:var(--rs);padding:13px 15px;cursor:pointer;display:flex;align-items:center;gap:13px;transition:all .18s;background:white;}
+.op-chip{border:2px solid var(--border);border-radius:var(--rs);padding:13px 15px;cursor:pointer;display:flex;flex-direction:column;gap:0;transition:all .18s;background:white;}
 .op-chip:hover{border-color:var(--ob);}
 .op-chip.sel{border-color:var(--o1);background:var(--op);}
 .op-chip-name{font-size:14px;font-weight:700;color:var(--ink);}
 .op-chip.sel .op-chip-name{color:var(--o1);}
+.op-chip-desc{font-size:11px;color:var(--ink3);font-weight:400;line-height:1.5;margin-top:2px;}
 .op-placeholder{font-size:12px;color:var(--ink3);padding:4px 0;}
 
 .cday.full{color:var(--ink3);cursor:default;opacity:.55;}
@@ -519,9 +520,14 @@ function pickDoc(id){
   document.getElementById('docErr').classList.remove('on');
   const doc=doctors.find(d=>d.id===id);
   document.getElementById('opWrap').innerHTML=doc.ops.length
-    ? doc.ops.map(o=>`<div class="op-chip${sel.op===o?' sel':''}" onclick="pickOp('${o}')">
-        <span class="op-chip-name">${o}</span>
-      </div>`).join('')
+    ? doc.ops.map(o=>{
+        const name=typeof o==='object'?o.name:o;
+        const desc=typeof o==='object'?(o.desc||''):'';
+        return `<div class="op-chip${sel.op===name?' sel':''}" onclick="pickOp('${name.replace(/'/g,"\\'")}')">
+          <span class="op-chip-name">${name}</span>
+          ${desc?`<span class="op-chip-desc">${desc}</span>`:''}
+        </div>`;
+      }).join('')
     : '<div class="op-placeholder">此醫師尚未設定術式</div>';
   document.getElementById('opErr').classList.remove('on');
 }
