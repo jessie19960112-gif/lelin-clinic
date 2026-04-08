@@ -1238,14 +1238,17 @@ window.renderSlots   = renderSlots;
         db.collection('bookings')
           .where('docId','==',sel.docId)
           .where('date','==',sel.date)
-          .where('slot','==',sel.slot)
           .where('status','in',['pending','approved'])
           .get(),
         15000
       );
       const isAM=parseInt(sel.slot)<12;
       const limit=isAM?(docObj.limitAM??99):(docObj.limitPM??99);
-      if(limit>0 && snap.size>=limit){
+      const count=snap.docs.filter(d=>{
+        const s=d.data().slot;
+        return s && (parseInt(s)<12)===isAM;
+      }).length;
+      if(limit>0 && count>=limit){
         if(btnEl){btnEl.disabled=false;btnEl.innerHTML='確認送出';}
         showModal('此時段已額滿','很抱歉，您選擇的時段已額滿，請重新選擇其他時間。','重新選擇');
         sel.date=null; sel.slot=null;
