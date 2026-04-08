@@ -1232,7 +1232,26 @@ window.renderSlots   = renderSlots;
       return Promise.race([promise, timeout]);
     }
 
-    // 額滿即時檢查
+    // 第一關：_bookedSlots 本地即時檢查
+    const isAM=parseInt(sel.slot)<12;
+    const limit=isAM?(docObj.limitAM??99):(docObj.limitPM??99);
+    const localCount=Object.entries(window._bookedSlots||{})
+      .filter(([key])=>{
+        const [did,date,slot]=key.split(':');
+        return parseInt(did)===sel.docId && date===sel.date && (parseInt(slot)<12)===isAM;
+      })
+      .reduce((sum,[,cnt])=>sum+cnt,0);
+    if(limit>0 && localCount>=limit){
+      if(btnEl){btnEl.disabled=false;btnEl.innerHTML='確認送出';}
+      showModal('此時段已額滿','很抱歉，您選擇的時段已額滿，請重新選擇其他時間。','重新選擇');
+      sel.date=null; sel.slot=null;
+      calDate=new Date();
+      document.getElementById('slotCard').style.display='none';
+      show('p2');setStep(2);renderCal();
+      return;
+    }
+
+    // 第二關：額滿即時檢查
     try{
       const snap=await withTimeout(
         db.collection('bookings')
