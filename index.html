@@ -3275,24 +3275,20 @@ window.openOpSelfPayEditor = function(docId, opName){
     items.forEach((it,i)=>{
       const priceStr=it.unit?`$${parseInt(it.price).toLocaleString()}/${it.unit}`:`$${parseInt(it.price).toLocaleString()}`;
       const isReq=it.role==='required';
-      rows+=`<tr class="sp-drag-row" draggable="true" data-idx="${i}" style="cursor:grab;">
-        <td style="padding:8px 4px 8px 6px;border-bottom:1px solid #F1F5F9;width:24px;color:var(--text3);cursor:grab;">
+      rows+=`<div class="sp-drag-row" data-idx="${i}" style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-bottom:1px solid #F1F5F9;background:white;user-select:none;">
+        <div class="sp-drag-handle" style="width:20px;flex-shrink:0;color:var(--text3);cursor:grab;display:flex;align-items:center;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px;"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="16" x2="20" y2="16"/></svg>
-        </td>
-        <td style="padding:8px 10px;border-bottom:1px solid #F1F5F9;font-size:13px;font-weight:600;">${it.name}${isReq?' <span style="color:var(--red);font-size:10px;">*</span>':''}</td>
-        <td style="padding:8px 10px;border-bottom:1px solid #F1F5F9;font-size:12px;color:var(--text2);">${priceStr}</td>
-        <td style="padding:8px 10px;border-bottom:1px solid #F1F5F9;">
-          <select data-item-id="${it.id}" class="sp-role-sel" style="padding:4px 8px;border:1.5px solid var(--border);border-radius:var(--rx);font-size:12px;outline:none;">
-            <option value="required"${isReq?' selected':''}>必要</option>
-            <option value="optional"${!isReq?' selected':''}>選填</option>
-          </select>
-        </td>
-        <td style="padding:8px 10px;border-bottom:1px solid #F1F5F9;">
-          <button class="icon-btn ib-del" data-del-id="${it.id}" style="width:26px;height:26px;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:11px;height:11px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-        </td>
-      </tr>`;
+        </div>
+        <div style="flex:1;min-width:0;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${it.name}${isReq?' <span style="color:var(--red);font-size:10px;">*</span>':''}</div>
+        <div style="width:90px;flex-shrink:0;font-size:12px;color:var(--text2);text-align:right;">${priceStr}</div>
+        <select data-item-id="${it.id}" class="sp-role-sel" style="width:72px;flex-shrink:0;padding:4px 6px;border:1.5px solid var(--border);border-radius:var(--rx);font-size:12px;outline:none;">
+          <option value="required"${isReq?' selected':''}>必要</option>
+          <option value="optional"${!isReq?' selected':''}>選填</option>
+        </select>
+        <button class="icon-btn ib-del" data-del-id="${it.id}" style="width:26px;height:26px;flex-shrink:0;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:11px;height:11px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>`;
     });
 
     document.getElementById('op_editor_body').innerHTML=`
@@ -3308,16 +3304,16 @@ window.openOpSelfPayEditor = function(docId, opName){
           <button class="tb-btn primary" id="op_ci_add_btn" style="padding:6px 12px;white-space:nowrap;">新增</button>
         </div>
       </div>
-      <table style="width:100%;border-collapse:collapse;margin-bottom:4px;" id="sp_drag_table">
-        <thead><tr style="background:#F8FAFC;">
-          <th style="padding:7px 4px 7px 6px;border-bottom:2px solid var(--border);width:24px;"></th>
-          <th style="padding:7px 10px;text-align:left;border-bottom:2px solid var(--border);font-size:12px;">項目名稱</th>
-          <th style="padding:7px 10px;text-align:left;border-bottom:2px solid var(--border);font-size:12px;">單價</th>
-          <th style="padding:7px 10px;text-align:left;border-bottom:2px solid var(--border);font-size:12px;">必要/選填</th>
-          <th style="padding:7px 10px;border-bottom:2px solid var(--border);width:36px;"></th>
-        </tr></thead>
-        <tbody id="sp_drag_tbody">${rows||'<tr><td colspan="5" style="padding:12px;text-align:center;color:var(--text3);font-size:12px;">尚未加入任何項目</td></tr>'}</tbody>
-      </table>`;
+      <div style="border:1.5px solid var(--border);border-radius:var(--rx);overflow:hidden;margin-bottom:4px;">
+        <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#F8FAFC;border-bottom:2px solid var(--border);">
+          <div style="width:20px;flex-shrink:0;"></div>
+          <div style="flex:1;font-size:11px;font-weight:700;color:var(--text2);">項目名稱</div>
+          <div style="width:90px;flex-shrink:0;font-size:11px;font-weight:700;color:var(--text2);text-align:right;">單價</div>
+          <div style="width:72px;flex-shrink:0;font-size:11px;font-weight:700;color:var(--text2);">必要/選填</div>
+          <div style="width:26px;flex-shrink:0;"></div>
+        </div>
+        <div id="sp_drag_tbody">${rows||'<div style="padding:16px;text-align:center;color:var(--text3);font-size:12px;">尚未加入任何項目</div>'}</div>
+      </div>`;
 
     // bind events
     document.getElementById('op_ci_add_btn')?.addEventListener('click',function(){
@@ -3364,10 +3360,11 @@ window.openOpSelfPayEditor = function(docId, opName){
       window._spSortable && window._spSortable.destroy();
       window._spSortable = new Sortable(tbody, {
         animation: 150,
-        handle: 'td:first-child',
+        handle: '.sp-drag-handle',
         ghostClass: 'sp-drag-ghost',
         chosenClass: 'sp-drag-chosen',
         dragClass: 'sp-drag-active',
+        forceFallback: false,
         onEnd: function(evt){
           const items=allItems();
           const [moved]=items.splice(evt.oldIndex,1);
