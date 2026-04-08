@@ -381,10 +381,12 @@ button{font-family:inherit;cursor:pointer;}
     <!-- P3.5 自費項目 -->
     <div class="panel" id="p35">
       <div class="card">
-        <div class="cttl">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-          自費項目
-          <span style="font-size:11px;font-weight:600;color:#D03020;display:inline-flex;align-items:center;gap:3px;margin-left:6px;">
+        <div class="cttl" style="justify-content:space-between;">
+          <span style="display:inline-flex;align-items:center;gap:8px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+            自費項目
+          </span>
+          <span style="font-size:11px;font-weight:600;color:#D03020;display:inline-flex;align-items:center;gap:3px;">
             <svg viewBox="0 0 24 24" fill="none" stroke="#D03020" stroke-width="2" stroke-linecap="round" style="width:11px;height:11px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             僅收現金
           </span>
@@ -429,10 +431,12 @@ button{font-family:inherit;cursor:pointer;}
           <div class="pv-row" id="pv_nr"><div class="pv-k">備註</div><div class="pv-v" id="pv_note"></div></div>
         </div>
         <div class="pv-blk" id="pv_sp_blk" style="display:none;">
-          <div class="pv-ttl" style="display:flex;align-items:center;gap:5px;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px;height:12px;"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-            自費項目
-            <span style="font-size:11px;font-weight:600;color:#D03020;letter-spacing:0;display:inline-flex;align-items:center;gap:3px;margin-left:6px;">
+          <div class="pv-ttl" style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="display:inline-flex;align-items:center;gap:5px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px;height:12px;"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+              自費項目
+            </span>
+            <span style="font-size:11px;font-weight:600;color:#D03020;letter-spacing:0;display:inline-flex;align-items:center;gap:3px;">
               <svg viewBox="0 0 24 24" fill="none" stroke="#D03020" stroke-width="2" stroke-linecap="round" style="width:11px;height:11px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
               僅收現金
             </span>
@@ -471,7 +475,7 @@ button{font-family:inherit;cursor:pointer;}
       <div class="suc-info-row"><div class="suc-info-k">時段</div><div class="suc-info-v" id="suc_slot"></div></div>
       <div class="suc-info-row" id="suc_sp_row" style="display:none;align-items:center;">
         <div class="suc-info-k" style="line-height:1;padding-top:2px;">自費</div>
-        <div class="suc-info-v" style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap;">
+        <div class="suc-info-v" style="display:flex;align-items:center;justify-content:space-between;flex:1;">
           <span id="suc_sp_total" style="font-size:17px;font-weight:900;color:var(--o1);line-height:1;display:inline-block;"></span>
           <span style="font-size:11px;font-weight:600;color:#D03020;display:inline-flex;align-items:center;gap:3px;line-height:1;white-space:nowrap;">
             <svg viewBox="0 0 24 24" fill="none" stroke="#D03020" stroke-width="2" stroke-linecap="round" style="width:11px;height:11px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -620,7 +624,7 @@ function renderFeSelfPay(){
         +'<td></td>'
         +'<td>'
         +'<div class="sp-item-nm">'+it.name+'</div>'
-        +'<div class="sp-item-pr" style="color:var(--ink3);">必要費用</div>'
+        +'<div class="sp-item-pr" style="color:var(--ink3);">*必要費用</div>'
         +'</td>'
         +'<td class="tc"></td>'
         +'<td class="tr" style="white-space:nowrap;">$'+it.price.toLocaleString()+'</td>'
@@ -827,7 +831,7 @@ function fillPreview(){
       const reqRows=spItems.filter(function(x){return x.role==='required';});
       const buildOptRow=function(x){
         const subtotal=x.price*x.qty;
-        const nameCol=x.name+' ×'+x.qty;
+        const nameCol=x.name+'*'+x.qty;
         return '<div style="display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;">'
           +'<span style="font-size:13px;color:var(--ink);font-weight:600;">'+nameCol+'</span>'
           +'<span style="font-size:13px;font-weight:700;color:var(--ink);padding-left:12px;white-space:nowrap;">$'+subtotal.toLocaleString()+'</span>'
@@ -837,7 +841,7 @@ function fillPreview(){
       if(reqRows.length){
         rows+=reqRows.map(function(x){
           return '<div style="display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;">'
-            +'<span style="font-size:13px;color:var(--ink);font-weight:600;">'+x.name+'<span style="color:var(--ink3);font-weight:400;font-size:12px;"> 必要費用</span></span>'
+            +'<span style="font-size:13px;color:var(--ink);font-weight:600;">'+x.name+'<span style="color:var(--ink3);font-weight:400;font-size:12px;"> (*必要費用)</span></span>'
             +'<span style="font-size:13px;font-weight:700;color:var(--ink);padding-left:12px;white-space:nowrap;">$'+x.price.toLocaleString()+'</span>'
             +'</div>';
         }).join('');
