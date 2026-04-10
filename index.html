@@ -1631,7 +1631,7 @@ window.openAddPatient = function(){
   document.getElementById('modalTitle').textContent='新增病人預約';
   document.getElementById('modal').className='modal wide';
 
-  const docOpts=`<option value="">— 請選擇醫師 —</option>`+doctors.map(d=>`<option value="${d.id}">${d.name} 醫師</option>`).join('');
+  const docOpts=`<option value="" disabled selected>— 請選擇醫師 —</option>`+doctors.map(d=>`<option value="${d.id}">${d.name} 醫師</option>`).join('');
 
   document.getElementById('modalBody').innerHTML=`
     <div class="edit-row"><label class="edit-label">病例號</label><input class="edit-inp" id="a_caseNo"></div>
@@ -1653,10 +1653,10 @@ window.openAddPatient = function(){
       <select class="edit-inp" id="a_doc" onchange="onAddDocChange()">${docOpts}</select>
       <div id="a_err_doc" style="display:none;font-size:11px;color:var(--red);margin-top:4px;">請選擇醫師</div>
     </div>
-    <div class="edit-row"><label class="edit-label">術式 <span style="color:var(--red);">*</span></label><select class="edit-inp" id="a_op" onchange="onAddOpChange()"><option value="">— 先選醫師 —</option></select><div id="a_err_op" style="display:none;font-size:11px;color:var(--red);margin-top:4px;">請選擇術式</div></div>
+    <div class="edit-row"><label class="edit-label">術式 <span style="color:var(--red);">*</span></label><select class="edit-inp" id="a_op" onchange="onAddOpChange()"><option value="" disabled selected>— 先選醫師 —</option></select><div id="a_err_op" style="display:none;font-size:11px;color:var(--red);margin-top:4px;">請選擇術式</div></div>
     <div class="edit-row edit-row-split">
-      <div style="flex:1"><label class="edit-label">手術日期 <span style="color:var(--red);">*</span></label><input class="edit-inp" type="date" id="a_date" onchange="onAddDateChange()" disabled style="opacity:.45;cursor:not-allowed;" title="請先選擇醫師"></div>
-      <div style="flex:1"><label class="edit-label">手術時段 <span style="color:var(--red);">*</span></label><select class="edit-inp" id="a_slot" onchange="checkAddConflict()"><option value="">— 先選日期 —</option></select></div>
+      <div style="flex:1"><label class="edit-label">手術日期 <span style="color:var(--red);">*</span></label><div id="a_date_wrap"><select class="edit-inp" id="a_date_placeholder" disabled style="opacity:.55;cursor:not-allowed;"><option>— 請選擇醫師 —</option></select></div></div>
+      <div style="flex:1"><label class="edit-label">手術時段 <span style="color:var(--red);">*</span></label><select class="edit-inp" id="a_slot" onchange="checkAddConflict()"><option value="" disabled selected>— 先選日期 —</option></select></div>
     </div>
     <div class="conflict-warn" id="a_conflict">⚠ 此時段已有其他預約，請選擇其他時間</div>
     <div class="edit-row"><label class="edit-label">備註 <span style="font-size:11px;color:var(--text3);font-weight:400;">（選填）</span></label><input class="edit-inp" id="a_note" placeholder="選填"></div>
@@ -1675,7 +1675,7 @@ window.openAddPatient = function(){
 
 /* on date change, update slot options using selected doctor's configured slots */
 function onAddDateChange(){
-  const date=document.getElementById('a_date').value;
+  const date=(document.getElementById('a_date')?.value)||'';
   const docId=document.getElementById('a_doc').value||null;
   const slotSel=document.getElementById('a_slot');
   const doc=doctors.find(d=>String(d.id)===String(docId));
@@ -1749,7 +1749,7 @@ function onAddDateChange(){
 }
 
 function checkAddConflict(){
-  const date  = document.getElementById('a_date').value;
+  const date  = (document.getElementById('a_date')?.value)||'';
   const slot  = document.getElementById('a_slot').value;
   const docId = document.getElementById('a_doc')?.value||null;
   const warn  = document.getElementById('a_conflict');
@@ -1767,18 +1767,21 @@ function onAddDocChange(){
   const docId = document.getElementById('a_doc').value;
   const doc   = doctors.find(d=>String(d.id)===String(docId));
   const opSel = document.getElementById('a_op');
-  const dateInp = document.getElementById('a_date');
+  const dateWrap = document.getElementById('a_date_wrap');
   if(!doc){
-    opSel.innerHTML='<option value="">— 先選醫師 —</option>';
-    // 停用日期欄位
-    if(dateInp){dateInp.disabled=true;dateInp.style.opacity='.45';dateInp.style.cursor='not-allowed';dateInp.title='請先選擇醫師';}
+    opSel.innerHTML='<option value="" disabled selected>— 先選醫師 —</option>';
+    // 恢復 placeholder select
+    if(dateWrap) dateWrap.innerHTML=`<select class="edit-inp" id="a_date_placeholder" disabled style="opacity:.55;cursor:not-allowed;"><option>— 請選擇醫師 —</option></select>`;
+    document.getElementById('a_slot').innerHTML=`<option value="" disabled selected>— 先選日期 —</option>`;
     renderAddSelfPaySection(); return;
   }
   opSel.innerHTML = doc.ops.map(o=>{const n=typeof o==='object'?o.name:o;return`<option value="${n}">${n}</option>`;}).join('');
-  // 啟用日期欄位
-  if(dateInp){dateInp.disabled=false;dateInp.style.opacity='';dateInp.style.cursor='';dateInp.title='';}
+  // 換成真正的日期欄位
+  if(dateWrap && !document.getElementById('a_date')){
+    dateWrap.innerHTML=`<input class="edit-inp" type="date" id="a_date" onchange="onAddDateChange()">`;
+  }
   renderAddSelfPaySection();
-  const date=document.getElementById('a_date').value;
+  const date=document.getElementById('a_date')?.value;
   if(date) onAddDateChange();
 }
 
@@ -2035,7 +2038,7 @@ window.pickAddDate = function(ds){
 window.saveAddPatient = async function(){
   const name  = document.getElementById('a_name').value.trim();
   const phone = document.getElementById('a_phone').value.trim();
-  const date  = document.getElementById('a_date').value;
+  const date  = (document.getElementById('a_date')?.value)||'';
   const slot  = document.getElementById('a_slot').value;
   const docId = document.getElementById('a_doc').value||null;
   const by=document.getElementById('a_bday_y').value.trim();
@@ -3165,9 +3168,9 @@ function renderReview(){
       <td style="font-size:12px;">${b.op||'—'}</td>
       <td style="font-size:12px;color:var(--text2);max-width:100px;" title="${b.note||''}">${b.note?(b.note.length>10?b.note.slice(0,10)+'…':b.note):'—'}</td>
       <td><div class="act-row">
-        <button class="icon-btn ib-detail" title="詳情" onclick="openDetail('${b.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></button>
         ${unlocked
-          ?`<button class="icon-btn ib-approve" title="核准" onclick="reviewApprove('${b.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></button>
+          ?`<button class="icon-btn ib-detail" title="詳情" onclick="openDetail('${b.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></button>
+            <button class="icon-btn ib-approve" title="核准" onclick="reviewApprove('${b.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></button>
             <button class="icon-btn ib-reject" title="拒絕" onclick="reviewReject('${b.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`
           :`<span style="font-size:11px;color:var(--text3);">請先解鎖</span>`}
       </div></td>
