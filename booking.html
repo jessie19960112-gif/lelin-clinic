@@ -516,7 +516,7 @@ function closeModal(){ document.getElementById('customModal').classList.remove('
 
 function renderDoctors(){
   document.getElementById('docList').innerHTML=doctors.map(d=>`
-    <div class="doc-item${sel.docId===d.id?' sel':''}" id="di_${d.id}" onclick="pickDoc(${d.id})">
+    <div class="doc-item${sel.docId===d.id?' sel':''}" id="di_${d.id}" data-docid="${d.id}" onclick="pickDoc(+this.dataset.docid)">
       <div class="doc-av" style="background:${d.color};">${d.name[0]}</div>
       <div><div class="doc-nm">${d.name} 醫師</div><div class="doc-tt">${d.title}</div></div>
     </div>`).join('');
