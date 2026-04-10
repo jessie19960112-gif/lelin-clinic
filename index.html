@@ -398,7 +398,8 @@ tr:hover td{background:#C3D9EE;}
 .sp-drag-active{box-shadow:0 4px 16px rgba(0,0,0,.12);background:white!important;}
 
 /* ── LOGIN OVERLAY ── */
-#loginOverlay{display:flex;position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#1a0a00 0%,#2d1200 40%,#1C2333 100%);align-items:center;justify-content:center;}
+#loginOverlay{display:none;position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#1a0a00 0%,#2d1200 40%,#1C2333 100%);align-items:center;justify-content:center;}
+#loginOverlay.visible{display:flex;}
 .login-box{background:#fff;border-radius:20px;padding:44px 40px;width:400px;max-width:92vw;box-shadow:0 8px 48px rgba(0,0,0,.35);text-align:center;position:relative;z-index:1;}
 .login-logo{width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,var(--orange),var(--ol));display:flex;align-items:center;justify-content:center;margin:0 auto 18px;box-shadow:0 4px 20px rgba(244,123,32,.45);}
 .login-logo svg{width:28px;height:28px;}
@@ -606,7 +607,7 @@ tr:hover td{background:#FFF9F5;}
 </div>
 
 <!-- SIDEBAR -->
-<nav class="sb">
+<nav class="sb" id="mainSidebar" style="display:none;">
   <div class="sb-logo">
     <div class="sb-logo-row">
       <div class="sb-icon">
@@ -666,7 +667,7 @@ tr:hover td{background:#FFF9F5;}
     </button>
   </div>
 </nav>
-<div class="main">
+<div class="main" id="mainContent" style="display:none;">
   <div class="topbar">
     <div class="topbar-title" id="topbarTitle">預約清單</div>
     <div class="topbar-right" id="topbarRight">
@@ -892,7 +893,7 @@ window.printBooking = async function(bookingId){
     const payload = {
       caseNo:  b.caseNo||'—',
       name:    b.name||'—',
-      bday:    fmtBday(b.bday)||'—',
+      bday:    (()=>{const p=parseBday(b.bday);return(p.y&&p.m&&p.d)?`${parseInt(p.y)}年 ${parseInt(p.m)}月 ${parseInt(p.d)}日`:'—';})(),
       doctor:  docName(b.docId, b.docName)||'—',
       op:      b.op||'—',
       date:    fmtDate(b.date),
@@ -1185,7 +1186,7 @@ function composeBday(y,m,d){
 
 window._renderDetailModal = function(b, editMode, isPast=false){
   document.getElementById('modal').className='modal wide';
-  const docOpts=`<option value="">— 請選擇醫師 —</option>`+doctors.map(d=>`<option value="${d.id}"${String(b.docId)===String(d.id)?' selected':''}>${d.name} 醫師</option>`).join('');
+  const docOpts=`<option value="" disabled>— 請選擇醫師 —</option>`+doctors.map(d=>`<option value="${d.id}"${String(b.docId)===String(d.id)?' selected':''}>${d.name} 醫師</option>`).join('');
   const selDoc=doctors.find(d=>String(d.id)===String(b.docId));
   const opOpts=(selDoc?selDoc.ops:OPS_LIST).map(o=>{const n=typeof o==='object'?o.name:o;return`<option value="${n}"${b.op===n?' selected':''}>${n}</option>`;}).join('');
   const lineOpts=`<option value="0"${!b.lineNotified?' selected':''}>未通知</option><option value="1"${b.lineNotified?' selected':''}>已通知</option>`;
@@ -1284,6 +1285,8 @@ window._renderDetailModal = function(b, editMode, isPast=false){
           const missingReq=reqItems.filter(it=>!existingIds.includes(it.id));
           allItems=[...(b.selfPayItems||[]),...missingReq.map(it=>({...it,qty:1,role:'required'}))];
         }
+        // 必要費用置頂排序
+        allItems=allItems.slice().sort((a,b)=>(a.role==='required'?0:1)-(b.role==='required'?0:1));
         if(!allItems.length) return '';
         return `<div class="detail-card" style="margin-top:10px;">
           <div class="detail-card-hd"><span class="detail-card-title">自費項目</span></div>
@@ -1652,7 +1655,7 @@ window.openAddPatient = function(){
     </div>
     <div class="edit-row"><label class="edit-label">術式 <span style="color:var(--red);">*</span></label><select class="edit-inp" id="a_op" onchange="onAddOpChange()"><option value="">— 先選醫師 —</option></select><div id="a_err_op" style="display:none;font-size:11px;color:var(--red);margin-top:4px;">請選擇術式</div></div>
     <div class="edit-row edit-row-split">
-      <div style="flex:1"><label class="edit-label">手術日期 <span style="color:var(--red);">*</span></label><input class="edit-inp" type="date" id="a_date" onchange="onAddDateChange()"></div>
+      <div style="flex:1"><label class="edit-label">手術日期 <span style="color:var(--red);">*</span></label><input class="edit-inp" type="date" id="a_date" onchange="onAddDateChange()" disabled style="opacity:.45;cursor:not-allowed;" title="請先選擇醫師"></div>
       <div style="flex:1"><label class="edit-label">手術時段 <span style="color:var(--red);">*</span></label><select class="edit-inp" id="a_slot" onchange="checkAddConflict()"><option value="">— 先選日期 —</option></select></div>
     </div>
     <div class="conflict-warn" id="a_conflict">⚠ 此時段已有其他預約，請選擇其他時間</div>
@@ -1764,8 +1767,16 @@ function onAddDocChange(){
   const docId = document.getElementById('a_doc').value;
   const doc   = doctors.find(d=>String(d.id)===String(docId));
   const opSel = document.getElementById('a_op');
-  if(!doc){ opSel.innerHTML='<option value="">— 先選醫師 —</option>'; renderAddSelfPaySection(); return; }
+  const dateInp = document.getElementById('a_date');
+  if(!doc){
+    opSel.innerHTML='<option value="">— 先選醫師 —</option>';
+    // 停用日期欄位
+    if(dateInp){dateInp.disabled=true;dateInp.style.opacity='.45';dateInp.style.cursor='not-allowed';dateInp.title='請先選擇醫師';}
+    renderAddSelfPaySection(); return;
+  }
   opSel.innerHTML = doc.ops.map(o=>{const n=typeof o==='object'?o.name:o;return`<option value="${n}">${n}</option>`;}).join('');
+  // 啟用日期欄位
+  if(dateInp){dateInp.disabled=false;dateInp.style.opacity='';dateInp.style.cursor='';dateInp.title='';}
   renderAddSelfPaySection();
   const date=document.getElementById('a_date').value;
   if(date) onAddDateChange();
@@ -3134,7 +3145,7 @@ function renderReview(){
   }
 
   if(!data.length){
-    t.innerHTML=`<tbody><tr><td colspan="7"><div class="review-empty">
+    t.innerHTML=`<tbody><tr><td colspan="8"><div class="review-empty">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
       ${doctors.find(d=>String(d.id)===String(reviewActiveDocId))?.name||''} 醫師目前沒有待審核的預約
     </div></td></tr></tbody>`;
@@ -3143,9 +3154,10 @@ function renderReview(){
   }
 
   t.innerHTML=`<thead><tr>
-    <th>姓名</th><th>生日</th><th>手術日期</th><th>時段</th><th>術式</th><th>備註</th><th>操作</th>
+    <th>病歷號</th><th>姓名</th><th>生日</th><th>手術日期</th><th>時段</th><th>術式</th><th>備註</th><th>操作</th>
   </tr></thead><tbody>${data.map(b=>{
     return`<tr class="rev-row">
+      <td style="font-size:12px;color:var(--text2);">${b.caseNo||'—'}</td>
       <td class="td-name">${b.name}</td>
       <td style="font-size:12px;color:var(--text2);">${fmtBday(b.bday)||'—'}</td>
       <td class="td-date">${fmtDate(b.date)}</td>
@@ -3153,6 +3165,7 @@ function renderReview(){
       <td style="font-size:12px;">${b.op||'—'}</td>
       <td style="font-size:12px;color:var(--text2);max-width:100px;" title="${b.note||''}">${b.note?(b.note.length>10?b.note.slice(0,10)+'…':b.note):'—'}</td>
       <td><div class="act-row">
+        <button class="icon-btn ib-detail" title="詳情" onclick="openDetail('${b.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></button>
         ${unlocked
           ?`<button class="icon-btn ib-approve" title="核准" onclick="reviewApprove('${b.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></button>
             <button class="icon-btn ib-reject" title="拒絕" onclick="reviewReject('${b.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`
@@ -3608,8 +3621,10 @@ updateReviewBadge();
   // ── 監聽登入狀態，並檢查白名單 ──
   auth.onAuthStateChanged(async user=>{
     if(!user){
-      // 未登入：顯示登入頁
-      document.getElementById('loginOverlay').style.display='flex';
+      // 未登入：顯示登入頁，隱藏主畫面
+      document.getElementById('loginOverlay').classList.add('visible');
+      document.getElementById('mainSidebar').style.display='none';
+      document.getElementById('mainContent').style.display='none';
       const btn=document.getElementById('loginBtn');
       if(btn){btn.disabled=false;btn.innerHTML=`<svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg> 使用 Google 帳號登入`;}
       window._currentUserEmail=null;
@@ -3619,19 +3634,27 @@ updateReviewBadge();
     try{
       const doc=await db.collection('allowedUsers').doc(user.email).get();
       if(doc.exists && doc.data().active===true){
-        // ✅ 通過
+        // ✅ 通過：隱藏登入頁，顯示主畫面
         window._currentUserEmail=user.email;
-        document.getElementById('loginOverlay').style.display='none';
+        document.getElementById('loginOverlay').classList.remove('visible');
         document.getElementById('loginErr').style.display='none';
+        document.getElementById('mainSidebar').style.display='flex';
+        document.getElementById('mainContent').style.display='flex';
       } else {
         // ❌ 不在白名單
         await auth.signOut();
+        document.getElementById('loginOverlay').classList.add('visible');
+        document.getElementById('mainSidebar').style.display='none';
+        document.getElementById('mainContent').style.display='none';
         const errEl=document.getElementById('loginErr');
         errEl.textContent=`${user.email} 沒有存取權限，請聯絡管理員`;
         errEl.style.display='block';
       }
     }catch(e){
       await auth.signOut();
+      document.getElementById('loginOverlay').classList.add('visible');
+      document.getElementById('mainSidebar').style.display='none';
+      document.getElementById('mainContent').style.display='none';
       const errEl=document.getElementById('loginErr');
       errEl.textContent='驗證失敗，請稍後再試';
       errEl.style.display='block';
