@@ -2393,8 +2393,10 @@ window.selectSlotDay = function(ds){slotSelectedDay=ds;renderSlotCal();}
 
 function renderTimeSlotPanel(ds){
   if(!slotActiveDocId){document.getElementById('timeSlotPanel').innerHTML='<div class="no-date-hint">請先選擇醫師分頁</div>';return;}
-  const todayStr=new Date().toISOString().slice(0,10);
+  const now=new Date();
+  const todayStr=now.toISOString().slice(0,10);
   const isPastDate=ds<todayStr;
+  const isToday=ds===todayStr;
   const sel=getDocSlots(slotActiveDocId,ds);
   const booked=getDocBookedSlots(slotActiveDocId,ds);
   const dc=docColor(slotActiveDocId);
@@ -2429,6 +2431,14 @@ function renderTimeSlotPanel(ds){
     }
   }
 
+  // helper: is a slot time already past (for today)?
+  function isSlotTimePast(s){
+    if(!isToday) return isPastDate;
+    const [hh,mm]=s.split(':').map(Number);
+    const slotTime=new Date(now.getFullYear(),now.getMonth(),now.getDate(),hh,mm,0,0);
+    return slotTime<=now;
+  }
+
   const slotItems=sel.map(s=>{
     const isBooked=booked.includes(s);
     const am=isAM(s);
@@ -2436,19 +2446,38 @@ function renderTimeSlotPanel(ds){
     const limit=(lim===0||lim>0)?lim:99;
     const limitReached=am?(counts.am>=limit):(counts.pm>=limit);
     const isGrey=!isBooked&&(limitReached||isPanelWkClosed);
-    // past date: no delete button, show lock icon instead
-    const actionBtn = isPastDate
-      ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;color:var(--text3);flex-shrink:0;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0"/></svg>`
-      : isBooked
-        ? `<span class="dds-booked">已預約</span>`
-        : `<button class="dds-del" onclick="removeDaySlotInline('${ds}','${s}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+    const isExpired=isSlotTimePast(s); // 過去時段（含當天已過時間）
+
+    let actionBtn;
+    if(isBooked){
+      // 有預約：無論過去現在，顯示「已預約」badge
+      actionBtn=`<span class="dds-booked">已預約</span>`;
+    } else if(isExpired){
+      // 已過時間且無預約：可刪，顯示刪除鈕（灰色）
+      actionBtn=`<button class="dds-del" onclick="removeDaySlotInline('${ds}','${s}')" style="opacity:.55;" title="刪除過去時段"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+    } else {
+      // 未來時段：正常刪除鈕
+      actionBtn=`<button class="dds-del" onclick="removeDaySlotInline('${ds}','${s}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+    }
+
+    // 過去時段文字加刪除線，灰色
+    const timeStyle=isExpired&&!isBooked
+      ? `color:var(--text3);text-decoration:line-through;`
+      : `color:${isGrey?'var(--text3)':dc.dot};${isGrey?'text-decoration:line-through;':''}`;
+
     return `<div class="dds-item">
-      <span class="dds-time" style="color:${isGrey?'var(--text3)':dc.dot};${isGrey?'text-decoration:line-through;':''}">${s}</span>
+      <span class="dds-time" style="${timeStyle}">${s}</span>
       ${actionBtn}
     </div>`;
   }).join('');
 
-  const hourOpts=Array.from({length:24},(_,i)=>`<option value="${String(i).padStart(2,'0')}">${String(i).padStart(2,'0')}</option>`).join('');
+  // 新增時段下拉：當天時，已過的「時」選項 disabled
+  const nowH=now.getHours();
+  const hourOpts=Array.from({length:24},(_,i)=>{
+    const hStr=String(i).padStart(2,'0');
+    const disabled=(isToday && i<=nowH)?' disabled':'';
+    return `<option value="${hStr}"${disabled}>${hStr}</option>`;
+  }).join('');
   const minOpts=['00','15','30','45'].map(v=>`<option value="${v}">${v}</option>`).join('');
 
   // plain text AM/PM remaining — 0 = red, >0 = black
@@ -2460,12 +2489,17 @@ function renderTimeSlotPanel(ds){
   const pmTxt=effLimPM<99?`下午剩 <strong style="color:${(rem2PM===0||isPanelWkClosed)?'var(--red)':'var(--text)'};">${rem2PM}</strong> 人`:'';
   const remText=(amTxt||pmTxt)?`<span style="font-size:12px;color:var(--text2);">${[amTxt,pmTxt].filter(Boolean).join('　')}</span>`:'';
 
+  // 過去日期但有可刪時段，提示文字改變
+  const pastHint=isPastDate
+    ? `<span style="font-size:11px;color:var(--text3);font-weight:500;display:inline-flex;align-items:center;gap:3px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:11px;height:11px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0"/></svg>過去日期，無預約時段可刪除</span>`
+    : '';
+
   document.getElementById('timeSlotPanel').innerHTML=`
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
       <span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:${dc.text};">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px;color:${dc.dot};"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         ${fmtDate(ds)} 可預約時段
-        ${isPastDate?`<span style="font-size:11px;color:var(--text3);font-weight:500;display:inline-flex;align-items:center;gap:3px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:11px;height:11px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0"/></svg>過去日期，僅供檢視</span>`:''}
+        ${pastHint}
       </span>
       ${remText}
     </div>
@@ -2480,11 +2514,19 @@ function renderTimeSlotPanel(ds){
 }
 
 window.addDaySlotInline = function(ds){
-  if(ds<new Date().toISOString().slice(0,10)){toast('warn','過去日期不可新增時段');return;}
+  const now=new Date();
+  const todayStr=now.toISOString().slice(0,10);
+  if(ds<todayStr){toast('warn','過去日期不可新增時段');return;}
   const h=document.getElementById('dds_h').value;
   const min=document.getElementById('dds_m').value;
   if(!h||min===''){toast('warn','請選擇時與分');return;}
   const slot=h+':'+min;
+  // 當天：檢查時段是否已過
+  if(ds===todayStr){
+    const[hh,mm]=slot.split(':').map(Number);
+    const slotTime=new Date(now.getFullYear(),now.getMonth(),now.getDate(),hh,mm,0,0);
+    if(slotTime<=now){toast('warn','不能新增已過的時段');return;}
+  }
   const doc=doctors.find(d=>String(d.id)===String(slotActiveDocId));
   // only block if limit is explicitly set to 0 (not open)
   if(doc){
@@ -2502,7 +2544,6 @@ window.addDaySlotInline = function(ds){
 }
 
 window.removeDaySlotInline = function(ds,slot){
-  if(ds<new Date().toISOString().slice(0,10)){toast('warn','過去日期不可修改時段');return;}
   if(getDocBookedSlots(slotActiveDocId,ds).includes(slot)){toast('warn','此時段已有預約，無法刪除');return;}
   setDocSlots(slotActiveDocId,ds,getDocSlots(slotActiveDocId,ds).filter(s=>s!==slot));
   renderSlotCal();
@@ -2558,9 +2599,13 @@ function renderSlotSummary(){
     const chipsHtml=slots.map(s=>{
       const isBooked=booked.includes(s);
       const limitFull=isSlotLimitReached(doc,ds,s);
+      const isPastSlot=ds<new Date().toISOString().slice(0,10);
       if(isBooked){
-        // 已被預約：醫師顏色底、白色字
+        // 已被預約：醫師顏色底、白色字（過去現在都一樣）
         return `<span class="slot-summary-chip" style="background:${dc.dot};color:#fff;border-color:${dc.dot};">${s}</span>`;
+      } else if(isPastSlot){
+        // 過去日期且無預約：灰色刪除線，可刪
+        return `<span class="slot-summary-chip" style="color:var(--text3);text-decoration:line-through;background:#F1F5F9;border-color:var(--border);">${s}</span>`;
       } else if(isWkClosed || limitFull){
         // week-limit closed or capacity full: grey strikethrough
         return `<span class="slot-summary-chip wk-closed">${s}</span>`;
@@ -2571,12 +2616,15 @@ function renderSlotSummary(){
     }).join('');
 
     const isPastSummary=ds<new Date().toISOString().slice(0,10);
+    // 過去日期：只要有無預約的時段就顯示 × 鈕
+    const hasDeletable=slots.some(s=>!booked.includes(s));
+    const showDelBtn=!isPastSummary||(isPastSummary&&hasDeletable);
     return `<div class="slot-summary-item${isSelected?' summary-active':''}" onclick="selectSlotDay('${ds}')" style="cursor:pointer;${isSelected?`border-color:${dc.dot};background:${dc.bg};`:''}">
       <div style="min-width:80px;">
-        <div class="slot-summary-date" style="${isSelected?`color:${dc.text};`:''}">${fmtDate(ds)}</div>
+        <div class="slot-summary-date" style="${isSelected?`color:${dc.text};`:''}${isPastSummary?'color:var(--text3);':''}">${fmtDate(ds)}</div>
       </div>
       <div class="slot-summary-chips">${chipsHtml}</div>
-      ${isPastSummary?'':`<button class="slot-summary-del" onclick="event.stopPropagation();clearDocSlots('${ds}')" title="清除所有可刪時段"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`}
+      ${showDelBtn?`<button class="slot-summary-del" onclick="event.stopPropagation();clearDocSlots('${ds}')" title="清除所有可刪時段" style="${isPastSummary?'opacity:.55;':''}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`:''}
     </div>`;
   }).join('');
 }
