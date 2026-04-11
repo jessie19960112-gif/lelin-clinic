@@ -516,16 +516,18 @@ function closeModal(){ document.getElementById('customModal').classList.remove('
 
 function renderDoctors(){
   document.getElementById('docList').innerHTML=doctors.map(d=>`
-    <div class="doc-item${sel.docId===d.id?' sel':''}" id="di_${d.id}" data-docid="${d.id}" onclick="pickDoc(+this.dataset.docid)">
+    <div class="doc-item${sel.docId==d.id?' sel':''}" id="di_${d.id}" data-docid="${d.id}" onclick="pickDoc(this.dataset.docid)">
       <div class="doc-av" style="background:${d.color};">${d.name[0]}</div>
       <div><div class="doc-nm">${d.name} 醫師</div><div class="doc-tt">${d.title}</div></div>
     </div>`).join('');
 }
 function pickDoc(id){
+
   sel.docId=id; sel.op=null;
   renderDoctors();
   document.getElementById('docErr').classList.remove('on');
-  const doc=doctors.find(d=>d.id===id);
+  const doc=doctors.find(d=>d.id==id);
+  if(!doc) return;
   document.getElementById('opWrap').innerHTML=doc.ops.length
     ? doc.ops.map(o=>{
         const name=typeof o==='object'?o.name:o;
@@ -806,7 +808,7 @@ function fillPreview(){
   const phone=document.getElementById('f_phone').value.trim();
   const note=document.getElementById('f_note').value.trim();
   const yi=parseInt(yv),mi=parseInt(mv),di=parseInt(dv);
-  const doc=doctors.find(dd=>dd.id===sel.docId);
+  const doc=doctors.find(dd=>dd.id==sel.docId);
   if(!doc) return;
   document.getElementById('pv_doc').textContent=doc.name+' 醫師';
   document.getElementById('pv_op').textContent=sel.op;
@@ -893,7 +895,7 @@ function toStep4(){
   show('p4');setStep(4);
 }
 function submitBooking(){
-  const doc=doctors.find(d=>d.id===sel.docId);
+  const doc=doctors.find(d=>d.id==sel.docId);
   document.getElementById('suc_doc').textContent=doc.name+' 醫師';
   document.getElementById('suc_op').textContent=sel.op;
   document.getElementById('suc_date').textContent=fmtDs(sel.date);
@@ -954,7 +956,7 @@ function getDocBookedDaysInWeek(docId, weekMonStr){
   const bookedDates=new Set();
   Object.keys(window._bookedSlots).forEach(key=>{
     const [did,date]=key.split(':');
-    if(parseInt(did)===docId && window._bookedSlots[key]>0){
+    if(did===docId && window._bookedSlots[key]>0){
       const weekMon=getWeekKey(date);
       if(weekMon===weekMonStr) bookedDates.add(date);
     }
@@ -964,7 +966,7 @@ function getDocBookedDaysInWeek(docId, weekMonStr){
 
 // 判斷某天是否因週限制而關閉（不顯示額滿，直接視為無開放）
 function isWeekLimitClosed(docId, ds){
-  const doc=doctors.find(d=>d.id===docId);
+  const doc=doctors.find(d=>d.id==docId);
   if(!doc||!doc.weekLimit||doc.weekLimit<=0) return false;
   const weekMon=getWeekKey(ds);
   const bookedDays=getDocBookedDaysInWeek(docId, weekMon);
@@ -972,21 +974,21 @@ function isWeekLimitClosed(docId, ds){
   // 已達週限制，但若該天本身就有預約，不關閉（已被使用的天不受影響）
   const hasSelfBooking=Object.keys(window._bookedSlots||{}).some(key=>{
     const [did,date]=key.split(':');
-    return parseInt(did)===docId && date===ds && window._bookedSlots[key]>0;
+    return did===docId && date===ds && window._bookedSlots[key]>0;
   });
   return !hasSelfBooking;
 }
 // 判斷某天的上午或下午是否達到配額
 function isSessionFull(docId, ds, isAM){
   if(!window._bookedSlots) return false;
-  const doc=doctors.find(d=>d.id===docId);
+  const doc=doctors.find(d=>d.id==docId);
   if(!doc) return false;
   const lim=isAM?(doc.limitAM??99):(doc.limitPM??99);
   if(!lim||lim<=0) return false;
   // 計算該天同一時段（上午/下午）的總預約數
   const total=Object.entries(window._bookedSlots).reduce((sum,[key,cnt])=>{
     const [did,date,slot]=key.split(':');
-    if(parseInt(did)===docId && date===ds && (parseInt(slot)<12)===isAM) return sum+cnt;
+    if(did===docId && date===ds && (parseInt(slot)<12)===isAM) return sum+cnt;
     return sum;
   },0);
   return total>=lim;
@@ -994,7 +996,7 @@ function isSessionFull(docId, ds, isAM){
 
 function isDayFull(docId, ds, ss){
   if(!window._bookedSlots||!ss||!ss.length) return false;
-  const doc=doctors.find(d=>d.id===docId);
+  const doc=doctors.find(d=>d.id==docId);
   if(!doc) return false;
   // 每個時段：若所屬上午/下午配額已滿，或該時段自身已被預約，則視為不可用
   return ss.every(slot=>{
@@ -1170,10 +1172,10 @@ window.renderSlots   = renderSlots;
       return {id:v.id, name:v.name||'', title:v.title||'',
         color:colorFromId(v.colorId), ops:v.ops||[],
         limitAM:v.limitAM??3, limitPM:v.limitPM??3, weekLimit:v.weekLimit||0};
-    }).sort((a,b)=>a.id-b.id);
+    }).sort((a,b)=>String(a.id).localeCompare(String(b.id)));
     renderDoctors();
     // 若已選醫師被刪除則重置
-    if(sel.docId && !doctors.find(d=>d.id===sel.docId)){
+    if(sel.docId && !doctors.find(d=>d.id==sel.docId)){
       sel={docId:null,op:null,date:null,slot:null};
       document.getElementById('opWrap').innerHTML=
         '<div class="op-placeholder">請先選擇醫師，術式將自動帶入</div>';
@@ -1216,7 +1218,7 @@ window.renderSlots   = renderSlots;
   window.submitBookingToFirebase = async function(){
     const btnEl=document.querySelector('#p4 .btn-p');
     if(btnEl){btnEl.disabled=true;btnEl.innerHTML='送出中…';}
-    const docObj=doctors.find(d=>d.id===sel.docId);
+    const docObj=doctors.find(d=>d.id==sel.docId);
     const name=document.getElementById('f_name').value.trim();
     const yv=document.getElementById('f_y').value.trim();
     const mv=document.getElementById('f_m').value.trim();
@@ -1235,7 +1237,7 @@ window.renderSlots   = renderSlots;
     const localCount=Object.entries(window._bookedSlots||{})
       .filter(([key])=>{
         const [did,date,slot]=key.split(':');
-        return parseInt(did)===sel.docId && date===sel.date && (parseInt(slot)<12)===isAM;
+        return did===sel.docId && date===sel.date && (parseInt(slot)<12)===isAM;
       })
       .reduce((sum,[,cnt])=>sum+cnt,0);
     if(limit>0 && localCount>=limit){
