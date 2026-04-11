@@ -644,13 +644,13 @@ tr:hover td{background:#FFF9F5;}
       <span class="ni-badge" id="reviewBadge" style="display:none;"></span>
     </button>
     <div class="sb-sec">系統設定</div>
-    <button class="ni" onclick="nav('schedule')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      預約時段設定
-    </button>
     <button class="ni" onclick="nav('doctors')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
       醫師與術式
+    </button>
+    <button class="ni" onclick="nav('schedule')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      預約時段設定
     </button>
     <button class="ni" onclick="nav('selfpay')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
@@ -861,72 +861,6 @@ let calView = 'month', calDate = new Date(2026,3,1);
 let slotCalDate = new Date(2026,3,1), slotSelectedDay = null;
 
 /* ═══════════════════════════════════════
-   GOOGLE SHEET 列印
-═══════════════════════════════════════ */
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxVIaKfU27A1uhYJC1m_k2K2iqk6DwUcWQyNwvGAs5Uv2olaFIAnUGlh2_qIBDXAw/exec';
-
-window.printBooking = async function(bookingId){
-  const b = bookings.find(x => x.id === bookingId);
-  if(!b) return;
-
-  const btn = document.getElementById('print_btn_'+bookingId);
-  if(btn){ btn.disabled=true; btn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:14px;height:14px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> 傳送中…`; }
-
-  toast('info','正在寫入 Google Sheet…');
-
-  try{
-    // 整理自費項目
-    const docExists = doctors.some(d=>String(d.id)===String(b.docId));
-    let allItems;
-    if(!docExists){
-      allItems = b.selfPayItems||[];
-    } else {
-      const key = String(b.docId)+':'+(b.op||'');
-      const cfg = opSelfPay[key]||{required:[],optional:[],customItems:[]};
-      const customItems = cfg.customItems||[];
-      const reqItems = cfg.required.map(id=>customItems.find(x=>x.id===id)).filter(Boolean);
-      const existingIds = (b.selfPayItems||[]).map(x=>x.id);
-      const missingReq = reqItems.filter(it=>!existingIds.includes(it.id));
-      allItems = [...(b.selfPayItems||[]),...missingReq.map(it=>({...it,qty:1,role:'required'}))];
-    }
-
-    const payload = {
-      caseNo:  b.caseNo||'—',
-      name:    b.name||'—',
-      bday:    (()=>{const p=parseBday(b.bday);return(p.y&&p.m&&p.d)?`${parseInt(p.y)}年 ${parseInt(p.m)}月 ${parseInt(p.d)}日`:'—';})(),
-      doctor:  docName(b.docId, b.docName)||'—',
-      op:      b.op||'—',
-      date:    fmtDate(b.date),
-      slot:    b.slot||'—',
-      selfPayItems: allItems.map(it=>({
-        name:  it.name,
-        price: parseInt(it.price)||0,
-        qty:   parseInt(it.qty)||1
-      }))
-    };
-
-    const res = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
-    const json = await res.json();
-
-    if(json.ok){
-      toast('success','已傳送至 Google Sheet，請至手術單工作頁列印');
-    } else {
-      toast('err','寫入失敗：'+(json.error||'未知錯誤'));
-    }
-  } catch(e){
-    toast('err','連線失敗：'+e.message);
-  } finally {
-    if(btn){
-      btn.disabled=false;
-      btn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:14px;height:14px;"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> 傳送並列印`;
-    }
-  }
-};
-
-/* ═══════════════════════════════════════
    NAV
 ═══════════════════════════════════════ */
 const panelNames = {bookings:'預約清單',review:'醫師審核',calendar:'手術排程',schedule:'預約時段設定',doctors:'醫師與術式管理',selfpay:'自費項目設定',users:'使用者管理'};
@@ -1083,7 +1017,15 @@ function renderBookings(){
     let av,bv;
     if(col==='date'){av=a.date+a.slot;bv=b2.date+b2.slot;}
     else if(col==='status'){av=statusOrder[a.status]??9;bv=statusOrder[b2.status]??9;}
-    else if(col==='lineNotified'){av=a.lineNotified?1:0;bv=b2.lineNotified?1:0;}
+    else if(col==='lineNotified'){
+      // 排序優先：已通知(0) → 可點擊標記(1) → 請先核准(2)
+      const lineOrder=b=>{
+        if(b.lineNotified) return 0;
+        if(b.status==='pending') return 2;
+        return 1;
+      };
+      av=lineOrder(a);bv=lineOrder(b2);
+    }
     else {av=a[col]||'';bv=b2[col]||'';}
     return dir==='asc'?(av<bv?-1:av>bv?1:0):(av>bv?-1:av<bv?1:0);
   });
@@ -1193,6 +1135,10 @@ window._renderDetailModal = function(b, editMode, isPast=false){
 
   if(editMode){
     window._editingBookingId = b.id;
+    // 深拷貝快照，取消時還原用
+    window._editingBookingSnapshot = JSON.parse(JSON.stringify(b));
+    // 初始化自費暫存
+    window._editingTempSelfPay = JSON.parse(JSON.stringify(b.selfPayItems||[]));
     const bp=parseBday(b.bday);
     document.getElementById('modalTitle').textContent='編輯預約';
     document.getElementById('modalBody').innerHTML=`
@@ -1231,7 +1177,7 @@ window._renderDetailModal = function(b, editMode, isPast=false){
       </div>`;
     document.getElementById('modalFoot').innerHTML=`<div class="modal-acts">
       <button class="mbtn mbtn-approve" id="e_save_btn" onclick="saveEdit('${b.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>儲存</button>
-      <button class="mbtn mbtn-close" onclick="_renderDetailModal(bookings.find(x=>x.id==='${b.id}'),false)">取消</button>
+      <button class="mbtn mbtn-close" onclick="cancelEdit('${b.id}')">取消</button>
     </div>`;
   } else {
     // line toggle for card (same style as table, but locked in view mode)
@@ -1239,14 +1185,7 @@ window._renderDetailModal = function(b, editMode, isPast=false){
       ? `<span class="line-toggle sent locked" title="如需修改請進入編輯"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:12px;height:12px;"><polyline points="20 6 9 17 4 12"/></svg>已通知</span>`
       : `<span class="line-toggle disabled"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px;height:12px;"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>未通知</span>`;
 
-    document.getElementById('modalTitle').innerHTML=`<span style="flex:1;">預約詳情</span>
-      <button id="print_btn_${b.id}" onclick="printBooking('${b.id}')"
-        style="display:inline-flex;align-items:center;gap:6px;padding:6px 13px;border-radius:var(--rx);border:1.5px solid var(--bb);background:var(--bp);color:var(--blue);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0;"
-        onmouseover="this.style.background='var(--blue)';this.style.color='white';"
-        onmouseout="this.style.background='var(--bp)';this.style.color='var(--blue)';">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:14px;height:14px;"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-        傳送並列印
-      </button>`;
+    document.getElementById('modalTitle').innerHTML=`<span style="flex:1;">預約詳情</span>`;
     document.getElementById('modalHd').style.cssText='display:flex;align-items:center;gap:8px;';
     document.getElementById('modalBody').innerHTML=`
       <div class="detail-card">
@@ -1331,7 +1270,10 @@ function buildEditSelfPayHTML(b){
   const key=docId+':'+op;
   const cfg=opSelfPay[key]||{required:[],optional:[],customItems:[]};
   const customItems=cfg.customItems||[];
-  const curSel=b.selfPayItems||[];
+  // 優先用暫存
+  const curSel=(window._editingBookingId===b.id && window._editingTempSelfPay)
+    ? window._editingTempSelfPay
+    : (b.selfPayItems||[]);
   const reqItems=cfg.required.map(id=>customItems.find(x=>x.id===id)).filter(Boolean);
   const optItems=cfg.optional.map(id=>customItems.find(x=>x.id===id)).filter(Boolean);
   const selOpt=curSel.filter(x=>x.role!=='required');
@@ -1381,7 +1323,9 @@ window.openEditSelfPayPicker = function(key, bookingId){
   const cfg=opSelfPay[key]||{required:[],optional:[],customItems:[]};
   const customItems=cfg.customItems||[];
   const optItems=cfg.optional.map(id=>customItems.find(x=>x.id===id)).filter(Boolean);
-  const curSel=b?b.selfPayItems||[]:[];
+  // 使用暫存陣列，不直接讀 b.selfPayItems
+  if(!window._editingTempSelfPay) window._editingTempSelfPay = JSON.parse(JSON.stringify(b?b.selfPayItems||[]:[]) );
+  const curSel=window._editingTempSelfPay;
   const customExisting=curSel.filter(e=>e.role==='custom');
 
   document.getElementById('modal2Title').textContent='選擇自費項目';
@@ -1426,23 +1370,22 @@ window.openEditSelfPayPicker = function(key, bookingId){
 };
 
 window.addCustomItemToPickerEdit = function(bookingId, key){
-  const b=bookings.find(x=>x.id===bookingId); if(!b) return;
   const name=document.getElementById('spei_name')?.value.trim();
   const price=parseInt(document.getElementById('spei_price')?.value)||0;
   const unit=document.getElementById('spei_unit')?.value.trim()||'';
   const qty=Math.max(1,parseInt(document.getElementById('spei_qty')?.value||1)||1);
   if(!name){toast('warn','請輸入項目名稱');return;}
   if(!price){toast('warn','請輸入單價');return;}
-  if(!b.selfPayItems) b.selfPayItems=[];
-  b.selfPayItems.push({id:'custom_'+Date.now(),name,price,unit,qty,role:'custom'});
+  if(!window._editingTempSelfPay) window._editingTempSelfPay=[];
+  window._editingTempSelfPay.push({id:'custom_'+Date.now(),name,price,unit,qty,role:'custom'});
   window.openEditSelfPayPicker(key, bookingId);
 };
 
 window.removeEditCustomItem = function(bookingId, idx, key){
-  const b=bookings.find(x=>x.id===bookingId); if(!b) return;
-  const customs=b.selfPayItems?b.selfPayItems.filter(e=>e.role==='custom'):[];
+  if(!window._editingTempSelfPay) return;
+  const customs=window._editingTempSelfPay.filter(e=>e.role==='custom');
   const toRemove=customs[idx];
-  if(toRemove) b.selfPayItems=b.selfPayItems.filter(e=>e!==toRemove);
+  if(toRemove) window._editingTempSelfPay=window._editingTempSelfPay.filter(e=>e!==toRemove);
   window.openEditSelfPayPicker(key, bookingId);
 };
 
@@ -1451,8 +1394,10 @@ window.confirmEditSpPicker = function(key, bookingId){
   const cfg=opSelfPay[key]||{required:[],optional:[],customItems:[]};
   const customItems=cfg.customItems||[];
   const optItems=cfg.optional.map(id=>customItems.find(x=>x.id===id)).filter(Boolean);
-  const reqItems=b.selfPayItems?b.selfPayItems.filter(x=>x.role==='required'):[];
-  const customExisting=b.selfPayItems?b.selfPayItems.filter(x=>x.role==='custom'):[];
+  // 從暫存取得 required 和 custom 部分
+  const curTemp=window._editingTempSelfPay||[];
+  const reqItems=curTemp.filter(x=>x.role==='required');
+  const customExisting=curTemp.filter(x=>x.role==='custom');
   const selOpt=[];
   optItems.forEach(it=>{
     const cb=document.getElementById('spcb_'+it.id);
@@ -1461,11 +1406,29 @@ window.confirmEditSpPicker = function(key, bookingId){
       selOpt.push({id:it.id,name:it.name,price:it.price,unit:it.unit||'',qty,role:'optional'});
     }
   });
-  b.selfPayItems=[...reqItems,...selOpt,...customExisting];
+  // 寫回暫存，不寫入 b.selfPayItems
+  window._editingTempSelfPay=[...reqItems,...selOpt,...customExisting];
   closeModal2();
+  // 更新畫面預覽（用暫存資料建立假的 b）
   const wrap=document.getElementById('e_selfpay_wrap');
-  if(wrap) wrap.innerHTML=buildEditSelfPayHTML(b);
+  if(wrap){
+    const fakeB=Object.assign({},b,{selfPayItems:window._editingTempSelfPay});
+    wrap.innerHTML=buildEditSelfPayHTML(fakeB);
+  }
   toast('success','自費項目已更新，請按儲存生效');
+};
+
+window.cancelEdit = function(id){
+  // 還原快照，丟棄所有暫存編輯（含自費）
+  const snap = window._editingBookingSnapshot;
+  if(snap){
+    const idx = bookings.findIndex(x=>x.id===id);
+    if(idx>=0) Object.assign(bookings[idx], JSON.parse(JSON.stringify(snap)));
+  }
+  window._editingBookingSnapshot = null;
+  window._editingBookingId = null;
+  const b = bookings.find(x=>x.id===id);
+  if(b) _renderDetailModal(b, false, false);
 };
 
 window.saveEdit = function(id){
@@ -1491,8 +1454,13 @@ window.saveEdit = function(id){
   b.status=document.getElementById('e_status').value;
   b.lineNotified=document.getElementById('e_line').value==='1';
   b.note=document.getElementById('e_note').value.trim();
-  // selfPayItems已在confirmEditSpPicker中即時更新到b物件
-  const editSelfPayResult=b.selfPayItems||[];
+  // selfPayItems 從暫存讀取（不從 b 直接讀，避免未確認的舊狀態）
+  const editSelfPayResult=window._editingTempSelfPay||b.selfPayItems||[];
+  b.selfPayItems=editSelfPayResult;
+  // 清除暫存
+  window._editingTempSelfPay=null;
+  window._editingBookingSnapshot=null;
+  window._editingBookingId=null;
   if(b.fbId && window._fbSaveEdit) window._fbSaveEdit(b.fbId,{
     caseNo:b.caseNo||'',
     name:b.name,bday:b.bday,phone:b.phone,
@@ -1529,22 +1497,23 @@ window.onEditOpChange = function(){
   const docId=document.getElementById('e_doc')?.value||'';
   const op=document.getElementById('e_op')?.value||'';
   if(!docId||!op){wrap.innerHTML='<div style="font-size:12px;color:var(--text3);">請先選擇醫師與術式</div>';return;}
-  // 重置 booking 的 selfPayItems 為只有必要費用
-  let resetItems=[];
+  // 重置暫存為只有必要費用
+  const key=docId+':'+op;
+  const cfg=opSelfPay[key]||{required:[],optional:[],customItems:[]};
+  const customItems=cfg.customItems||[];
+  window._editingTempSelfPay=cfg.required.map(rid=>{
+    const it=customItems.find(x=>x.id===rid);
+    return it?{id:it.id,name:it.name,price:it.price,unit:it.unit||'',qty:1,role:'required'}:null;
+  }).filter(Boolean);
   if(window._editingBookingId){
     const b=bookings.find(x=>x.id===window._editingBookingId);
     if(b){
-      const key=docId+':'+op;
-      const cfg=opSelfPay[key]||{required:[],optional:[],customItems:[]};
-      const customItems=cfg.customItems||[];
-      b.selfPayItems=cfg.required.map(rid=>{
-        const it=customItems.find(x=>x.id===rid);
-        return it?{id:it.id,name:it.name,price:it.price,unit:it.unit||'',qty:1,role:'required'}:null;
-      }).filter(Boolean);
-      resetItems=b.selfPayItems;
+      const fakeB=Object.assign({},b,{docId,op,selfPayItems:window._editingTempSelfPay});
+      wrap.innerHTML=buildEditSelfPayHTML(fakeB);
+      return;
     }
   }
-  const fakeB={id:window._editingBookingId||'', docId,op,selfPayItems:resetItems};
+  const fakeB={id:window._editingBookingId||'', docId,op,selfPayItems:window._editingTempSelfPay};
   wrap.innerHTML=buildEditSelfPayHTML(fakeB);
 }
 
@@ -3157,7 +3126,7 @@ function renderReview(){
   }
 
   t.innerHTML=`<thead><tr>
-    <th>病歷號</th><th>姓名</th><th>生日</th><th>手術日期</th><th>時段</th><th>術式</th><th>備註</th><th>操作</th>
+    <th>病歷號</th><th>姓名</th><th>生日</th><th>手術日期</th><th>時段</th><th>術式</th><th>備註</th><th>詳情</th><th>審核</th>
   </tr></thead><tbody>${data.map(b=>{
     return`<tr class="rev-row">
       <td style="font-size:12px;color:var(--text2);">${b.caseNo||'—'}</td>
@@ -3167,10 +3136,14 @@ function renderReview(){
       <td style="font-weight:700;font-size:13px;">${b.slot}</td>
       <td style="font-size:12px;">${b.op||'—'}</td>
       <td style="font-size:12px;color:var(--text2);max-width:100px;" title="${b.note||''}">${b.note?(b.note.length>10?b.note.slice(0,10)+'…':b.note):'—'}</td>
+      <td>
+        ${unlocked
+          ?`<button class="icon-btn ib-detail" title="詳情" onclick="openDetail('${b.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></button>`
+          :`<span style="font-size:11px;color:var(--text3);">—</span>`}
+      </td>
       <td><div class="act-row">
         ${unlocked
-          ?`<button class="icon-btn ib-detail" title="詳情" onclick="openDetail('${b.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></button>
-            <button class="icon-btn ib-approve" title="核准" onclick="reviewApprove('${b.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></button>
+          ?`<button class="icon-btn ib-approve" title="核准" onclick="reviewApprove('${b.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></button>
             <button class="icon-btn ib-reject" title="拒絕" onclick="reviewReject('${b.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`
           :`<span style="font-size:11px;color:var(--text3);">請先解鎖</span>`}
       </div></td>
