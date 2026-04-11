@@ -1766,7 +1766,7 @@ function onAddDocChange(){
   opSel.innerHTML = doc.ops.map(o=>{const n=typeof o==='object'?o.name:o;return`<option value="${n}">${n}</option>`;}).join('');
   // 換成真正的日期欄位
   if(dateWrap && !document.getElementById('a_date')){
-    dateWrap.innerHTML=`<input class="edit-inp" type="date" id="a_date" onchange="onAddDateChange()">`;
+    dateWrap.innerHTML=`<input class="edit-inp" type="date" id="a_date" min="${new Date().toISOString().slice(0,10)}" onchange="onAddDateChange()">`;
   }
   renderAddSelfPaySection();
   const date=document.getElementById('a_date')?.value;
@@ -2076,6 +2076,17 @@ window.saveAddPatient = async function(){
   // 日期 & 時段
   if(!date){toast('err','請選擇手術日期');ok=false;}
   if(date&&!slot){toast('err','請選擇手術時段');ok=false;}
+  // 不允許過去日期或當天已過時段
+  if(date&&slot){
+    const nowA=new Date();
+    const todayA=nowA.toISOString().slice(0,10);
+    if(date<todayA){toast('err','不可選擇過去日期');ok=false;}
+    else if(date===todayA){
+      const[hh,mm]=slot.split(':').map(Number);
+      const slotT=new Date(nowA.getFullYear(),nowA.getMonth(),nowA.getDate(),hh,mm,0,0);
+      if(slotT<=nowA){toast('err','不可選擇已過的時段');ok=false;}
+    }
+  }
 
   // 驗證失敗時滾動到第一個錯誤欄位
   if(!ok){
