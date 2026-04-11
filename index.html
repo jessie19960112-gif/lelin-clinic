@@ -2255,16 +2255,28 @@ function renderDayCal(){
 ═══════════════════════════════════════ */
 // slotSettings keys: "docId:YYYY-MM-DD" -> [slots]
 let slotActiveDocId = null;
+// 本地未儲存的時段變更，key 同 slotSettings
+let localSlotChanges = {};
 
 function getDocSlots(docId, ds){ return slotSettings[docId+':'+ds] || []; }
 function getCommittedDocSlots(docId, ds){ return committedSlotSettings[docId+':'+ds] || []; }
 function setDocSlots(docId, ds, arr){
   const k=docId+':'+ds;
-  if(arr&&arr.length) slotSettings[k]=[...arr].sort(); else delete slotSettings[k];
+  if(arr&&arr.length){
+    slotSettings[k]=[...arr].sort();
+    localSlotChanges[k]=[...arr].sort();
+  } else {
+    delete slotSettings[k];
+    localSlotChanges[k]=[];  // 空陣列代表「此 key 需刪除」
+  }
 }
-function getBookedSlots(ds){
-  // only pending + approved count as "booked" — rejected frees the slot
-  return bookings.filter(b=>b.date===ds&&(b.status==='pending'||b.status==='approved')).map(b=>b.slot);
+// 只查此醫師在此日的已預約時段（pending+approved）
+function getDocBookedSlots(docId, ds){
+  return bookings.filter(b=>
+    b.date===ds &&
+    String(b.docId)===String(docId) &&
+    (b.status==='pending'||b.status==='approved')
+  ).map(b=>b.slot);
 }
 
 // is slot AM (before 12:00)?
@@ -2384,7 +2396,7 @@ function renderTimeSlotPanel(ds){
   const todayStr=new Date().toISOString().slice(0,10);
   const isPastDate=ds<todayStr;
   const sel=getDocSlots(slotActiveDocId,ds);
-  const booked=getBookedSlots(ds);
+  const booked=getDocBookedSlots(slotActiveDocId,ds);
   const dc=docColor(slotActiveDocId);
   const doc=doctors.find(d=>String(d.id)===String(slotActiveDocId));
   const counts=getDocBookedCount(slotActiveDocId,ds);
@@ -2491,7 +2503,7 @@ window.addDaySlotInline = function(ds){
 
 window.removeDaySlotInline = function(ds,slot){
   if(ds<new Date().toISOString().slice(0,10)){toast('warn','過去日期不可修改時段');return;}
-  if(getBookedSlots(ds).includes(slot)){toast('warn','此時段已有預約，無法刪除');return;}
+  if(getDocBookedSlots(slotActiveDocId,ds).includes(slot)){toast('warn','此時段已有預約，無法刪除');return;}
   setDocSlots(slotActiveDocId,ds,getDocSlots(slotActiveDocId,ds).filter(s=>s!==slot));
   renderSlotCal();
 }
@@ -2513,7 +2525,7 @@ function renderSlotSummary(){
     <span style="font-size:12px;font-weight:700;color:var(--text2);">本月已設定時段</span>
     ${wkBadge}
   </div>`+entries.map(([ds,slots])=>{
-    const booked=getBookedSlots(ds);
+    const booked=getDocBookedSlots(slotActiveDocId,ds);
     const isSelected=ds===slotSelectedDay;
     const doc=doctors.find(d=>String(d.id)===String(slotActiveDocId));
 
@@ -2570,16 +2582,16 @@ function renderSlotSummary(){
 }
 
 function removeSummarySlot(ds, slot){
-  const booked=getBookedSlots(ds);
+  const booked=getDocBookedSlots(slotActiveDocId,ds);
   if(booked.includes(slot)){toast('warn','此時段已有預約，無法刪除');return;}
   setDocSlots(slotActiveDocId,ds,getDocSlots(slotActiveDocId,ds).filter(s=>s!==slot));
   renderSlotCal();
 }
 
 function clearDocSlots(ds){
-  // only protect slots with pending or approved bookings; rejected slots can be cleared
+  // only protect slots with pending or approved bookings for this doctor; rejected slots can be cleared
   const protected_slots=bookings
-    .filter(b=>b.date===ds&&(b.status==='pending'||b.status==='approved'))
+    .filter(b=>b.date===ds&&String(b.docId)===String(slotActiveDocId)&&(b.status==='pending'||b.status==='approved'))
     .map(b=>b.slot);
   setDocSlots(slotActiveDocId,ds,getDocSlots(slotActiveDocId,ds).filter(s=>protected_slots.includes(s)));
   renderSlotCal();
@@ -2679,7 +2691,7 @@ window.applyGlobalSettings = function(){
     const dt=new Date(y,m,d);
     if(!cfg.days.includes(dt.getDay())) continue;
     const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const booked=getBookedSlots(ds);
+    const booked=getDocBookedSlots(globalSettingDocId,ds);
     const cur=getDocSlots(globalSettingDocId,ds);
     const merged=[...new Set([...cur,...allowedSlots])].filter(s=>!booked.includes(s)||cur.includes(s));
     setDocSlots(globalSettingDocId,ds,merged); count++;
@@ -3042,6 +3054,7 @@ window.deleteDoctor = function(id){
   if(!confirm(`確定要刪除 ${doc.name} 醫師？\n\n該醫師的所有預約時段設定也將一併刪除。`))return;
   const prefix=String(id)+':';
   Object.keys(slotSettings).forEach(k=>{if(k.startsWith(prefix)) delete slotSettings[k];});
+  Object.keys(localSlotChanges).forEach(k=>{if(k.startsWith(prefix)) delete localSlotChanges[k];});
   if(window._fbDeleteDoctorSlots) window._fbDeleteDoctorSlots(id);
   if(window._fbDeleteDoctor) window._fbDeleteDoctor(id);
   doctors=doctors.filter(d=>String(d.id)!==String(id));
@@ -3732,9 +3745,14 @@ updateReviewBadge();
 
   // ── 即時監聽 slots ──
   db.collection('slots').onSnapshot(snap=>{
-    slotSettings={};
-    snap.docs.forEach(d=>{ const v=d.data(); if(v.slots) slotSettings[d.id]=v.slots; });
-    committedSlotSettings=JSON.parse(JSON.stringify(slotSettings));
+    committedSlotSettings={};
+    snap.docs.forEach(d=>{ const v=d.data(); if(v.slots) committedSlotSettings[d.id]=v.slots; });
+    // merge：Firebase 已存的為基底，本地未儲存的變更優先覆蓋
+    slotSettings=Object.assign({},committedSlotSettings);
+    Object.entries(localSlotChanges).forEach(([k,v])=>{
+      if(v&&v.length) slotSettings[k]=v;   // 本地新增/修改
+      else delete slotSettings[k];           // 本地刪除（空陣列代表刪除）
+    });
     if(document.getElementById('panel-schedule').classList.contains('active')) renderSlotCal();
   });
 
@@ -3771,6 +3789,8 @@ updateReviewBadge();
       await Promise.all(Object.entries(slotSettings).map(([k,v])=>
         db.collection('slots').doc(k).set({slots:v})
       ));
+      // 清除本地變更記錄（已存進 Firebase）
+      localSlotChanges={};
       toast('success','時段已儲存到雲端');
       committedSlotSettings=JSON.parse(JSON.stringify(slotSettings));
     }catch(e){ toast('err','儲存失敗：'+e.message); }
