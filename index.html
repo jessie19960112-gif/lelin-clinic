@@ -1270,8 +1270,8 @@ function buildEditSelfPayHTML(b){
   const key=docId+':'+op;
   const cfg=opSelfPay[key]||{required:[],optional:[],customItems:[]};
   const customItems=cfg.customItems||[];
-  // 優先用暫存
-  const curSel=(window._editingBookingId===b.id && window._editingTempSelfPay)
+  // 優先用暫存（用 !== null 判斷，避免空陣列被誤判為 falsy）
+  const curSel=(window._editingBookingId===b.id && window._editingTempSelfPay !== null && window._editingTempSelfPay !== undefined)
     ? window._editingTempSelfPay
     : (b.selfPayItems||[]);
   const reqItems=cfg.required.map(id=>customItems.find(x=>x.id===id)).filter(Boolean);
@@ -1324,7 +1324,7 @@ window.openEditSelfPayPicker = function(key, bookingId){
   const customItems=cfg.customItems||[];
   const optItems=cfg.optional.map(id=>customItems.find(x=>x.id===id)).filter(Boolean);
   // 使用暫存陣列，不直接讀 b.selfPayItems
-  if(!window._editingTempSelfPay) window._editingTempSelfPay = JSON.parse(JSON.stringify(b?b.selfPayItems||[]:[]) );
+  if(window._editingTempSelfPay === null || window._editingTempSelfPay === undefined) window._editingTempSelfPay = JSON.parse(JSON.stringify(b?b.selfPayItems||[]:[]));
   const curSel=window._editingTempSelfPay;
   const customExisting=curSel.filter(e=>e.role==='custom');
 
