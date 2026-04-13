@@ -393,7 +393,7 @@ tr:hover td{background:#C3D9EE;}
 .ft.active .ft-cnt{background:rgba(244,123,32,.22);}
 
 /* SortableJS drag styles */
-.sp-drag-ghost{opacity:0.4;background:var(--op)!important;}
+.sp-drag-ghost{opacity:0!important;}
 .sp-drag-chosen{background:#FFFBF7!important;}
 .sp-drag-active{box-shadow:0 4px 16px rgba(0,0,0,.12);background:white!important;}
 
@@ -449,7 +449,8 @@ tr:hover td{background:#FFF9F5;}
 .slot-layout{display:flex;gap:0;align-items:flex-start;min-width:0;}
 .slot-left{width:40%;min-width:260px;flex-shrink:0;padding-right:28px;box-sizing:border-box;}
 .slot-divider{width:1px;background:var(--border);align-self:stretch;flex-shrink:0;min-height:420px;margin:0 4px;}
-.slot-right{flex:1;min-width:0;padding-left:20px;max-height:560px;overflow-y:auto;}
+.slot-right{flex:1;min-width:0;padding-left:20px;height:560px;overflow-y:auto;position:relative;}
+.slot-summary-sticky-hd{position:sticky;top:0;background:var(--card);z-index:10;padding-bottom:6px;margin-bottom:4px;border-bottom:1px solid var(--border);}
 .slot-summary-sticky-hd{position:sticky;top:0;background:white;z-index:10;padding-bottom:8px;margin-bottom:2px;}
 
 /* slot cal grid — grid-auto-rows ensures all cells same height per row */
@@ -1095,6 +1096,17 @@ window.deleteBooking = function(id){
   toast('warn','預約已刪除');
 }
 
+window.deletePastBooking = function(id){
+  const b=bookings.find(x=>x.id===id);if(!b)return;
+  if(!confirm(`確定要刪除 ${b.name} 的預約？`))return;
+  if(b.fbId && window._fbDelete) window._fbDelete(b.fbId);
+  bookings=bookings.filter(x=>x.id!==id);
+  closeModal();
+  renderBookings();
+  updateReviewBadge();
+  toast('warn','預約已刪除');
+}
+
 /* Combined Detail + Edit modal */
 window.openDetail = function(id){
   const b=bookings.find(x=>x.id===id);if(!b)return;
@@ -1268,7 +1280,9 @@ window._renderDetailModal = function(b, editMode, isPast=false){
       ${retired
         ? `<span style="font-size:12px;color:var(--text3);display:flex;align-items:center;gap:5px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0"/></svg>負責醫師已離職，資料不可編輯</span>`
         : isPast
-          ? `<span style="font-size:12px;color:var(--text3);display:flex;align-items:center;gap:5px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0"/></svg>過去日期資料不可編輯</span>`
+          ? `<button class="mbtn mbtn-reject" onclick="deletePastBooking('${b.id}')" style="background:var(--red);border-color:var(--red);color:white;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>刪除預約
+            </button>`
           : `<button class="mbtn mbtn-approve" onclick="_renderDetailModal(bookings.find(x=>x.id==='${b.id}'),true,false)" style="background:var(--orange);">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:15px;height:15px;"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>編輯資料
             </button>`}
@@ -2421,11 +2435,12 @@ function renderTimeSlotPanel(ds){
     </div>`;
   }).join('');
 
-  // 新增時段下拉：當天時，已過的「時」選項 disabled
+  // 新增時段下拉：08-20 點，當天時已過的選項 disabled
   const nowH=now.getHours();
-  const hourOpts=Array.from({length:24},(_,i)=>{
-    const hStr=String(i).padStart(2,'0');
-    const disabled=(isToday && i<=nowH)?' disabled':'';
+  const hourOpts=Array.from({length:13},(_,i)=>{
+    const h=i+8;
+    const hStr=String(h).padStart(2,'0');
+    const disabled=(isToday && h<=nowH)?' disabled':'';
     return `<option value="${hStr}"${disabled}>${hStr}</option>`;
   }).join('');
   const minOpts=['00','15','30','45'].map(v=>`<option value="${v}">${v}</option>`).join('');
@@ -2513,9 +2528,11 @@ function renderSlotSummary(){
   if(!entries.length){div.innerHTML=`<div style="font-size:12px;color:var(--text3);padding:14px 0;">本月尚未設定任何時段</div>`;return;}
   const doc2=doctors.find(d=>String(d.id)===String(slotActiveDocId));
   const wkBadge=doc2&&doc2.weekLimit?`<span style="font-size:12px;color:var(--text2);">每週上限 <strong style="color:var(--red);">${doc2.weekLimit}</strong> 天</span>`:'';
-  div.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-    <span style="font-size:12px;font-weight:700;color:var(--text2);">本月已設定時段</span>
-    ${wkBadge}
+  div.innerHTML=`<div class="slot-summary-sticky-hd">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-size:12px;font-weight:700;color:var(--text2);">本月已設定時段</span>
+      ${wkBadge}
+    </div>
   </div>`+entries.map(([ds,slots])=>{
     const booked=getDocBookedSlots(slotActiveDocId,ds);
     const isSelected=ds===slotSelectedDay;
@@ -2628,7 +2645,7 @@ function renderGlobalTimeBody(){
 
   const slotChips=cfg.slots.map((s,i)=>`<div class="global-slot-row"><span class="global-slot-time">${s}</span><button class="global-slot-del" onclick="delGlobalSlot(${i})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>`).join('');
 
-  const hourOpts=Array.from({length:24},(_,i)=>`<option value="${String(i).padStart(2,'0')}">${String(i).padStart(2,'0')}</option>`).join('');
+  const hourOpts=Array.from({length:13},(_,i)=>{const h=i+8;const hStr=String(h).padStart(2,'0');return`<option value="${hStr}">${hStr}</option>`;}).join('');
   const minOpts=['00','15','30','45'].map(v=>`<option value="${v}">${v}</option>`).join('');
 
   document.getElementById('modal2Body').innerHTML=`
