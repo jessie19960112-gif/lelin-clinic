@@ -522,8 +522,7 @@ function renderDoctors(){
     </div>`).join('');
 }
 function pickDoc(id){
-
-  sel.docId=id; sel.op=null;
+  sel.docId=id; sel.op=null; sel.date=null; sel.slot=null;
   renderDoctors();
   document.getElementById('docErr').classList.remove('on');
   const doc=doctors.find(d=>d.id==id);
@@ -551,7 +550,7 @@ function toStep2(){
   if(!sel.op){document.getElementById('opErr').classList.add('on');return;}
   show('p2');setStep(2);renderCal();
 }
-function toStep1(){show('p1');setStep(1);}
+function toStep1(){sel.date=null;sel.slot=null;document.getElementById('slotCard').style.display='none';show('p1');setStep(1);}
 function toStep3(){
   if(!sel.date){
     document.getElementById('dateErr').classList.add('on');
@@ -1258,7 +1257,7 @@ window.renderSlots   = renderSlots;
           .where('date','==',sel.date)
           .where('status','in',['pending','approved'])
           .get(),
-        15000
+        5000
       );
       const isAM=parseInt(sel.slot)<12;
       const limit=isAM?(docObj.limitAM??99):(docObj.limitPM??99);
@@ -1275,7 +1274,7 @@ window.renderSlots   = renderSlots;
         show('p2');setStep(2);renderCal();
         return;
       }
-    }catch(e){ /* 查詢失敗或逾時仍允許送出 */ }
+    }catch(e){ console.warn('額滿查詢失敗：', e.message); }
 
     try{
       await withTimeout(
@@ -1288,7 +1287,7 @@ window.renderSlots   = renderSlots;
           selfPayItems:window._feSelSelfPay||[],
           createdAt:firebase.firestore.FieldValue.serverTimestamp()
         }),
-        15000
+        5000
       );
       submitBooking();
     }catch(e){
