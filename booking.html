@@ -1295,28 +1295,11 @@ window.renderSlots   = renderSlots;
     }catch(e){
       if(btnEl){btnEl.disabled=false;btnEl.innerHTML='確認送出';}
       if(e.message==='TIMEOUT'){
-        // 逾時：先查「電話+日期+時段」確認是否已成功寫入
-        const phone=document.getElementById('f_phone').value.trim();
-        try{
-          const chk=await withTimeout(
-            db.collection('bookings')
-              .where('phone','==',phone)
-              .where('date','==',sel.date)
-              .where('slot','==',sel.slot)
-              .get(),
-            3000
-          );
-          if(!chk.empty){
-            // 已成功寫入，直接跳成功頁
-            submitBooking();
-          } else {
-            // 尚未寫入，留在確認頁讓病患重試
-            showModal('連線逾時','網路連線逾時，請確認網路後再按確認送出。','重新嘗試');
-          }
-        }catch(e2){
-          // 查詢也失敗，留在確認頁讓病患重試
-          showModal('連線逾時','網路連線逾時，請確認網路後再按確認送出。','重新嘗試');
-        }
+        showModal('網路連線不穩','網路連線不穩，請確認網路後重新預約。','確定');
+        document.getElementById('customModal').querySelector('.modal-btn').onclick=function(){
+          closeModal();
+          goHome();
+        };
       } else {
         showModal('送出失敗','網路異常，請稍後再試。\n（'+e.message+'）','關閉');
       }
