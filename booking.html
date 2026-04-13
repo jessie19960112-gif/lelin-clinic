@@ -1257,7 +1257,7 @@ window.renderSlots   = renderSlots;
           .where('date','==',sel.date)
           .where('status','in',['pending','approved'])
           .get(),
-        5000
+        3000
       );
       const isAM=parseInt(sel.slot)<12;
       const limit=isAM?(docObj.limitAM??99):(docObj.limitPM??99);
@@ -1287,7 +1287,7 @@ window.renderSlots   = renderSlots;
           selfPayItems:window._feSelSelfPay||[],
           createdAt:firebase.firestore.FieldValue.serverTimestamp()
         }),
-        5000
+        3000
       );
       submitBooking();
     }catch(e){
