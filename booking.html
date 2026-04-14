@@ -1216,6 +1216,7 @@ window.renderSlots   = renderSlots;
   });
 
   // ── 送出預約（含額滿檢查）──
+  // 使用 fetch() REST API 寫入，避免 Firebase SDK 離線快取造成幽靈資料
   window.submitBookingToFirebase = async function(){
     const btnEl=document.querySelector('#p4 .btn-p');
     if(btnEl){btnEl.disabled=true;btnEl.innerHTML='送出中…';}
@@ -1226,11 +1227,6 @@ window.renderSlots   = renderSlots;
     const dv=document.getElementById('f_d').value.trim();
     const phone=document.getElementById('f_phone').value.trim();
     const note=document.getElementById('f_note').value.trim();
-
-    function withTimeout(promise, ms){
-      const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error('TIMEOUT')),ms));
-      return Promise.race([promise, timeout]);
-    }
 
     // 第一關：_bookedSlots 本地即時檢查
     const isAM=parseInt(sel.slot)<12;
@@ -1251,23 +1247,23 @@ window.renderSlots   = renderSlots;
       return;
     }
 
-    // 第二關：額滿即時檢查
+    // 第二關：額滿即時檢查（使用 SDK，有快取可用）
     try{
-      const snap=await withTimeout(
+      const snap=await Promise.race([
         db.collection('bookings')
           .where('docId','==',sel.docId)
           .where('date','==',sel.date)
           .where('status','in',['pending','approved'])
           .get(),
-        3000
-      );
-      const isAM=parseInt(sel.slot)<12;
-      const limit=isAM?(docObj.limitAM??99):(docObj.limitPM??99);
+        new Promise((_,rej)=>setTimeout(()=>rej(new Error('TIMEOUT')),3000))
+      ]);
+      const isAM2=parseInt(sel.slot)<12;
+      const limit2=isAM2?(docObj.limitAM??99):(docObj.limitPM??99);
       const count=snap.docs.filter(d=>{
         const s=d.data().slot;
-        return s && (parseInt(s)<12)===isAM;
+        return s && (parseInt(s)<12)===isAM2;
       }).length;
-      if(limit>0 && count>=limit){
+      if(limit2>0 && count>=limit2){
         if(btnEl){btnEl.disabled=false;btnEl.innerHTML='確認送出';}
         showModal('此時段已額滿','很抱歉，您選擇的時段已額滿，請重新選擇其他時間。','重新選擇');
         sel.date=null; sel.slot=null;
@@ -1278,29 +1274,64 @@ window.renderSlots   = renderSlots;
       }
     }catch(e){ console.warn('額滿查詢失敗：', e.message); }
 
+    // ── 用 fetch() REST API 寫入，不經過 Firebase SDK 的離線快取 ──
+    const bookingData={
+      fields:{
+        docName:{stringValue:docObj.name},
+        docId:{stringValue:String(sel.docId)},
+        op:{stringValue:sel.op},
+        date:{stringValue:sel.date},
+        slot:{stringValue:sel.slot},
+        name:{stringValue:name},
+        bday:{stringValue:yv+'/'+mv+'/'+dv},
+        phone:{stringValue:phone},
+        note:{stringValue:note},
+        status:{stringValue:'pending'},
+        lineNotified:{booleanValue:false},
+        selfPayItems:(window._feSelSelfPay||[]).length
+          ? {arrayValue:{values:(window._feSelSelfPay).map(function(item){
+              return {mapValue:{fields:{
+                id:{stringValue:item.id||''},
+                name:{stringValue:item.name||''},
+                price:{integerValue:String(item.price||0)},
+                unit:{stringValue:item.unit||''},
+                qty:{integerValue:String(item.qty||1)},
+                role:{stringValue:item.role||'optional'}
+              }}};
+            })}}
+          : {arrayValue:{values:[]}},
+        createdAt:{timestampValue:new Date().toISOString()}
+      }
+    };
+
+    const restUrl='https://firestore.googleapis.com/v1/projects/'+firebaseConfig.projectId+'/databases/(default)/documents/bookings';
+
     try{
-      await withTimeout(
-        db.collection('bookings').add({
-          docName:docObj.name, docId:sel.docId,
-          op:sel.op, date:sel.date, slot:sel.slot,
-          name, bday:`${yv}/${mv}/${dv}`,
-          phone, note, status:'pending',
-          lineNotified:false,
-          selfPayItems:window._feSelSelfPay||[],
-          createdAt:firebase.firestore.FieldValue.serverTimestamp()
-        }),
-        3000
-      );
+      const controller=new AbortController();
+      const timer=setTimeout(function(){controller.abort();},3000);
+
+      const resp=await fetch(restUrl,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(bookingData),
+        signal:controller.signal
+      });
+      clearTimeout(timer);
+
+      if(!resp.ok){
+        const errBody=await resp.text().catch(function(){return '';});
+        throw new Error('HTTP '+resp.status+': '+errBody.slice(0,100));
+      }
+
+      // 寫入成功 → 顯示成功畫面
       submitBooking();
     }catch(e){
       if(btnEl){btnEl.disabled=false;btnEl.innerHTML='確認送出';}
-      if(e.message==='TIMEOUT'){
-        showModal('網路連線不穩','網路連線不穩，請確認網路後重新預約。','確定');
-        document.getElementById('customModal').querySelector('.modal-btn').onclick=function(){
-          location.reload();
-        };
+      if(e.name==='AbortError'||e.message==='TIMEOUT'){
+        // 逾時：資料沒進 Firebase，留在確認頁讓病人重試
+        showModal('網路連線不穩','目前網路連線不穩，請確認網路後再次點擊送出。','我知道了');
       } else {
-        showModal('送出失敗','網路異常，請稍後再試。\n（'+e.message+'）','關閉');
+        showModal('送出失敗','網路異常，請稍後再試。','我知道了');
       }
     }
   };
