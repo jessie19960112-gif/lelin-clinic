@@ -1115,6 +1115,54 @@ window.openDetail = function(id){
   _renderDetailModal(b, false, isPast);
 }
 
+window.printToSheet = function(id){
+  const b=bookings.find(x=>x.id===id);if(!b)return;
+  const doc=doctors.find(d=>String(d.id)===String(b.docId));
+  const doctorName=doc?doc.name+'醫師':(b.docName||'—');
+
+  // 組合自費項目（同詳情頁邏輯）
+  let allItems=[];
+  const docExists=doctors.some(d=>String(d.id)===String(b.docId));
+  if(!docExists){
+    allItems=b.selfPayItems||[];
+  } else {
+    const key=String(b.docId)+':'+(b.op||'');
+    const cfg=opSelfPay[key]||{required:[],optional:[],customItems:[]};
+    const customItems=cfg.customItems||[];
+    const reqItems=cfg.required.map(rid=>customItems.find(x=>x.id===rid)).filter(Boolean);
+    const existingIds=(b.selfPayItems||[]).map(x=>x.id);
+    const missingReq=reqItems.filter(it=>!existingIds.includes(it.id));
+    allItems=[...(b.selfPayItems||[]),...missingReq.map(it=>({...it,qty:1,role:'required'}))];
+  }
+
+  const payload={
+    caseNo: b.caseNo||'',
+    name: b.name||'',
+    bday: fmtBday(b.bday)||'',
+    doctor: doctorName,
+    op: b.op||'',
+    date: b.date||'',
+    slot: b.slot||'',
+    selfPayItems: allItems.map(it=>({name:it.name, price:it.price, qty:it.qty||1}))
+  };
+
+  const btn=document.querySelector('#modalTitle .tb-btn');
+  if(btn){btn.disabled=true;btn.innerHTML='傳送中…';}
+
+  fetch('https://script.google.com/macros/s/AKfycbxVIaKfU27A1uhYJC1m_k2K2iqk6DwUcWQyNwvGAs5Uv2olaFIAnUGlh2_qIBDXAw/exec',{
+    method:'POST',
+    mode:'no-cors',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(payload)
+  }).then(()=>{
+    toast('success','已傳送到 Google Sheet');
+  }).catch(e=>{
+    toast('err','傳送失敗：'+e.message);
+  }).finally(()=>{
+    if(btn){btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>列印';}
+  });
+}
+
 // bday stored as "72/03/15", display same
 function fmtBday(s){
   if(!s) return '—';
@@ -1212,7 +1260,7 @@ window._renderDetailModal = function(b, editMode, isPast=false){
       ? `<span class="line-toggle sent locked" title="如需修改請進入編輯"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:12px;height:12px;"><polyline points="20 6 9 17 4 12"/></svg>已通知</span>`
       : `<span class="line-toggle disabled"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px;height:12px;"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>未通知</span>`;
 
-    document.getElementById('modalTitle').innerHTML=`<span style="flex:1;">預約詳情</span>`;
+    document.getElementById('modalTitle').innerHTML=`<span style="flex:1;">預約詳情</span><button class="tb-btn" onclick="printToSheet('${b.id}')" style="font-size:11.5px;padding:5px 12px;gap:5px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>列印</button>`;
     document.getElementById('modalHd').style.cssText='display:flex;align-items:center;gap:8px;';
     document.getElementById('modalBody').innerHTML=`
       <div class="detail-card">
