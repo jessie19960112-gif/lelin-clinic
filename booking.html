@@ -1297,8 +1297,7 @@ window.renderSlots   = renderSlots;
       if(e.message==='TIMEOUT'){
         showModal('網路連線不穩','網路連線不穩，請確認網路後重新預約。','確定');
         document.getElementById('customModal').querySelector('.modal-btn').onclick=function(){
-          closeModal();
-          goHome();
+          location.reload();
         };
       } else {
         showModal('送出失敗','網路異常，請稍後再試。\n（'+e.message+'）','關閉');
