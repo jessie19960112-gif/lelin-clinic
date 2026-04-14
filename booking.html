@@ -1219,7 +1219,7 @@ window.renderSlots   = renderSlots;
   // 使用 fetch() REST API 寫入，避免 Firebase SDK 離線快取造成幽靈資料
   window.submitBookingToFirebase = async function(){
     const btnEl=document.querySelector('#p4 .btn-p');
-    if(btnEl){btnEl.disabled=true;btnEl.innerHTML='送出中…';}
+    if(btnEl){btnEl.disabled=true;btnEl.style.opacity='.7';}
     const docObj=doctors.find(d=>d.id==sel.docId);
     const name=document.getElementById('f_name').value.trim();
     const yv=document.getElementById('f_y').value.trim();
@@ -1238,7 +1238,7 @@ window.renderSlots   = renderSlots;
       })
       .reduce((sum,[,cnt])=>sum+cnt,0);
     if(limit>0 && localCount>=limit){
-      if(btnEl){btnEl.disabled=false;btnEl.innerHTML='確認送出';}
+      if(btnEl){btnEl.disabled=false;btnEl.style.opacity='1';}
       showModal('此時段已額滿','很抱歉，您選擇的時段已額滿，請重新選擇其他時間。','重新選擇');
       sel.date=null; sel.slot=null;
       calDate=new Date();
@@ -1264,7 +1264,7 @@ window.renderSlots   = renderSlots;
         return s && (parseInt(s)<12)===isAM2;
       }).length;
       if(limit2>0 && count>=limit2){
-        if(btnEl){btnEl.disabled=false;btnEl.innerHTML='確認送出';}
+        if(btnEl){btnEl.disabled=false;btnEl.style.opacity='1';}
         showModal('此時段已額滿','很抱歉，您選擇的時段已額滿，請重新選擇其他時間。','重新選擇');
         sel.date=null; sel.slot=null;
         calDate=new Date();
@@ -1326,7 +1326,7 @@ window.renderSlots   = renderSlots;
       // 寫入成功 → 顯示成功畫面
       submitBooking();
     }catch(e){
-      if(btnEl){btnEl.disabled=false;btnEl.innerHTML='確認送出';}
+      if(btnEl){btnEl.disabled=false;btnEl.style.opacity='1';}
       if(e.name==='AbortError'||e.message==='TIMEOUT'){
         // 逾時：資料沒進 Firebase，留在確認頁讓病人重試
         showModal('網路連線不穩','目前網路連線不穩，請確認網路後再次點擊送出。','我知道了');
