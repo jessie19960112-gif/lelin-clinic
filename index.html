@@ -1433,12 +1433,14 @@ window.saveEdit = function(id){
   if(by&&bm&&bd) b.bday=composeBday(by,bm,bd);
   b.phone=document.getElementById('e_phone').value.trim()||b.phone;
   b.date=date; b.slot=slot;
-  b.docId=document.getElementById('e_doc').value||null;
-  if(!b.docId){toast('err','請指定負責醫師');return;}
+  const newDocId=document.getElementById('e_doc').value||null;
+  if(!newDocId){toast('err','請指定負責醫師');return;}
+  const docChanged=String(newDocId)!==String(b.docId);
+  b.docId=newDocId;
   const editedDocObj=doctors.find(d=>String(d.id)===String(b.docId));
   b.docName=editedDocObj?editedDocObj.name:(b.docName||'');
   b.op=document.getElementById('e_op').value;
-  b.status=document.getElementById('e_status').value;
+  b.status=docChanged?'pending':document.getElementById('e_status').value;
   b.lineNotified=document.getElementById('e_line').value==='1';
   b.note=document.getElementById('e_note').value.trim();
   // selfPayItems 從暫存讀取（不從 b 直接讀，避免未確認的舊狀態）
@@ -1459,6 +1461,7 @@ window.saveEdit = function(id){
   if(document.getElementById('panel-calendar').classList.contains('active')) renderCal();
   updateReviewBadge();
   toast('success','資料已更新');
+  if(docChanged) toast('warn','醫師已變更，狀態自動改為待審核');
   // 儲存後回到詳情頁
   _renderDetailModal(b, false, false);
 }
@@ -2440,7 +2443,7 @@ function renderTimeSlotPanel(ds){
   const hourOpts=Array.from({length:13},(_,i)=>{
     const h=i+8;
     const hStr=String(h).padStart(2,'0');
-    const disabled=(isToday && h<=nowH)?' disabled':'';
+    const disabled=(isToday && h<nowH)?' disabled':'';
     return `<option value="${hStr}"${disabled}>${hStr}</option>`;
   }).join('');
   const minOpts=['00','15','30','45'].map(v=>`<option value="${v}">${v}</option>`).join('');
