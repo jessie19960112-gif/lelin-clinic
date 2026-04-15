@@ -593,11 +593,12 @@ function renderFeSelfPay(){
   // fallback: show all catalog items as optional
   const fallback=!cfg;
   const allOptIds=fallback?feSelfPayCatalog.map(function(it){return it.id;}):optIds;
-  const optItems=feSelfPayCatalog.filter(function(it){return allOptIds.includes(it.id);});
-  const reqItemsFromLib=feSelfPayCatalog.filter(function(it){return !fallback&&reqIds.includes(it.id);});
+  // 依照 opSettings 的 ID 陣列順序排列，確保後台拖曳排序正確反映到 booking
+  const optItems=allOptIds.map(function(id){return feSelfPayCatalog.find(function(it){return it.id===id;});}).filter(Boolean);
+  const reqItemsFromLib=reqIds.map(function(id){return feSelfPayCatalog.find(function(it){return it.id===id&&!fallback;});}).filter(Boolean);
   const reqCustom=customItems.filter(function(it){return reqIds.includes(it.id);});
   const reqItems=reqItemsFromLib.concat(reqCustom);
-  const optCustom=customItems.filter(function(it){return optIds.includes(it.id);});
+  const optCustom=optIds.map(function(id){return customItems.find(function(it){return it.id===id;});}).filter(Boolean);
   const allOptItems=optItems.concat(optCustom);
 
   window._feReqItems=reqItems;
