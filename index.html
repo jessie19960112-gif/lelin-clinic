@@ -2619,16 +2619,27 @@ function renderSlotSummary(){
       }
     }).join('');
 
-    const isPastSummary=ds<new Date().toISOString().slice(0,10);
+    const nowPS=new Date();
+    const todayStrPS=nowPS.toISOString().slice(0,10);
+    const isPastSummary=ds<todayStrPS;
+    // 今天所有無預約時段都已過 → 也視為「過期」（日期變灰）
+    const isTodayPS=ds===todayStrPS;
+    const allSlotsExpiredToday=isTodayPS&&slots.every(s=>{
+      if(booked.includes(s)) return false;
+      const[hh,mm]=s.split(':').map(Number);
+      const t=new Date(nowPS.getFullYear(),nowPS.getMonth(),nowPS.getDate(),hh,mm,0,0);
+      return t<=nowPS;
+    });
+    const isEffectivelyPast=isPastSummary||allSlotsExpiredToday;
     // 過去日期：只要有無預約的時段就顯示 × 鈕
     const hasDeletable=slots.some(s=>!booked.includes(s));
-    const showDelBtn=!isPastSummary||(isPastSummary&&hasDeletable);
+    const showDelBtn=!isEffectivelyPast||(isEffectivelyPast&&hasDeletable);
     return `<div class="slot-summary-item${isSelected?' summary-active':''}" onclick="selectSlotDay('${ds}')" style="cursor:pointer;${isSelected?`border-color:${dc.dot};background:${dc.bg};`:''}">
       <div style="min-width:80px;">
-        <div class="slot-summary-date" style="${isSelected?`color:${dc.text};`:''}${isPastSummary?'color:var(--text3);':''}">${fmtDate(ds)}</div>
+        <div class="slot-summary-date" style="${isSelected?`color:${dc.text};`:''}${isEffectivelyPast?'color:var(--text3);':''}">${fmtDate(ds)}</div>
       </div>
       <div class="slot-summary-chips">${chipsHtml}</div>
-      ${showDelBtn?`<button class="slot-summary-del" onclick="event.stopPropagation();clearDocSlots('${ds}')" title="清除所有可刪時段" style="${isPastSummary?'opacity:.55;':''}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`:''}
+      ${showDelBtn?`<button class="slot-summary-del" onclick="event.stopPropagation();clearDocSlots('${ds}')" title="清除所有可刪時段" style="${isEffectivelyPast?'opacity:.55;':''}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`:''}
     </div>`;
   }).join('');
 }
