@@ -1299,7 +1299,9 @@ window._renderDetailModal = function(b, editMode, isPast=false){
     const retired=isDocRetired(b);
     document.getElementById('modalFoot').innerHTML=`<div class="modal-acts" style="align-items:center;">
       ${retired
-        ? `<span style="font-size:12px;color:var(--text3);display:flex;align-items:center;gap:5px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0"/></svg>負責醫師已離職，資料不可編輯</span>`
+        ? `<button class="mbtn mbtn-reject" onclick="deletePastBooking('${b.id}')" style="background:var(--red);border-color:var(--red);color:white;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>刪除(醫師已離職)
+            </button>`
         : isPast
           ? `<button class="mbtn mbtn-reject" onclick="deletePastBooking('${b.id}')" style="background:var(--red);border-color:var(--red);color:white;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>刪除預約
@@ -2465,7 +2467,8 @@ function renderTimeSlotPanel(ds){
     const h=i+8;
     const hStr=String(h).padStart(2,'0');
     const disabled=(isToday && h<nowH)?' disabled':'';
-    return `<option value="${hStr}"${disabled}>${hStr}</option>`;
+    const disabledStyle=(isToday && h<nowH)?' style="color:#D8DCE3;"':'';
+    return `<option value="${hStr}"${disabled}${disabledStyle}>${hStr}</option>`;
   }).join('');
   const minOpts=['00','15','30','45'].map(v=>`<option value="${v}">${v}</option>`).join('');
 
@@ -2591,7 +2594,16 @@ function renderSlotSummary(){
     const chipsHtml=slots.map(s=>{
       const isBooked=booked.includes(s);
       const limitFull=isSlotLimitReached(doc,ds,s);
-      const isPastSlot=ds<new Date().toISOString().slice(0,10);
+      const nowR=new Date();
+      const todayStrR=nowR.toISOString().slice(0,10);
+      const isStrictPast=ds<todayStrR;
+      const isTodayR=ds===todayStrR;
+      let isPastSlot=isStrictPast;
+      if(!isPastSlot&&isTodayR&&!isBooked){
+        const[hh,mm]=s.split(':').map(Number);
+        const slotT=new Date(nowR.getFullYear(),nowR.getMonth(),nowR.getDate(),hh,mm,0,0);
+        isPastSlot=slotT<=nowR;
+      }
       if(isBooked){
         // 已被預約：醫師顏色底、白色字（過去現在都一樣）
         return `<span class="slot-summary-chip" style="background:${dc.dot};color:#fff;border-color:${dc.dot};">${s}</span>`;
