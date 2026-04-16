@@ -721,28 +721,30 @@ function calcFeSpTotal(){
 
 function collectFeSp(){
   const items=[];
-  // optional selected from catalog
-  feSelfPayCatalog.forEach(function(it){
-    const cb=document.getElementById('fespcb_'+it.id);
-    if(cb&&cb.classList.contains('chk')){
-      const q=Math.max(1,parseInt((document.getElementById('fespq_'+it.id)||{value:'1'}).value)||1);
-      items.push({id:it.id,name:it.name,price:it.price,unit:it.unit||'',qty:q,role:'optional'});
-    }
-  });
-  // optional selected from custom items
   const key=getFeOpKey();
   const cfg=(key&&feOpSelfPay[key])||null;
-  if(cfg&&cfg.customItems){
-    cfg.customItems.forEach(function(it){
-      if(cfg.optional.includes(it.id)){
-        const cb=document.getElementById('fespcb_'+it.id);
-        if(cb&&cb.classList.contains('chk')){
-          const q=Math.max(1,parseInt((document.getElementById('fespq_'+it.id)||{value:'1'}).value)||1);
-          items.push({id:it.id,name:it.name,price:it.price,unit:it.unit||'',qty:q,role:'optional'});
-        }
+  const optIds=cfg?((cfg.optional)||[]):feSelfPayCatalog.map(function(it){return it.id;});
+  const customItems=(cfg&&cfg.customItems)||[];
+  // 依照 opSettings 的 optional 順序收集，確保順序與後台一致
+  optIds.forEach(function(id){
+    const catItem=feSelfPayCatalog.find(function(it){return it.id===id;});
+    if(catItem){
+      const cb=document.getElementById('fespcb_'+id);
+      if(cb&&cb.classList.contains('chk')){
+        const q=Math.max(1,parseInt((document.getElementById('fespq_'+id)||{value:'1'}).value)||1);
+        items.push({id:catItem.id,name:catItem.name,price:catItem.price,unit:catItem.unit||'',qty:q,role:'optional'});
       }
-    });
-  }
+      return;
+    }
+    const cusItem=customItems.find(function(it){return it.id===id;});
+    if(cusItem){
+      const cb=document.getElementById('fespcb_'+id);
+      if(cb&&cb.classList.contains('chk')){
+        const q=Math.max(1,parseInt((document.getElementById('fespq_'+id)||{value:'1'}).value)||1);
+        items.push({id:cusItem.id,name:cusItem.name,price:cusItem.price,unit:cusItem.unit||'',qty:q,role:'optional'});
+      }
+    }
+  });
   // required
   (window._feReqItems||[]).forEach(function(it){
     items.push({id:it.id,name:it.name,price:it.price,unit:it.unit||'',qty:1,role:'required'});
