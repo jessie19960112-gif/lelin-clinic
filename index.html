@@ -155,6 +155,10 @@ th{padding:9px 14px;font-size:11px;font-weight:700;color:var(--text2);text-align
 td{padding:10px 14px;font-size:13px;border-bottom:1px solid #F1F5F9;vertical-align:middle;}
 tr:last-child td{border-bottom:none;}
 tr:hover td{background:#C3D9EE;}
+.detail-card tr:hover td{background:transparent;}
+.detail-card tr[style*="background:var(--yp)"]:hover td{background:var(--yp);}
+.selfpay-tbl tr:hover td{background:transparent !important;}
+.selfpay-tbl tr.retired-row:hover td{background:var(--yp) !important;}
 .td-name{font-weight:600;}
 .td-date{color:var(--text2);font-size:12px;}
 .td-slot{font-weight:700;color:var(--orange);font-size:12px;}
@@ -1298,7 +1302,7 @@ window._renderDetailModal = function(b, editMode, isPast=false){
         const viewTotal=viewItems.reduce((s,it)=>s+parseInt(it.price)*(parseInt(it.qty)||1),0);
         return `<div class="detail-card" style="margin-top:10px;">
           <div class="detail-card-hd"><span class="detail-card-title">自費項目</span></div>
-          <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <table class="selfpay-tbl" style="width:100%;border-collapse:collapse;font-size:13px;">
             <thead><tr style="border-bottom:2px solid var(--border);">
               <th style="text-align:left;padding:6px 0;font-size:11px;font-weight:700;color:var(--text2);">品項</th>
               <th style="text-align:center;padding:6px 8px;font-size:11px;font-weight:700;color:var(--text2);width:50px;">數量</th>
@@ -1318,7 +1322,7 @@ window._renderDetailModal = function(b, editMode, isPast=false){
           ${retiredViewItems.map(it=>{
             const qty=parseInt(it.qty)||1;
             const subtotal=parseInt(it.price)*qty;
-            return `<tr style="border-bottom:1px solid #F1F5F9;background:var(--yp);">
+            return `<tr class="retired-row" style="border-bottom:1px solid #F1F5F9;background:var(--yp);">
               <td style="padding:7px 0;font-weight:500;"><span style="color:var(--yellow);margin-right:4px;" title="此項目已從清單中移除">⚠</span>${it.name}</td>
               <td style="text-align:center;padding:7px 8px;">${qty}</td>
               <td style="text-align:right;padding:7px 0;font-weight:600;">$${subtotal.toLocaleString()}</td>
@@ -1375,7 +1379,7 @@ function buildEditSelfPayHTML(b){
   }
 
   let total=allItems.reduce((s,it)=>s+parseInt(it.price)*(parseInt(it.qty)||1),0);
-  let html=`<table style="width:100%;border-collapse:collapse;font-size:13px;">
+  let html=`<table class="selfpay-tbl" style="width:100%;border-collapse:collapse;font-size:13px;">
     <thead><tr style="border-bottom:2px solid var(--border);">
       <th style="text-align:left;padding:6px 0;font-size:11px;font-weight:700;color:var(--text2);">品項</th>
       <th style="text-align:center;padding:6px 8px;font-size:11px;font-weight:700;color:var(--text2);width:50px;">數量</th>
@@ -1400,7 +1404,7 @@ function buildEditSelfPayHTML(b){
     retiredItems.forEach(it=>{
       const qty=parseInt(it.qty)||1;
       const subtotal=parseInt(it.price)*qty;
-      html+=`<tr style="border-bottom:1px solid #F1F5F9;background:var(--yp);">
+      html+=`<tr class="retired-row" style="border-bottom:1px solid #F1F5F9;background:var(--yp);">
         <td style="padding:7px 0;font-weight:500;"><span style="color:var(--yellow);margin-right:4px;" title="此項目已從清單中移除">⚠</span>${it.name}</td>
         <td style="text-align:center;padding:7px 8px;">${qty}</td>
         <td style="text-align:right;padding:7px 0;font-weight:600;">$${subtotal.toLocaleString()}</td>
