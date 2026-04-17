@@ -3865,7 +3865,7 @@ updateReviewBadge();
     if(document.getElementById('panel-users')?.classList.contains('active')) renderUserList();
   });
 
-  // ── 即時監聽 bookings ──
+  // ── 即時監聯 bookings ──
   db.collection('bookings').onSnapshot(snap=>{
     bookings = snap.docs.map(d=>{
       const v=d.data();
@@ -3886,7 +3886,47 @@ updateReviewBadge();
     });
     renderBookings(); renderReview(); updateReviewBadge();
     if(document.getElementById('panel-calendar').classList.contains('active')) renderCal();
+    // ── 自動更新 slotCounts（供前端 booking.html 讀取，不含個資）──
+    _rebuildSlotCounts();
   });
+
+  // ── 重建 slotCounts：只存 docId:date → {slot:count} ──
+  let _scTimer=null;
+  async function _rebuildSlotCounts(){
+    // 防抖：連續觸發只執行最後一次
+    if(_scTimer) clearTimeout(_scTimer);
+    _scTimer=setTimeout(async()=>{
+      try{
+        // 從本地 bookings 計算每個 docId:date 的各時段預約數
+        const counts={};
+        bookings.filter(b=>b.status==='pending'||b.status==='approved').forEach(b=>{
+          const key=b.docId+':'+b.date;
+          if(!counts[key]) counts[key]={};
+          counts[key][b.slot]=(counts[key][b.slot]||0)+1;
+        });
+        // 讀取現有 slotCounts，比對差異後只更新有變化的
+        const existSnap=await db.collection('slotCounts').get();
+        const existMap={};
+        existSnap.docs.forEach(d=>{ existMap[d.id]=d.data(); });
+        const batch=db.batch();
+        let changed=false;
+        // 更新/新增有預約的
+        Object.entries(counts).forEach(([key,slots])=>{
+          if(JSON.stringify(existMap[key]||{})!==JSON.stringify(slots)){
+            batch.set(db.collection('slotCounts').doc(key),slots);
+            changed=true;
+          }
+          delete existMap[key];
+        });
+        // 刪除已無預約的
+        Object.keys(existMap).forEach(key=>{
+          batch.delete(db.collection('slotCounts').doc(key));
+          changed=true;
+        });
+        if(changed) await batch.commit();
+      }catch(e){ console.warn('slotCounts 更新失敗：',e.message); }
+    },1000);
+  }
 
   // ── 即時監聽 doctors ──
   db.collection('doctors').onSnapshot(snap=>{

@@ -1202,15 +1202,20 @@ window.renderSlots   = renderSlots;
     feOpSelfPay = snap.exists ? snap.data() : {};
   });
 
-  // ── 即時監聽 bookings → 計算已預約數，即時更新畫面 ──
-  db.collection('bookings').onSnapshot(snap=>{
+  // ── 即時監聽 slotCounts（不含個資，只有時段預約數量）──
+  db.collection('slotCounts').onSnapshot(snap=>{
     window._bookedSlots={};
-    snap.docs.map(d=>d.data())
-      .filter(b=>b.status==='approved'||b.status==='pending')
-      .forEach(b=>{
-        const key=`${b.docId}:${b.date}:${b.slot}`;
-        window._bookedSlots[key]=(window._bookedSlots[key]||0)+1;
+    snap.docs.forEach(d=>{
+      // doc.id 格式：docId:date，data 格式：{slot:count}
+      const [docId,date]=d.id.split(':');
+      const slots=d.data();
+      Object.entries(slots).forEach(([slot,count])=>{
+        if(count>0){
+          const key=`${docId}:${date}:${slot}`;
+          window._bookedSlots[key]=count;
+        }
       });
+    });
     // 即時更新日曆與時段顯示
     if(document.getElementById('p2').classList.contains('on')){
       renderCal();
@@ -1231,7 +1236,7 @@ window.renderSlots   = renderSlots;
     const phone=document.getElementById('f_phone').value.trim();
     const note=document.getElementById('f_note').value.trim();
 
-    // 第一關：_bookedSlots 本地即時檢查
+    // 額滿檢查：用 slotCounts 本地即時資料
     const isAM=parseInt(sel.slot)<12;
     const limit=isAM?(docObj.limitAM??99):(docObj.limitPM??99);
     const localCount=Object.entries(window._bookedSlots||{})
@@ -1250,32 +1255,31 @@ window.renderSlots   = renderSlots;
       return;
     }
 
-    // 第二關：額滿即時檢查（使用 SDK，有快取可用）
+    // 即時再確認：用 REST API 讀取 slotCounts 最新資料
     try{
-      const snap=await Promise.race([
-        db.collection('bookings')
-          .where('docId','==',sel.docId)
-          .where('date','==',sel.date)
-          .where('status','in',['pending','approved'])
-          .get(),
+      const scDocId=encodeURIComponent(sel.docId+':'+sel.date);
+      const scUrl='https://firestore.googleapis.com/v1/projects/'+firebaseConfig.projectId+'/databases/(default)/documents/slotCounts/'+scDocId;
+      const scResp=await Promise.race([
+        fetch(scUrl).then(r=>r.ok?r.json():null),
         new Promise((_,rej)=>setTimeout(()=>rej(new Error('TIMEOUT')),3000))
       ]);
-      const isAM2=parseInt(sel.slot)<12;
-      const limit2=isAM2?(docObj.limitAM??99):(docObj.limitPM??99);
-      const count=snap.docs.filter(d=>{
-        const s=d.data().slot;
-        return s && (parseInt(s)<12)===isAM2;
-      }).length;
-      if(limit2>0 && count>=limit2){
-        if(btnEl){btnEl.disabled=false;btnEl.style.opacity='1';}
-        showModal('此時段已額滿','很抱歉，您選擇的時段已額滿，請重新選擇其他時間。','重新選擇');
-        sel.date=null; sel.slot=null;
-        calDate=new Date();
-        document.getElementById('slotCard').style.display='none';
-        show('p2');setStep(2);renderCal();
-        return;
+      if(scResp&&scResp.fields){
+        let freshCount=0;
+        Object.entries(scResp.fields).forEach(([slot,val])=>{
+          const cnt=parseInt(val.integerValue||0);
+          if((parseInt(slot)<12)===isAM) freshCount+=cnt;
+        });
+        if(limit>0 && freshCount>=limit){
+          if(btnEl){btnEl.disabled=false;btnEl.style.opacity='1';}
+          showModal('此時段已額滿','很抱歉，您選擇的時段已額滿，請重新選擇其他時間。','重新選擇');
+          sel.date=null; sel.slot=null;
+          calDate=new Date();
+          document.getElementById('slotCard').style.display='none';
+          show('p2');setStep(2);renderCal();
+          return;
+        }
       }
-    }catch(e){ console.warn('額滿查詢失敗：', e.message); }
+    }catch(e){ console.warn('額滿即時確認失敗：', e.message); }
 
     // ── 用 fetch() REST API 寫入，不經過 Firebase SDK 的離線快取 ──
     const bookingData={
