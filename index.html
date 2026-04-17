@@ -1295,7 +1295,7 @@ window._renderDetailModal = function(b, editMode, isPast=false){
           ...it,
           retired:!viewAllCfgIds.includes(it.id)
         }));
-        const activeViewItems=rawItems.filter(x=>!x.retired);
+        const activeViewItems=rawItems.filter(x=>!x.retired).sort((a,b)=>(a.role==='required'?0:1)-(b.role==='required'?0:1));
         const retiredViewItems=rawItems.filter(x=>x.retired);
         const viewItems=[...activeViewItems,...retiredViewItems];
         if(!viewItems.length) return '';
@@ -1365,7 +1365,7 @@ function buildEditSelfPayHTML(b){
     ? window._editingTempSelfPay
     : (b.selfPayItems||[]);
 
-  const activeItems=curSel.filter(x=>!x.retired);
+  const activeItems=curSel.filter(x=>!x.retired).sort((a,b)=>(a.role==='required'?0:1)-(b.role==='required'?0:1));
   const retiredItems=curSel.filter(x=>x.retired);
   const allItems=[...activeItems,...retiredItems];
 
