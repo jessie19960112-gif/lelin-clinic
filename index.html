@@ -698,7 +698,7 @@ tr:hover td{background:#FFF9F5;}
           <select class="filter-select" id="bookingDocSel" onchange="setBookingDocFilter(this.value)">
             <option value="all">全部醫師</option>
           </select>
-          <input class="search-inp" placeholder="🔍 搜尋姓名…" id="searchInp" oninput="renderBookings()">
+          <input class="search-inp" placeholder="🔍 搜尋病歷號或姓名…" id="searchInp" oninput="renderBookings()" style="width:200px;">
         </div>
         <table id="bookingsTable"></table>
       </div>
@@ -1014,7 +1014,7 @@ function renderBookings(){
   } else if(bookingStatusFilter!=='all'){
     data=data.filter(b=>b.status===bookingStatusFilter);
   }
-  if(q) data=data.filter(b=>b.name.includes(q));
+  if(q) data=data.filter(b=>b.name.toLowerCase().includes(q)||b.caseNo.toLowerCase().includes(q));
 
   const statusOrder={pending:0,approved:1,rejected:2};
   const {col,dir}=bookingSort;
@@ -1045,7 +1045,7 @@ function renderBookings(){
   }
 
   t.innerHTML=`<thead><tr>
-    <th>病例號</th><th>姓名</th>${thSort('date','手術日期')}<th>時段</th>
+    <th>病歷號</th><th>姓名</th>${thSort('date','手術日期')}<th>時段</th>
     <th>術式</th><th>醫師</th>${thSort('status','狀態')}${thSort('lineNotified','LINE')}<th>備註</th><th>操作</th>
   </tr></thead><tbody>${data.map(b=>{
     const retired=isDocRetired(b);
@@ -1215,7 +1215,7 @@ window._renderDetailModal = function(b, editMode, isPast=false){
     const bp=parseBday(b.bday);
     document.getElementById('modalTitle').textContent='編輯預約';
     document.getElementById('modalBody').innerHTML=`
-      <div class="edit-row"><label class="edit-label">病例號</label><input class="edit-inp" id="e_caseNo" value="${b.caseNo||''}"></div>
+      <div class="edit-row"><label class="edit-label">病歷號</label><input class="edit-inp" id="e_caseNo" value="${b.caseNo||''}"></div>
       <div class="edit-row"><label class="edit-label">姓名 <span style="color:var(--red);">*</span></label><input class="edit-inp" id="e_name" value="${b.name}"></div>
       <div class="edit-row">
         <label class="edit-label">生日（民國年/月/日）<span style="color:var(--red);">*</span></label>
@@ -1270,7 +1270,7 @@ window._renderDetailModal = function(b, editMode, isPast=false){
           <span class="detail-card-title">病人資料</span>
           <div class="detail-card-badges">${badge(b.status)}${lineTagCard}</div>
         </div>
-        <div class="mir"><div class="mik">病例號</div><div class="miv">${b.caseNo||'—'}</div></div>
+        <div class="mir"><div class="mik">病歷號</div><div class="miv">${b.caseNo||'—'}</div></div>
         <div class="mir"><div class="mik">姓名</div><div class="miv">${b.name}</div></div>
         <div class="mir"><div class="mik">生日</div><div class="miv">${fmtBday(b.bday)||'—'}</div></div>
         <div class="mir"><div class="mik">電話</div><div class="miv">${b.phone}</div></div>
@@ -1716,7 +1716,7 @@ window.openAddPatient = function(){
   const docOpts=`<option value="" disabled selected>— 請選擇醫師 —</option>`+doctors.map(d=>`<option value="${d.id}">${d.name} 醫師</option>`).join('');
 
   document.getElementById('modalBody').innerHTML=`
-    <div class="edit-row"><label class="edit-label">病例號</label><input class="edit-inp" id="a_caseNo"></div>
+    <div class="edit-row"><label class="edit-label">病歷號</label><input class="edit-inp" id="a_caseNo"></div>
     <div class="edit-row"><label class="edit-label">姓名 <span style="color:var(--red);">*</span></label><input class="edit-inp" id="a_name" placeholder="請輸入真實姓名"><div class="ferr" id="a_err_name" style="display:none;font-size:11px;color:var(--red);margin-top:4px;"></div></div>
     <div class="edit-row">
       <label class="edit-label">生日（民國年/月/日）<span style="color:var(--red);">*</span></label>
@@ -3938,6 +3938,7 @@ updateReviewBadge();
         ops:(v.ops||[]).map(o=>typeof o==='object'?o:{name:o,desc:''})};
     }).sort((a,b)=>String(a.id).localeCompare(String(b.id)));
     renderDoctors();
+    updateReviewBadge();
   });
 
   // ── 即時監聽 slots ──
