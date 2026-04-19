@@ -3229,7 +3229,8 @@ let reviewUnlockedDocId = null; // which doctor tab is currently unlocked
 
 function updateReviewBadge(){
   const activeDocIds=new Set(doctors.map(d=>String(d.id)));
-  const n=bookings.filter(b=>b.status==='pending'&&activeDocIds.has(String(b.docId))).length;
+  const todayStr=new Date().toISOString().slice(0,10);
+  const n=bookings.filter(b=>b.status==='pending'&&activeDocIds.has(String(b.docId))&&b.date>=todayStr).length;
   const badge=document.getElementById('reviewBadge');
   if(!badge)return;
   if(n>0){badge.textContent=n;badge.style.display='inline-flex';}
@@ -3239,10 +3240,11 @@ function updateReviewBadge(){
 function renderReviewDocTabs(){
   const tabs=document.getElementById('reviewDocTabs');
   if(!tabs)return;
+  const todayStr=new Date().toISOString().slice(0,10);
   let html='';
   doctors.forEach(d=>{
     const dc=docColor(d.id);
-    const cnt=bookings.filter(b=>b.status==='pending'&&String(b.docId)===String(d.id)).length;
+    const cnt=bookings.filter(b=>b.status==='pending'&&String(b.docId)===String(d.id)&&b.date>=todayStr).length;
     const isActive=String(reviewActiveDocId)===String(d.id);
     html+=`<button class="doc-tab${isActive?' active':''}" onclick="selectReviewDoc('${d.id}')"
       style="${isActive?`color:${dc.dot};border-bottom-color:${dc.dot};`:''}"
@@ -3273,7 +3275,14 @@ function renderReview(){
   const t=document.getElementById('reviewTable');
   if(!doctors.length){ t.innerHTML=''; return; }
 
-  let data=bookings.filter(b=>b.status==='pending'&&String(b.docId)===String(reviewActiveDocId));
+  let data=bookings.filter(b=>{
+    if(b.status!=='pending') return false;
+    if(String(b.docId)!==String(reviewActiveDocId)) return false;
+    // 只顯示今天及未來的待審核預約
+    const todayStr=new Date().toISOString().slice(0,10);
+    if(b.date<todayStr) return false;
+    return true;
+  });
   data.sort((a,b)=>a.date.localeCompare(b.date)||a.slot.localeCompare(b.slot));
 
   const dc=docColor(reviewActiveDocId);
@@ -4039,18 +4048,17 @@ updateReviewBadge();
     }catch(e){console.warn('清除舊時段失敗：',e.message);}
   })();
 
-  // ── 啟動時清除一年前的舊 bookings ──
+  // ── 啟動時清除本月以前的舊 bookings（以月為單位）──
   (async function purgeOldBookings(){
     try{
-      const cutoff=new Date();
-      cutoff.setFullYear(cutoff.getFullYear()-1);
-      const cutoffStr=cutoff.toISOString().slice(0,10);
+      const now=new Date();
+      const cutoffStr=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
       const snap=await db.collection('bookings').where('date','<',cutoffStr).get();
       if(snap.empty) return;
       const batch=db.batch();
       snap.docs.forEach(d=>batch.delete(d.ref));
       await batch.commit();
-      console.log(`已刪除 ${snap.docs.length} 筆超過一年的舊預約`);
+      console.log(`已刪除 ${snap.docs.length} 筆本月以前的舊預約`);
     }catch(e){console.warn('清除舊資料失敗：',e.message);}
   })();
   window._fbApprove = function(fbId){
