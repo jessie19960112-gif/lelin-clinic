@@ -3795,6 +3795,8 @@ updateReviewBadge();
         document.getElementById('loginErr').style.display='none';
         document.getElementById('mainSidebar').style.display='flex';
         document.getElementById('mainContent').style.display='flex';
+        // 登入後重新渲染當前頁面，確保資料顯示
+        nav('bookings');
       } else {
         // ❌ 不在白名單
         await auth.signOut();
