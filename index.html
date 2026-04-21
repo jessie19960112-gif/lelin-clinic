@@ -2440,10 +2440,18 @@ function renderSlotCal(){
     el.className=cls;
     if(d===1) el.style.gridColumnStart=first+1;
     if(hasSlots && ds!==slotSelectedDay){
-      el.style.background=dc.bg;
-      el.style.borderColor=dc.border;
-      el.style.color=dc.text;
-      el.style.fontWeight='700';
+      if(isPast){
+        // 過期但有時段：灰色框
+        el.style.background='#F1F5F9';
+        el.style.borderColor='#E2E8F0';
+        el.style.color='var(--text3)';
+        el.style.fontWeight='700';
+      } else {
+        el.style.background=dc.bg;
+        el.style.borderColor=dc.border;
+        el.style.color=dc.text;
+        el.style.fontWeight='700';
+      }
     }
     // selected day uses doctor dot colour as background
     if(ds===slotSelectedDay){
@@ -2458,7 +2466,7 @@ function renderSlotCal(){
       // 只顯示小圓點，不套用週上限閉鎖
       const dot=document.createElement('div');
       dot.className='slot-day-dot';
-      dot.style.background=ds===slotSelectedDay?'rgba(255,255,255,.7)':dc.dot;
+      dot.style.background=ds===slotSelectedDay?'rgba(255,255,255,.7)':(isPast?'#B0B8C8':dc.dot);
       el.appendChild(dot);
     }
     if(!isPast) el.onclick=()=>selectSlotDay(ds);
