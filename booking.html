@@ -1260,6 +1260,31 @@ window.renderSlots   = renderSlots;
       return;
     }
 
+    // 週上限檢查：送出前再次確認
+    if(docObj.weekLimit && docObj.weekLimit>0){
+      if(isWeekLimitClosed(sel.docId, sel.date)){
+        if(btnEl){btnEl.disabled=false;btnEl.style.opacity='1';}
+        showModal('本週預約已滿','該醫師本週可開刀天數已達上限，請選擇其他週的日期。','重新選擇');
+        sel.date=null; sel.slot=null;
+        calDate=new Date();
+        document.getElementById('slotCard').style.display='none';
+        show('p2');setStep(2);renderCal();
+        return;
+      }
+    }
+
+    // 該時段是否已被其他人預約（不分術式）
+    const slotKey=`${sel.docId}:${sel.date}:${sel.slot}`;
+    if((window._bookedSlots||{})[slotKey]>0){
+      if(btnEl){btnEl.disabled=false;btnEl.style.opacity='1';}
+      showModal('此時段已被預約','很抱歉，您選擇的時段剛被其他人預約，請重新選擇。','重新選擇');
+      sel.date=null; sel.slot=null;
+      calDate=new Date();
+      document.getElementById('slotCard').style.display='none';
+      show('p2');setStep(2);renderCal();
+      return;
+    }
+
     // 即時再確認：用 REST API 讀取 slotCounts 最新資料
     try{
       const scDocId=encodeURIComponent(sel.docId+':'+sel.date);
@@ -1269,6 +1294,21 @@ window.renderSlots   = renderSlots;
         new Promise((_,rej)=>setTimeout(()=>rej(new Error('TIMEOUT')),3000))
       ]);
       if(scResp&&scResp.fields){
+        // 檢查該時段是否已被預約（不分術式）
+        const slotField=scResp.fields[sel.slot];
+        if(slotField){
+          const slotCnt=parseInt(slotField.integerValue||0);
+          if(slotCnt>0){
+            if(btnEl){btnEl.disabled=false;btnEl.style.opacity='1';}
+            showModal('此時段已被預約','很抱歉，您選擇的時段剛被其他人預約，請重新選擇。','重新選擇');
+            sel.date=null; sel.slot=null;
+            calDate=new Date();
+            document.getElementById('slotCard').style.display='none';
+            show('p2');setStep(2);renderCal();
+            return;
+          }
+        }
+        // 檢查上午/下午額滿
         let freshCount=0;
         Object.entries(scResp.fields).forEach(([slot,val])=>{
           const cnt=parseInt(val.integerValue||0);
