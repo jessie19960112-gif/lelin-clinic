@@ -938,6 +938,9 @@ function goHome(){
   ['f_name','f_y','f_m','f_d','f_phone','f_note'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('opWrap').innerHTML='<div style="font-size:12px;color:var(--ink3);padding:4px 0;">請先選擇醫師，術式將自動帶入</div>';
   document.getElementById('slotCard').style.display='none';
+  // ★ 重置送出按鈕狀態（修復第二次預約無法送出的問題）
+  var submitBtn=document.querySelector('#p4 .btn-p');
+  if(submitBtn){submitBtn.disabled=false;submitBtn.style.opacity='1';}
   calDate=new Date();
   renderDoctors();renderCal();show('p1');setStep(1);
   const ba=document.getElementById('bookingApp');
